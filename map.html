@@ -57,6 +57,7 @@
     <div id="export-buttons">
         <div id="export-geojson" class="export-btn">Export GeoJSON</div>
         <div id="export-kml" class="export-btn">Export KML</div>
+        <div id="save-changes" class="export-btn">Save Changes</div>
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
@@ -165,8 +166,19 @@
             a.click();
         }
 
+        function saveChanges() {
+            var data = drawnItems.toGeoJSON();
+            var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'updated-field.geojson';
+            a.click();
+        }
+
         document.getElementById('export-geojson').addEventListener('click', exportGeoJSON);
         document.getElementById('export-kml').addEventListener('click', exportKML);
+        document.getElementById('save-changes').addEventListener('click', saveChanges);
 
         function onLocationFound(e) {
             var radius = e.accuracy / 2;
