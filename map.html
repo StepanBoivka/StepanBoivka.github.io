@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Leaflet Map with Drawing Tools</title>
+    <title>Leaflet Map with Polygon Drawing</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
     <style>
@@ -54,7 +54,6 @@
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-draw/1.0.4/leaflet.draw-src.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/togeojson/0.16.0/togeojson.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script>
@@ -81,6 +80,13 @@
         map.addLayer(drawnItems);
 
         var drawControl = new L.Control.Draw({
+            draw: {
+                polyline: false,
+                polygon: true,
+                rectangle: false,
+                circle: false,
+                marker: false
+            },
             edit: {
                 featureGroup: drawnItems
             }
