@@ -13,19 +13,6 @@
         #map {
             height: 100%;
             width: 100%;
-            position: relative;
-        }
-        #locate-button {
-            position: absolute;
-            bottom: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            background-color: white;
-            border: 2px solid #ccc;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 1000;
         }
         #export-buttons {
             position: absolute;
@@ -43,27 +30,16 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        .info-popup {
-            background: white;
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
     </style>
 </head>
 <body>
     <div id="map"></div>
-    <div id="locate-button">Locate me</div>
     <div id="export-buttons">
         <div id="export-geojson" class="export-btn">Export GeoJSON</div>
-        <div id="export-kml" class="export-btn">Export KML</div>
-        <div id="save-changes" class="export-btn">Save Changes</div>
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/turf/6.5.0/turf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/togeojson/0.16.0/togeojson.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script>
         var map = L.map('map').setView([48.3794, 31.1656], 6); // Coordinates of Ukraine
 
@@ -101,30 +77,6 @@
         });
         map.addControl(drawControl);
 
-        // Load GeoJSON file
-        fetch('field.geojson')
-            .then(response => response.json())
-            .then(data => {
-                L.geoJSON(data, {
-                    onEachFeature: function (feature, layer) {
-                        drawnItems.addLayer(layer);
-                        if (layer instanceof L.Polygon) {
-                            var geojson = layer.toGeoJSON();
-                            var area = turf.area(geojson);
-                            var areaInHectares = (area / 10000).toFixed(2); // Convert square meters to hectares
-
-                            var popupContent = `
-                                <div class="info-popup">
-                                    <strong>Polygon Area:</strong><br>
-                                    ${areaInHectares} hectares
-                                </div>
-                            `;
-                            layer.bindPopup(popupContent);
-                        }
-                    }
-                });
-            });
-
         map.on(L.Draw.Event.CREATED, function (event) {
             var layer = event.layer;
             drawnItems.addLayer(layer);
@@ -155,67 +107,7 @@
             a.click();
         }
 
-        function exportKML() {
-            var geojson = drawnItems.toGeoJSON();
-            var kml = tokml(geojson, { documentName: 'Map Data', documentDescription: 'KML export of Leaflet Draw data' });
-            var blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = 'map-data.kml';
-            a.click();
-        }
-
-        function saveChanges() {
-            var data = drawnItems.toGeoJSON();
-            fetch('/save', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.text())
-            .then(message => alert(message))
-            .catch(error => alert('Error saving file: ' + error));
-        }
-
         document.getElementById('export-geojson').addEventListener('click', exportGeoJSON);
-        document.getElementById('export-kml').addEventListener('click', exportKML);
-        document.getElementById('save-changes').addEventListener('click', saveChanges);
-
-        function onLocationFound(e) {
-            var radius = e.accuracy / 2;
-
-            if (map._locationMarker) {
-                map.removeLayer(map._locationMarker);
-            }
-
-            if (map._locationCircle) {
-                map.removeLayer(map._locationCircle);
-            }
-
-            map._locationMarker = L.marker(e.latlng).addTo(map)
-                .bindPopup("Your location")
-                .openPopup();
-
-            map._locationCircle = L.circle(e.latlng, radius).addTo(map);
-            map.setView(e.latlng, 13);
-        }
-
-        function onLocationError(e) {
-            alert("Unable to retrieve your location: " + e.message);
-        }
-
-        document.getElementById('locate-button').addEventListener('click', function() {
-            if (navigator.geolocation) {
-                map.locate({ setView: true, maxZoom: 16 });
-                map.on('locationfound', onLocationFound);
-                map.on('locationerror', onLocationError);
-            } else {
-                alert("Your browser does not support geolocation.");
-            }
-        });
     </script>
 </body>
 </html>
