@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Leaflet Map with Polygon Drawing and Area Calculation</title>
+    <title>Leaflet Map with Editable GeoJSON</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
     <style>
@@ -99,6 +99,18 @@
             }
         });
         map.addControl(drawControl);
+
+        // Load GeoJSON file
+        var geojsonUrl = 'path/to/your-file.geojson'; // Замініть на шлях до вашого GeoJSON файлу
+        fetch(geojsonUrl)
+            .then(response => response.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    onEachFeature: function (feature, layer) {
+                        drawnItems.addLayer(layer);
+                    }
+                });
+            });
 
         map.on(L.Draw.Event.CREATED, function (event) {
             var layer = event.layer;
