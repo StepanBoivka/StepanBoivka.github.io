@@ -84,9 +84,52 @@
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
+        // Локалізований текст для leaflet-draw
         var drawControl = new L.Control.Draw({
             edit: {
                 featureGroup: drawnItems
+            },
+            draw: {
+                polyline: {
+                    title: 'Намалювати лінію',
+                    toolbar: {
+                        buttons: {
+                            start: 'Намалювати лінію'
+                        }
+                    }
+                },
+                polygon: {
+                    title: 'Намалювати полігон',
+                    toolbar: {
+                        buttons: {
+                            start: 'Намалювати полігон'
+                        }
+                    }
+                },
+                rectangle: {
+                    title: 'Намалювати прямокутник',
+                    toolbar: {
+                        buttons: {
+                            start: 'Намалювати прямокутник'
+                        }
+                    }
+                },
+                circle: {
+                    title: 'Намалювати круг',
+                    toolbar: {
+                        buttons: {
+                            start: 'Намалювати круг'
+                        }
+                    }
+                },
+                marker: {
+                    title: 'Додати маркер',
+                    toolbar: {
+                        buttons: {
+                            start: 'Додати маркер'
+                        }
+                    }
+                }
             }
         });
         map.addControl(drawControl);
