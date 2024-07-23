@@ -58,6 +58,7 @@
     <div id="map"></div>
     <div id="locate-button">Моє місцезнаходження</div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-providers/leaflet-providers.js"></script>
     <script>
         var map = L.map('map').setView([48.3794, 31.1656], 6); // координати України
 
@@ -67,10 +68,7 @@
         });
 
         // Шар Google Satellite
-        var googleSatLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        });
+        var googleSatLayer = L.tileLayer.provider('GoogleSatellite');
 
         // Додаємо шар OpenStreetMap на карту за замовчуванням
         osmLayer.addTo(map);
