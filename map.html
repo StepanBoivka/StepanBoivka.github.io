@@ -39,6 +39,22 @@
         .control-btn i {
             font-size: 18px;
         }
+        #metadata-form {
+            display: none;
+            position: absolute;
+            left: 20px;
+            bottom: 100px;
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 1001;
+        }
+        #metadata-form input, #metadata-form button {
+            display: block;
+            margin: 10px 0;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -54,6 +70,11 @@
             <i class="fas fa-location-arrow"></i>
         </div>
         <input type="file" id="file-input" style="display:none" multiple accept=".geojson" />
+    </div>
+    <div id="metadata-form">
+        <label for="field-name">Назва поля:</label>
+        <input type="text" id="field-name" placeholder="Введіть назву поля">
+        <button id="submit-metadata">Зберегти і експортувати</button>
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
@@ -116,13 +137,34 @@
         });
 
         function exportGeoJSON() {
-            var data = drawnItems.toGeoJSON();
+            document.getElementById('metadata-form').style.display = 'block';
+        }
+
+        function saveAndExport() {
+            var metadata = {
+                name: document.getElementById('field-name').value
+            };
+
+            var features = drawnItems.toGeoJSON().features;
+            features.forEach(function (feature) {
+                feature.properties = feature.properties || {};
+                feature.properties.metadata = metadata;
+            });
+
+            var data = {
+                type: "FeatureCollection",
+                features: features
+            };
+            
             var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             var url = URL.createObjectURL(blob);
             var a = document.createElement('a');
             a.href = url;
             a.download = 'map-data.geojson';
             a.click();
+
+            document.getElementById('metadata-form').style.display = 'none';
+            document.getElementById('field-name').value = ''; // Clear input field
         }
 
         function importGeoJSON(files) {
@@ -155,6 +197,8 @@
         }
 
         document.getElementById('export-geojson').addEventListener('click', exportGeoJSON);
+
+        document.getElementById('submit-metadata').addEventListener('click', saveAndExport);
 
         document.getElementById('import-geojson').addEventListener('click', function() {
             document.getElementById('file-input').click();
