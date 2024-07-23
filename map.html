@@ -185,6 +185,19 @@
                     onEachFeature: function (feature, layer) {
                         if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
                             layer.addTo(drawnItems);
+
+                            // Add name label if present
+                            var name = feature.properties.metadata ? feature.properties.metadata.name : 'No name';
+                            if (layer instanceof L.Polygon) {
+                                var center = layer.getBounds().getCenter();
+                                L.marker(center, { icon: L.divIcon({ className: 'name-label', html: name, iconSize: [100, 40] }) }).addTo(map);
+                            }
+                            
+                            // Add click event to show metadata
+                            layer.on('click', function() {
+                                var name = feature.properties.metadata ? feature.properties.metadata.name : 'No name';
+                                layer.bindPopup('<strong>Назва:</strong> ' + name).openPopup();
+                            });
                         }
                     }
                 });
