@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "field",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "Назва поля": null, "Площа": null }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 25.642412, 49.536865 ], [ 25.643291, 49.53887 ], [ 25.649965, 49.537464 ], [ 25.649031, 49.535466 ], [ 25.642412, 49.536865 ] ] ] } }
+]
+}
