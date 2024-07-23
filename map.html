@@ -86,7 +86,24 @@
         function onLocationFound(e) {
             var radius = e.accuracy / 2;
 
-            // Лише центрируем карту без маркерів та кіл
+            // Видаляємо попередній маркер і круг, якщо є
+            if (map._locationMarker) {
+                map.removeLayer(map._locationMarker);
+            }
+
+            if (map._locationCircle) {
+                map.removeLayer(map._locationCircle);
+            }
+
+            // Додаємо маркер для позиції користувача
+            map._locationMarker = L.marker(e.latlng).addTo(map)
+                .bindPopup("Ваша позиція")
+                .openPopup();
+
+            // Додаємо круг для точності
+            map._locationCircle = L.circle(e.latlng, radius).addTo(map);
+            
+            // Центруємо карту на позицію користувача
             map.setView(e.latlng, 13);
         }
 
