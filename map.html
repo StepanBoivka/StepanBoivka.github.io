@@ -5,14 +5,35 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         html, body {
+            height: 100%;
             margin: 0;
             padding: 0;
-            height: 100%;
-            overflow: hidden;
         }
         #map {
             height: 100%;
             width: 100%;
+        }
+        /* Збільшення розміру кнопок масштабування та меню шарів */
+        .leaflet-control-zoom a {
+            width: 36px;
+            height: 36px;
+            line-height: 36px;
+            font-size: 18px;
+        }
+        .leaflet-control-layers {
+            font-size: 18px;
+        }
+        /* Зміна розміру іконок на мобільних пристроях */
+        @media (max-width: 600px) {
+            .leaflet-control-zoom a {
+                width: 48px;
+                height: 48px;
+                line-height: 48px;
+                font-size: 24px;
+            }
+            .leaflet-control-layers {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
