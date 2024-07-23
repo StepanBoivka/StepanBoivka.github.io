@@ -168,11 +168,12 @@
                 features: [geojson]
             };
 
+            var fileName = metadata.name || 'polygon-data';
             var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             var url = URL.createObjectURL(blob);
             var a = document.createElement('a');
             a.href = url;
-            a.download = 'polygon-data.geojson';
+            a.download = fileName + '.geojson'; // Set filename to the value of the field
             a.click();
 
             document.getElementById('metadata-form').style.display = 'none';
