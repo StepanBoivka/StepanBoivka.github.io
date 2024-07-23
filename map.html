@@ -12,33 +12,25 @@
         #map {
             height: 100%;
             width: 100%;
+            position: relative;
         }
-        /* Збільшення розміру кнопок масштабування та меню шарів */
-        .leaflet-control-zoom a {
-            width: 36px;
-            height: 36px;
-            line-height: 36px;
-            font-size: 18px;
-        }
-        .leaflet-control-layers {
-            font-size: 18px;
-        }
-        /* Зміна розміру іконок на мобільних пристроях */
-        @media (max-width: 600px) {
-            .leaflet-control-zoom a {
-                width: 48px;
-                height: 48px;
-                line-height: 48px;
-                font-size: 24px;
-            }
-            .leaflet-control-layers {
-                font-size: 24px;
-            }
+        #locate-button {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background-color: white;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <div id="locate-button">Моє місцезнаходження</div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         var map = L.map('map').setView([48.3794, 31.1656], 6); // координати України
@@ -51,7 +43,7 @@
         // Шар Google Satellite
         var googleSatLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
             maxZoom: 20,
-            subdomains:['mt0','mt1','mt2','mt3']
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         });
 
         // Додаємо шар OpenStreetMap на карту за замовчуванням
@@ -69,10 +61,6 @@
         function onLocationFound(e) {
             var radius = e.accuracy / 2;
 
-            L.marker(e.latlng).addTo(map)
-                .bindPopup("Ваша позиція")
-                .openPopup();
-
             L.circle(e.latlng, radius).addTo(map);
             map.setView(e.latlng, 13);
         }
@@ -81,14 +69,16 @@
             alert("Не вдалося знайти ваше місцезнаходження: " + e.message);
         }
 
-        // Запит на геопозицію користувача
-        if (navigator.geolocation) {
-            map.locate({setView: true, maxZoom: 16});
-            map.on('locationfound', onLocationFound);
-            map.on('locationerror', onLocationError);
-        } else {
-            alert("Ваш браузер не підтримує геопозиціювання.");
-        }
+        // Запит на геопозицію користувача при натисканні кнопки
+        document.getElementById('locate-button').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                map.locate({ setView: true, maxZoom: 16 });
+                map.on('locationfound', onLocationFound);
+                map.on('locationerror', onLocationError);
+            } else {
+                alert("Ваш браузер не підтримує геопозиціювання.");
+            }
+        });
     </script>
 </body>
 </html>
