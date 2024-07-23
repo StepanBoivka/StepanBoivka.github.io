@@ -128,10 +128,13 @@
                 var area = turf.area(geojson);
                 var areaInHectares = (area / 10000).toFixed(2); // Convert square meters to hectares
 
+                geojson.properties = geojson.properties || {};
+                geojson.properties.area = areaInHectares + ' hectares'; // Add area to properties
+
                 var popupContent = `
                     <div class="info-popup">
-                        <strong>Polygon Area:</strong><br>
-                        ${areaInHectares} hectares
+                        <strong>Площа:</strong><br>
+                        ${geojson.properties.area}
                     </div>
                 `;
                 layer.bindPopup(popupContent);
@@ -189,7 +192,8 @@
                             // Add click event to show metadata
                             layer.on('click', function() {
                                 var name = feature.properties.metadata ? feature.properties.metadata.name : 'No name';
-                                layer.bindPopup('<strong>Назва:</strong> ' + name).openPopup();
+                                var area = feature.properties.area ? feature.properties.area : 'No area';
+                                layer.bindPopup('<strong>Назва:</strong> ' + name + '<br><strong>Площа:</strong> ' + area).openPopup();
                             });
                         }
                     }
