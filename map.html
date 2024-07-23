@@ -116,12 +116,12 @@
         });
         map.addControl(drawControl);
 
-        var currentFeature = null; // Track the currently selected feature
+        var lastFeature = null; // Track the last created feature
 
         map.on(L.Draw.Event.CREATED, function (event) {
             var layer = event.layer;
             drawnItems.addLayer(layer);
-            currentFeature = layer; // Set the current feature
+            lastFeature = layer; // Set the last created feature
 
             if (layer instanceof L.Polygon) {
                 var geojson = layer.toGeoJSON();
@@ -139,15 +139,15 @@
         });
 
         function exportGeoJSON() {
-            if (drawnItems.getLayers().length === 0) {
-                alert("Немає полігонів для експорту.");
+            if (!lastFeature) {
+                alert("Немає полігона для експорту.");
                 return;
             }
             document.getElementById('metadata-form').style.display = 'block';
         }
 
         function saveAndExport() {
-            if (!currentFeature) {
+            if (!lastFeature) {
                 alert("Немає вибраного полігону для збереження.");
                 return;
             }
@@ -156,29 +156,25 @@
                 name: document.getElementById('field-name').value
             };
 
-            var features = drawnItems.toGeoJSON().features;
-            features.forEach(function (feature) {
-                if (feature.geometry.coordinates === currentFeature.toGeoJSON().geometry.coordinates) {
-                    feature.properties = feature.properties || {};
-                    feature.properties.metadata = metadata;
-                }
-            });
+            var geojson = lastFeature.toGeoJSON();
+            geojson.properties = geojson.properties || {};
+            geojson.properties.metadata = metadata;
 
             var data = {
                 type: "FeatureCollection",
-                features: features
+                features: [geojson]
             };
 
             var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             var url = URL.createObjectURL(blob);
             var a = document.createElement('a');
             a.href = url;
-            a.download = 'map-data.geojson';
+            a.download = 'polygon-data.geojson';
             a.click();
 
             document.getElementById('metadata-form').style.display = 'none';
             document.getElementById('field-name').value = ''; // Clear input field
-            currentFeature = null; // Reset current feature
+            lastFeature = null; // Reset last feature
         }
 
         function importGeoJSON(files) {
