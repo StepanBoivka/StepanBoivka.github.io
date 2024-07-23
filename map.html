@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Leaflet Map with Polygon Drawing</title>
+    <title>Leaflet Map with Polygon Drawing and Area Calculation</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
     <style>
@@ -43,6 +43,12 @@
             border-radius: 5px;
             cursor: pointer;
         }
+        .info-popup {
+            background: white;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -54,6 +60,7 @@
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/turf/6.5.0/turf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/togeojson/0.16.0/togeojson.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script>
@@ -96,6 +103,21 @@
         map.on(L.Draw.Event.CREATED, function (event) {
             var layer = event.layer;
             drawnItems.addLayer(layer);
+
+            // Calculate and display area
+            if (layer instanceof L.Polygon) {
+                var geojson = layer.toGeoJSON();
+                var area = turf.area(geojson);
+                var areaInHectares = (area / 10000).toFixed(2); // Convert square meters to hectares
+
+                var popupContent = `
+                    <div class="info-popup">
+                        <strong>Polygon Area:</strong><br>
+                        ${areaInHectares} hectares
+                    </div>
+                `;
+                layer.bindPopup(popupContent).openPopup();
+            }
         });
 
         function exportGeoJSON() {
