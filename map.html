@@ -116,12 +116,9 @@
         });
         map.addControl(drawControl);
 
-        var lastFeature = null; // Track the last created feature
-
         map.on(L.Draw.Event.CREATED, function (event) {
             var layer = event.layer;
             drawnItems.addLayer(layer);
-            lastFeature = layer; // Set the last created feature
 
             if (layer instanceof L.Polygon) {
                 var geojson = layer.toGeoJSON();
@@ -138,34 +135,45 @@
                     </div>
                 `;
                 layer.bindPopup(popupContent);
+
+                // Add click event to show metadata
+                layer.on('click', function () {
+                    var name = geojson.properties.metadata ? geojson.properties.metadata.name : 'No name';
+                    var area = geojson.properties.area ? geojson.properties.area : 'No area';
+                    layer.bindPopup('<strong>Назва:</strong> ' + name + '<br><strong>Площа:</strong> ' + area).openPopup();
+                });
             }
         });
 
         function exportGeoJSON() {
-            if (!lastFeature) {
-                alert("Немає полігона для експорту.");
+            if (drawnItems.getLayers().length === 0) {
+                alert("Немає полігонів для експорту.");
                 return;
             }
             document.getElementById('metadata-form').style.display = 'block';
         }
 
         function saveAndExport() {
-            if (!lastFeature) {
-                alert("Немає вибраного полігону для збереження.");
-                return;
-            }
-
             var metadata = {
                 name: document.getElementById('field-name').value
             };
 
-            var geojson = lastFeature.toGeoJSON();
-            geojson.properties = geojson.properties || {};
-            geojson.properties.metadata = metadata;
+            if (!metadata.name) {
+                alert("Будь ласка, введіть назву поля.");
+                return;
+            }
+
+            var features = drawnItems.toGeoJSON().features;
+            features.forEach(function (feature) {
+                feature.properties.metadata = metadata;
+                var area = turf.area(feature);
+                var areaInHectares = (area / 10000).toFixed(2); // Convert square meters to hectares
+                feature.properties.area = areaInHectares + ' hectares';
+            });
 
             var data = {
                 type: "FeatureCollection",
-                features: [geojson]
+                features: features
             };
 
             var fileName = metadata.name || 'polygon-data';
@@ -178,7 +186,6 @@
 
             document.getElementById('metadata-form').style.display = 'none';
             document.getElementById('field-name').value = ''; // Clear input field
-            lastFeature = null; // Reset last feature
         }
 
         function importGeoJSON(files) {
@@ -191,7 +198,7 @@
                             layer.addTo(drawnItems);
 
                             // Add click event to show metadata
-                            layer.on('click', function() {
+                            layer.on('click', function () {
                                 var name = feature.properties.metadata ? feature.properties.metadata.name : 'No name';
                                 var area = feature.properties.area ? feature.properties.area : 'No area';
                                 layer.bindPopup('<strong>Назва:</strong> ' + name + '<br><strong>Площа:</strong> ' + area).openPopup();
