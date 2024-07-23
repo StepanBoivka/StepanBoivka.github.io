@@ -124,11 +124,8 @@
         function onLocationFound(e) {
             var radius = e.accuracy / 2;
 
-            // Remove the text from the popup
-            L.marker(e.latlng).addTo(map)
-                .bindPopup("") // Empty popup content
-                .openPopup();
-
+            // Add marker and circle without popup
+            L.marker(e.latlng).addTo(map);
             L.circle(e.latlng, radius).addTo(map);
         }
 
