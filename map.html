@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Карта на Leaflet з інструментом малювання</title>
+    <title>Leaflet Map with Drawing Tools</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
     <style>
@@ -47,32 +47,29 @@
 </head>
 <body>
     <div id="map"></div>
-    <div id="locate-button">Моє місцезнаходження</div>
+    <div id="locate-button">Locate me</div>
     <div id="export-buttons">
-        <div id="export-geojson" class="export-btn">Експортувати GeoJSON</div>
-        <div id="export-kml" class="export-btn">Експортувати KML</div>
+        <div id="export-geojson" class="export-btn">Export GeoJSON</div>
+        <div id="export-kml" class="export-btn">Export KML</div>
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
-    <script src="https://unpkg.com/togeojson/togeojson.js"></script>
-    <script src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-draw/1.0.4/leaflet.draw-src.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/togeojson/0.16.0/togeojson.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script>
-        var map = L.map('map').setView([48.3794, 31.1656], 6); // координати України
+        var map = L.map('map').setView([48.3794, 31.1656], 6); // Coordinates of Ukraine
 
-        // Шар OpenStreetMap
         var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         });
 
-        // Шар Google Satellite
         var googleSatLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
             maxZoom: 20
         });
 
-        // Додаємо шар OpenStreetMap на карту за замовчуванням
         osmLayer.addTo(map);
 
-        // Меню перемикання шарів
         var baseMaps = {
             "OpenStreetMap": osmLayer,
             "Google Satellite": googleSatLayer
@@ -80,56 +77,12 @@
 
         L.control.layers(baseMaps).addTo(map);
 
-        // Додаємо інструмент малювання
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
-        // Локалізований текст для leaflet-draw
         var drawControl = new L.Control.Draw({
             edit: {
                 featureGroup: drawnItems
-            },
-            draw: {
-                polyline: {
-                    title: 'Намалювати лінію',
-                    toolbar: {
-                        buttons: {
-                            start: 'Намалювати лінію'
-                        }
-                    }
-                },
-                polygon: {
-                    title: 'Намалювати полігон',
-                    toolbar: {
-                        buttons: {
-                            start: 'Намалювати полігон'
-                        }
-                    }
-                },
-                rectangle: {
-                    title: 'Намалювати прямокутник',
-                    toolbar: {
-                        buttons: {
-                            start: 'Намалювати прямокутник'
-                        }
-                    }
-                },
-                circle: {
-                    title: 'Намалювати круг',
-                    toolbar: {
-                        buttons: {
-                            start: 'Намалювати круг'
-                        }
-                    }
-                },
-                marker: {
-                    title: 'Додати маркер',
-                    toolbar: {
-                        buttons: {
-                            start: 'Додати маркер'
-                        }
-                    }
-                }
             }
         });
         map.addControl(drawControl);
@@ -139,7 +92,6 @@
             drawnItems.addLayer(layer);
         });
 
-        // Функція для експорту GeoJSON
         function exportGeoJSON() {
             var data = drawnItems.toGeoJSON();
             var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -150,7 +102,6 @@
             a.click();
         }
 
-        // Функція для експорту KML
         function exportKML() {
             var geojson = drawnItems.toGeoJSON();
             var kml = tokml(geojson, { documentName: 'Map Data', documentDescription: 'KML export of Leaflet Draw data' });
@@ -165,11 +116,9 @@
         document.getElementById('export-geojson').addEventListener('click', exportGeoJSON);
         document.getElementById('export-kml').addEventListener('click', exportKML);
 
-        // Функція для центрування карти на поточну позицію користувача
         function onLocationFound(e) {
             var radius = e.accuracy / 2;
 
-            // Видаляємо попередній маркер і круг, якщо є
             if (map._locationMarker) {
                 map.removeLayer(map._locationMarker);
             }
@@ -178,30 +127,25 @@
                 map.removeLayer(map._locationCircle);
             }
 
-            // Додаємо маркер для позиції користувача
             map._locationMarker = L.marker(e.latlng).addTo(map)
-                .bindPopup("Ваша позиція")
+                .bindPopup("Your location")
                 .openPopup();
 
-            // Додаємо круг для точності
             map._locationCircle = L.circle(e.latlng, radius).addTo(map);
-            
-            // Центруємо карту на позицію користувача
             map.setView(e.latlng, 13);
         }
 
         function onLocationError(e) {
-            alert("Не вдалося знайти ваше місцезнаходження: " + e.message);
+            alert("Unable to retrieve your location: " + e.message);
         }
 
-        // Запит на геопозицію користувача при натисканні кнопки
         document.getElementById('locate-button').addEventListener('click', function() {
             if (navigator.geolocation) {
                 map.locate({ setView: true, maxZoom: 16 });
                 map.on('locationfound', onLocationFound);
                 map.on('locationerror', onLocationError);
             } else {
-                alert("Ваш браузер не підтримує геопозиціювання.");
+                alert("Your browser does not support geolocation.");
             }
         });
     </script>
