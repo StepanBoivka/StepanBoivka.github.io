@@ -26,6 +26,32 @@
             cursor: pointer;
             z-index: 1000;
         }
+        /* Збільшення розміру кнопок масштабування та меню шарів для мобільних пристроїв */
+        .leaflet-control-zoom a {
+            width: 36px;
+            height: 36px;
+            line-height: 36px;
+            font-size: 18px;
+        }
+        .leaflet-control-layers {
+            font-size: 18px;
+        }
+        /* Зміна розміру іконок та кнопок на мобільних пристроях */
+        @media (max-width: 600px) {
+            .leaflet-control-zoom a {
+                width: 48px;
+                height: 48px;
+                line-height: 48px;
+                font-size: 24px;
+            }
+            .leaflet-control-layers {
+                font-size: 24px;
+            }
+            #locate-button {
+                padding: 15px 30px;
+                font-size: 18px;
+            }
+        }
     </style>
 </head>
 <body>
