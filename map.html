@@ -14,11 +14,35 @@
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
+        // Створення карти
         var map = L.map('map').setView([48.3794, 31.1656], 6); // координати України
 
+        // Додавання шару картки
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
+
+        // Функція для центрування карти на поточну позицію користувача
+        function onLocationFound(e) {
+            var radius = e.accuracy / 2;
+
+            L.marker(e.latlng).addTo(map)
+                .bindPopup("Ваша позиція")
+                .openPopup();
+
+            L.circle(e.latlng, radius).addTo(map);
+            map.setView(e.latlng, 13);
+        }
+
+        function onLocationError(e) {
+            alert(e.message);
+        }
+
+        // Запит на геопозицію користувача
+        map.locate({setView: true, maxZoom: 16});
+
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
     </script>
 </body>
 </html>
