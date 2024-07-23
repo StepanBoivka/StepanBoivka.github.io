@@ -101,13 +101,25 @@
         map.addControl(drawControl);
 
         // Load GeoJSON file
-        var geojsonUrl = 'path/to/your-file.geojson'; // Замініть на шлях до вашого GeoJSON файлу
-        fetch(geojsonUrl)
+        fetch('field.geojson')
             .then(response => response.json())
             .then(data => {
                 L.geoJSON(data, {
                     onEachFeature: function (feature, layer) {
                         drawnItems.addLayer(layer);
+                        if (layer instanceof L.Polygon) {
+                            var geojson = layer.toGeoJSON();
+                            var area = turf.area(geojson);
+                            var areaInHectares = (area / 10000).toFixed(2); // Convert square meters to hectares
+
+                            var popupContent = `
+                                <div class="info-popup">
+                                    <strong>Polygon Area:</strong><br>
+                                    ${areaInHectares} hectares
+                                </div>
+                            `;
+                            layer.bindPopup(popupContent);
+                        }
                     }
                 });
             });
