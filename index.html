@@ -49,6 +49,9 @@
 
         // Function to get a color based on the "Орендар" property
         function getColor(tenant) {
+            if (tenant === null || tenant === "" || tenant === undefined) {
+                return "#ffffff"; // White color for empty "Орендар"
+            }
             if (!tenantColors[tenant]) {
                 tenantColors[tenant] = getRandomColor();
             }
