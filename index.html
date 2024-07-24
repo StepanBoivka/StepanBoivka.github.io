@@ -13,7 +13,7 @@
             padding: 0;
             margin: 0;
         }
-        #fileSelect, #searchInput {
+        #fileSelect, #searchInput, #searchButton {
             position: absolute;
             z-index: 1000;
             background: white;
@@ -21,14 +21,24 @@
             border-radius: 5px;
         }
         #searchInput {
-            top: 60px; /* Позиціювання нижче кнопок зуму */
+            top: 70px; /* Опустити нижче кнопок зуму */
             left: 10px;
-            width: 200px; /* Зробити поле ширшим */
+            width: 150px; /* Ширина поля пошуку */
+        }
+        #searchButton {
+            top: 70px; /* Вирівняти з полем пошуку */
+            left: 170px; /* Позиція поруч з полем пошуку */
+            padding: 5px 10px; /* Розмір кнопки */
+            background: #007bff; /* Колір кнопки */
+            color: white; /* Колір тексту кнопки */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
         #fileSelect {
-            top: 100px; /* Позиціювання нижче поля пошуку */
+            top: 110px; /* Опустити нижче поля пошуку */
             left: 10px;
-            width: 200px; /* Зробити поле ширшим */
+            width: 150px; /* Ширина випадаючого списку */
         }
     </style>
     <title>Map with GeoJSON and Popups</title>
@@ -36,6 +46,7 @@
 <body>
     <div id="map"></div>
     <input type="text" id="searchInput" placeholder="Пошук за кадастровим номером">
+    <button id="searchButton">Пошук</button>
     <select id="fileSelect">
         <option>Виберіть файл</option>
     </select>
@@ -169,8 +180,8 @@
         });
 
         // Function to search for a feature by "Кадастровий номер"
-        document.getElementById('searchInput').addEventListener('input', function () {
-            var searchTerm = this.value.toLowerCase();
+        document.getElementById('searchButton').addEventListener('click', function () {
+            var searchTerm = document.getElementById('searchInput').value.toLowerCase();
             if (overlays) {
                 Object.values(overlays).forEach(layerGroup => {
                     layerGroup.eachLayer(layer => {
