@@ -13,7 +13,6 @@
             padding: 0;
             margin: 0;
         }
-
         #controls {
             position: absolute;
             z-index: 1000;
@@ -21,46 +20,36 @@
             left: 10px;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            width: 200px; /* Ширина кнопок */
         }
-
         .control-button {
             background: #007bff;
             color: white;
             border: 1px solid #007bff;
             border-radius: 5px;
-            padding: 5px 10px;
+            padding: 10px;
             cursor: pointer;
             text-align: center;
-            margin-bottom: 5px;
-            font-size: 14px;
-            width: 150px; /* Однакова ширина для всіх кнопок */
-            box-sizing: border-box;
+            margin-bottom: 10px;
         }
-
         .control-content {
             display: none;
             margin-top: 5px;
         }
-
         .control-button.active + .control-content {
             display: block;
         }
-
         #searchContainer {
             display: flex;
             flex-direction: column;
         }
-
         #searchInput, #fileSelect {
-            width: 100%;
+            width: 100%; /* Однакова ширина для всіх елементів */
             padding: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
             margin-bottom: 5px;
-            font-size: 14px;
         }
-
         #searchButton {
             padding: 5px 10px;
             background: #007bff;
@@ -68,9 +57,7 @@
             border: 1px solid #007bff;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
         }
-
         #geolocationButton {
             position: absolute;
             bottom: 10px;
@@ -79,13 +66,10 @@
             color: white;
             border: 1px solid #28a745;
             border-radius: 50%;
-            padding: 7px;
+            padding: 10px;
             cursor: pointer;
             z-index: 1000;
-            font-size: 18px;
-            box-sizing: border-box;
         }
-
         #geolocationButton:hover {
             background: #218838;
             border-color: #1e7e34;
@@ -188,8 +172,16 @@
                         style: styleFeature, // Apply the style function
                         onEachFeature: onEachFeature // Add the onEachFeature function
                     });
+                    
+                    // Remove existing layer if present
+                    if (overlays[layerName]) {
+                        map.removeLayer(overlays[layerName]);
+                    }
+                    
+                    // Add new layer and fit bounds
                     overlays[layerName] = geoJsonLayer;
                     geoJsonLayer.addTo(map);
+                    map.fitBounds(geoJsonLayer.getBounds()); // Zoom to the bounds of the new data
                     updateLayersControl();
                 })
                 .catch(error => console.error('Error loading GeoJSON data:', error));
@@ -206,69 +198,73 @@
             }).addTo(map);
         }
 
-        // Add GeoJSON layer
-        addGeoJsonLayer('data/parcels.geojson', 'Parcels');
+        // Function to load the list of files
+        function loadFileList() {
+            fetch('data/file_list.json')
+                .then(response => response.json())
+                .then(data => {
+                    var select = document.getElementById('fileSelect');
+                    data.files.forEach(file => {
+                        var option = document.createElement('option');
+                        option.value = file;
+                        option.textContent = file;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error loading file list:', error));
+        }
 
-        updateLayersControl();
+        // Function to load GeoJSON data based on selected file
+        document.getElementById('fileSelect').addEventListener('change', function () {
+            var fileName = this.value;
+            if (fileName && fileName !== 'Виберіть файл') {
+                addGeoJsonLayer('data/' + fileName, fileName);
+            }
+        });
 
-        // Search functionality
-        document.getElementById('searchButton').addEventListener('click', function() {
-            var searchTerm = document.getElementById('searchInput').value;
-            var found = false;
-
-            for (var layerName in overlays) {
-                if (overlays.hasOwnProperty(layerName)) {
-                    overlays[layerName].eachLayer(function(layer) {
-                        if (layer.feature && layer.feature.properties && layer.feature.properties["Кадастровий номер"] === searchTerm) {
+        // Function to search for a feature by "Кадастровий номер"
+        document.getElementById('searchButton').addEventListener('click', function () {
+            var searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (overlays) {
+                Object.values(overlays).forEach(layerGroup => {
+                    layerGroup.eachLayer(layer => {
+                        var isMatch = layer.feature.properties['Кадастровий номер'] && layer.feature.properties['Кадастровий номер'].toLowerCase().includes(searchTerm);
+                        layer.setStyle({ color: isMatch ? 'red' : getColor(layer.feature.properties["Орендар"]) });
+                        if (isMatch) {
                             map.fitBounds(layer.getBounds());
-                            layer.openPopup();
-                            found = true;
                         }
                     });
-                }
-            }
-
-            if (!found) {
-                alert('Полігон не знайдено');
-            }
-        });
-
-        // File selection functionality
-        document.getElementById('fileSelect').addEventListener('change', function() {
-            var selectedFile = this.value;
-            if (selectedFile !== 'Виберіть файл') {
-                var fileUrl = 'data/' + selectedFile;
-                map.eachLayer(function(layer) {
-                    if (layer instanceof L.GeoJSON) {
-                        map.removeLayer(layer);
-                    }
                 });
-                addGeoJsonLayer(fileUrl, selectedFile);
             }
         });
 
-        // Geolocation button functionality
-        document.getElementById('geolocationButton').addEventListener('click', function() {
+        // Function to handle geolocation
+        document.getElementById('geolocationButton').addEventListener('click', function () {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
+                navigator.geolocation.getCurrentPosition(function (position) {
                     var lat = position.coords.latitude;
-                    var lon = position.coords.longitude;
-                    map.setView([lat, lon], 13);
-                    L.marker([lat, lon]).addTo(map)
-                        .bindPopup('Ваша поточна локація')
+                    var lng = position.coords.longitude;
+                    map.setView([lat, lng], 13); // Zoom in to the user's location
+                    L.marker([lat, lng]).addTo(map)
+                        .bindPopup('Ваша геолокація')
                         .openPopup();
+                }, function (error) {
+                    console.error('Geolocation error:', error);
                 });
             } else {
-                alert('Геолокація не підтримується вашим браузером.');
+                alert('Geolocation не підтримується вашим браузером.');
             }
         });
 
-        // Toggle control visibility
-        document.getElementById('fileControlButton').addEventListener('click', function() {
+        // Initialize file list and map
+        loadFileList();
+
+        // Toggle control content visibility
+        document.getElementById('fileControlButton').addEventListener('click', function () {
             this.classList.toggle('active');
         });
 
-        document.getElementById('searchControlButton').addEventListener('click', function() {
+        document.getElementById('searchControlButton').addEventListener('click', function () {
             this.classList.toggle('active');
         });
     </script>
