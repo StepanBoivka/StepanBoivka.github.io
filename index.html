@@ -17,14 +17,23 @@
         }
         #fileSelect {
             position: absolute;
-            top: 50px; /* Змістіть вниз від кнопок */
+            top: 70px; /* Позиціювання нижче кнопок */
             left: 10px;
-            z-index: 1000; /* Високий z-index, щоб бути поверх кнопок */
+            z-index: 1000;
+        }
+        #searchInput {
+            position: absolute;
+            top: 10px; /* Позиціювання вище від кнопок */
+            left: 10px;
+            z-index: 1000;
+            padding: 5px;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <input type="text" id="searchInput" placeholder="Пошук за кадастровим номером">
     <select id="fileSelect">
         <option>Виберіть файл</option>
     </select>
@@ -41,6 +50,20 @@
                 attribution: 'Google'
             })]
         });
+
+        // Відновлення меню шарів
+        var baseMaps = {
+            "Google": L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                maxZoom: 18,
+                attribution: 'Google'
+            })
+        };
+        
+        var overlaysTree = [];
+        
+        var lay = L.control.layers.tree(baseMaps, overlaysTree, {
+            collapsed: true
+        }).addTo(map);
 
         // Функція для завантаження списку файлів
         function loadFileList() {
@@ -68,15 +91,36 @@
                     }
                     geoJsonLayer = L.geoJson(data, {
                         style: function (feature) {
+                            var fillColor = 'white'; // Колір за замовчуванням для пустих орендарів
+                            if (feature.properties['Орендар']) {
+                                fillColor = getRandomColor();
+                            }
                             return {
                                 color: 'blue',
                                 weight: 0.5,
-                                fillOpacity: 0.4
+                                fillOpacity: 0.4,
+                                fillColor: fillColor
                             };
                         }
                     }).addTo(map);
+                    // Додаємо шар до меню шарів
+                    overlaysTree = [{ label: `<img src="legend/${fileName}.png" /> ${fileName}`, layer: geoJsonLayer }];
+                    lay.removeLayer();
+                    lay = L.control.layers.tree(baseMaps, overlaysTree, {
+                        collapsed: true
+                    }).addTo(map);
                 })
                 .catch(error => console.error('Error loading GeoJSON file:', error));
+        }
+
+        // Функція для генерації випадкових кольорів
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
         }
 
         // Змінна для збереження шару GeoJSON
@@ -88,6 +132,18 @@
             if (fileName && fileName !== 'Виберіть файл') {
                 loadGeoJsonLayer(fileName);
             }
+        });
+
+        // Пошук за кадастровим номером
+        document.getElementById('searchInput').addEventListener('input', function () {
+            var searchTerm = this.value.toLowerCase();
+            geoJsonLayer.eachLayer(function (layer) {
+                var isMatch = layer.feature.properties['Кадастровий номер'] && layer.feature.properties['Кадастровий номер'].toLowerCase().includes(searchTerm);
+                layer.setStyle({ color: isMatch ? 'red' : 'blue' });
+                if (isMatch) {
+                    map.fitBounds(layer.getBounds());
+                }
+            });
         });
 
         // Завантажити список файлів при запуску
