@@ -5,9 +5,13 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css"/>
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
         #map {
-            height: 100vh;
-            width: 100vw;
+            height: 100%;
+            width: 100%;
         }
     </style>
 </head>
@@ -66,7 +70,7 @@
                 props.area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
             }
 
-            var geojson = drawnItems.toGeoJSON();
+            var geojson = layer.toGeoJSON();
             var blob = new Blob([JSON.stringify(geojson, null, 2)], { type: "application/json" });
             var url = URL.createObjectURL(blob);
             var a = document.createElement("a");
@@ -91,7 +95,8 @@
             },
             onAdd: function () {
                 var container = L.DomUtil.create('button', 'export-button');
-                container.innerHTML = 'Export';
+                container.innerHTML = 'E';
+                container.title = 'Export to GeoJSON';
                 container.style.backgroundColor = 'white';
                 container.style.width = '30px';
                 container.style.height = '30px';
@@ -118,7 +123,8 @@
             },
             onAdd: function () {
                 var container = L.DomUtil.create('button', 'import-button');
-                container.innerHTML = 'Import';
+                container.innerHTML = 'I';
+                container.title = 'Import GeoJSON';
                 container.style.backgroundColor = 'white';
                 container.style.width = '30px';
                 container.style.height = '30px';
@@ -152,7 +158,8 @@
             },
             onAdd: function () {
                 var container = L.DomUtil.create('button', 'locate-button');
-                container.innerHTML = 'Locate';
+                container.innerHTML = 'L';
+                container.title = 'Locate me';
                 container.style.backgroundColor = 'white';
                 container.style.width = '30px';
                 container.style.height = '30px';
