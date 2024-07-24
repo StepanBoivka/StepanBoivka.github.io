@@ -36,7 +36,6 @@
         <script src="js/labels.js"></script>
         <script src="js/leaflet-measure.js"></script>
         <script src="data/field_4.js"></script>
-        <script src="data/parcels.geojson"></script>
         <script>
         var map = L.map('map', {
             zoomControl: false,
@@ -203,13 +202,13 @@
             pane: 'pane_parcels',
             onEachFeature: function (feature, layer) {
                 var popupContent = '<table>\
-                        <tr>\
-                            <td colspan="2">' + (feature.properties['parcel_name'] !== null ? autolinker.link(feature.properties['parcel_name'].toLocaleString()) : '') + '</td>\
-                        </tr>\
-                        <tr>\
-                            <td colspan="2">' + (feature.properties['parcel_area'] !== null ? autolinker.link(feature.properties['parcel_area'].toLocaleString()) : '') + '</td>\
-                        </tr>\
-                    </table>';
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['parcel_name'] !== null ? autolinker.link(feature.properties['parcel_name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['parcel_area'] !== null ? autolinker.link(feature.properties['parcel_area'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
                 var content = removeEmptyRowsFromPopupContent(popupContent, feature);
                 layer.on('popupopen', function (e) {
                     addClassToPopupIfMedia(content, e.popup);
@@ -233,11 +232,6 @@
             }
         });
         
-        bounds_group.addLayer(layer_parcels);
-        map.addLayer(layer_field_4);
-        map.addLayer(layer_Google_1);
-        map.addLayer(layer_parcels);
-
         // Завантаження шару parcels
         fetch('data/parcels.geojson')
             .then(function (response) {
@@ -246,7 +240,12 @@
             .then(function (data) {
                 layer_parcels.addData(data);
                 map.addLayer(layer_parcels);
+                bounds_group.addLayer(layer_parcels);
+                map.fitBounds(layer_parcels.getBounds());
             });
+
+        map.addLayer(layer_field_4);
+        map.addLayer(layer_Google_1);
 
         var baseMaps = {};
         var overlaysTree = [
