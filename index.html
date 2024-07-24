@@ -13,6 +13,18 @@
             height: 100%;
             width: 100%;
         }
+        .leaflet-control {
+            margin-right: 10px;
+        }
+        .leaflet-bar button {
+            width: 30px;
+            height: 30px;
+            background-color: white;
+            border: none;
+        }
+        .leaflet-bar button:hover {
+            background-color: lightgray;
+        }
     </style>
 </head>
 <body>
@@ -39,7 +51,7 @@
 
         L.control.layers(baseMaps).addTo(map);
 
-        // Додавання контролу для малювання
+        // Додавання контролю для малювання
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
@@ -58,8 +70,26 @@
         });
         map.addControl(drawControl);
 
-        // Зберігання створеного або відредагованого полігона
-        function saveAndExport(layer) {
+        // Збереження змін до файлу field.geojson на сервері
+        function saveChanges(geojson) {
+            fetch('/api/save-geojson', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(geojson)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Обробка події створення або редагування полігона
+        function handleLayer(layer) {
             var feature = layer.feature = layer.feature || {};
             feature.type = feature.type || "Feature";
             var props = feature.properties = feature.properties || {};
@@ -70,50 +100,21 @@
                 props.area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
             }
 
-            var geojson = layer.toGeoJSON();
-            var blob = new Blob([JSON.stringify(geojson, null, 2)], { type: "application/json" });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement("a");
-            a.href = url;
-            a.download = (props.name || "field") + ".geojson";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            var geojson = drawnItems.toGeoJSON();
+            saveChanges(geojson);
         }
 
         map.on(L.Draw.Event.CREATED, function (event) {
             var layer = event.layer;
             drawnItems.addLayer(layer);
-            saveAndExport(layer);
+            handleLayer(layer);
         });
 
-        // Додавання кнопки для експорту
-        var exportButton = L.Control.extend({
-            options: {
-                position: 'topleft'
-            },
-            onAdd: function () {
-                var container = L.DomUtil.create('button', 'export-button');
-                container.innerHTML = 'E';
-                container.title = 'Export to GeoJSON';
-                container.style.backgroundColor = 'white';
-                container.style.width = '30px';
-                container.style.height = '30px';
-                container.onclick = function () {
-                    var geojson = drawnItems.toGeoJSON();
-                    var blob = new Blob([JSON.stringify(geojson, null, 2)], { type: "application/json" });
-                    var url = URL.createObjectURL(blob);
-                    var a = document.createElement("a");
-                    a.href = url;
-                    a.download = "fields.geojson";
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                };
-                return container;
-            }
+        map.on(L.Draw.Event.EDITED, function (event) {
+            var layers = event.layers;
+            layers.eachLayer(function (layer) {
+                handleLayer(layer);
+            });
         });
 
         // Додавання кнопки для імпорту
@@ -170,7 +171,6 @@
             }
         });
 
-        map.addControl(new exportButton());
         map.addControl(new importButton());
         map.addControl(new locateButton());
 
