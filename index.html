@@ -57,7 +57,8 @@
 
         var drawControl = new L.Control.Draw({
             edit: {
-                featureGroup: drawnItems
+                featureGroup: drawnItems,
+                remove: true
             },
             draw: {
                 polygon: true,
@@ -70,7 +71,7 @@
         });
         map.addControl(drawControl);
 
-        // Збереження змін до файлу field.geojson на сервері
+        // Функція для збереження змін
         function saveChanges(geojson) {
             fetch('/api/save-geojson', {
                 method: 'POST',
@@ -88,7 +89,7 @@
             });
         }
 
-        // Обробка події створення або редагування полігона
+        // Обробка подій створення та редагування
         function handleLayer(layer) {
             var feature = layer.feature = layer.feature || {};
             feature.type = feature.type || "Feature";
@@ -116,63 +117,6 @@
                 handleLayer(layer);
             });
         });
-
-        // Додавання кнопки для імпорту
-        var importButton = L.Control.extend({
-            options: {
-                position: 'topleft'
-            },
-            onAdd: function () {
-                var container = L.DomUtil.create('button', 'import-button');
-                container.innerHTML = 'I';
-                container.title = 'Import GeoJSON';
-                container.style.backgroundColor = 'white';
-                container.style.width = '30px';
-                container.style.height = '30px';
-                container.onclick = function () {
-                    var input = document.createElement("input");
-                    input.type = "file";
-                    input.accept = ".geojson";
-                    input.onchange = function (e) {
-                        var file = e.target.files[0];
-                        var reader = new FileReader();
-                        reader.onload = function (event) {
-                            var geojsonData = JSON.parse(event.target.result);
-                            L.geoJSON(geojsonData, {
-                                onEachFeature: function (feature, layer) {
-                                    drawnItems.addLayer(layer);
-                                }
-                            }).addTo(map);
-                        };
-                        reader.readAsText(file);
-                    };
-                    input.click();
-                };
-                return container;
-            }
-        });
-
-        // Додавання кнопки для геолокації
-        var locateButton = L.Control.extend({
-            options: {
-                position: 'topleft'
-            },
-            onAdd: function () {
-                var container = L.DomUtil.create('button', 'locate-button');
-                container.innerHTML = 'L';
-                container.title = 'Locate me';
-                container.style.backgroundColor = 'white';
-                container.style.width = '30px';
-                container.style.height = '30px';
-                container.onclick = function () {
-                    map.locate({ setView: true, maxZoom: 16 });
-                };
-                return container;
-            }
-        });
-
-        map.addControl(new importButton());
-        map.addControl(new locateButton());
 
         // Завантаження початкового GeoJSON
         fetch('field.geojson')
