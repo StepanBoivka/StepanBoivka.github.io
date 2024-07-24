@@ -1,250 +1,195 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Leaflet Map with Editable GeoJSON, Import, and Export</title>
+    <title>Карта на Leaflet</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css"/>
     <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
         #map {
-            height: 100%;
-            width: 100%;
-        }
-        #control-panel {
-            position: absolute;
-            left: 20px;
-            bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 1000;
-        }
-        .control-btn {
-            padding: 8px;
-            background-color: white;
-            border: 2px solid #ccc;
-            border-radius: 5px;
-            cursor: pointer;
-            text-align: center;
-            font-size: 14px;
-        }
-        .control-btn:hover {
-            background-color: #f0f0f0;
-        }
-        .control-btn i {
-            font-size: 18px;
-        }
-        #metadata-form {
-            display: none;
-            position: absolute;
-            left: 20px;
-            bottom: 100px;
-            background-color: white;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            z-index: 1001;
-        }
-        #metadata-form input, #metadata-form button {
-            display: block;
-            margin: 10px 0;
-            width: 100%;
+            height: 100vh;
+            width: 100vw;
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
-    <div id="control-panel">
-        <div id="export-geojson" class="control-btn">
-            <i class="fas fa-file-export"></i>
-        </div>
-        <div id="import-geojson" class="control-btn">
-            <i class="fas fa-file-import"></i>
-        </div>
-        <div id="locate-button" class="control-btn">
-            <i class="fas fa-location-arrow"></i>
-        </div>
-        <input type="file" id="file-input" style="display:none" multiple accept=".geojson" />
-    </div>
-    <div id="metadata-form">
-        <label for="field-name">Назва поля:</label>
-        <input type="text" id="field-name" placeholder="Введіть назву поля">
-        <button id="submit-metadata">Зберегти і експортувати</button>
-    </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/turf/6.5.0/turf.min.js"></script>
     <script>
-        var map = L.map('map').setView([48.3794, 31.1656], 6); // Coordinates of Ukraine
+        var map = L.map('map').setView([48.3794, 31.1656], 6); // координати України
 
-        var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Підключення OpenStreetMap та Google Satellite шарів
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        var googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            attribution: '© Google'
         });
 
-        var googleSatLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-            maxZoom: 20
-        });
-
-        osmLayer.addTo(map);
-
+        // Додавання шарів в контрол
         var baseMaps = {
-            "OpenStreetMap": osmLayer,
-            "Google Satellite": googleSatLayer
+            "OpenStreetMap": osm,
+            "Google Satellite": googleSat
         };
 
         L.control.layers(baseMaps).addTo(map);
 
+        // Додавання контролу для малювання
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
         var drawControl = new L.Control.Draw({
-            draw: {
-                polyline: false,
-                polygon: true,
-                rectangle: false,
-                circle: false,
-                marker: false
-            },
             edit: {
                 featureGroup: drawnItems
+            },
+            draw: {
+                polygon: true,
+                polyline: false,
+                rectangle: false,
+                circle: false,
+                marker: false,
+                circlemarker: false
             }
         });
         map.addControl(drawControl);
 
+        // Зберігання створеного або відредагованого полігона
+        function saveAndExport(layer) {
+            var feature = layer.feature = layer.feature || {};
+            feature.type = feature.type || "Feature";
+            var props = feature.properties = feature.properties || {};
+            props.name = prompt("Введіть назву поля:", props.name || "");
+
+            // Розрахунок площі
+            if (layer instanceof L.Polygon) {
+                props.area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+            }
+
+            var geojson = drawnItems.toGeoJSON();
+            var blob = new Blob([JSON.stringify(geojson, null, 2)], { type: "application/json" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = (props.name || "field") + ".geojson";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         map.on(L.Draw.Event.CREATED, function (event) {
             var layer = event.layer;
             drawnItems.addLayer(layer);
+            saveAndExport(layer);
+        });
 
-            if (layer instanceof L.Polygon) {
-                var geojson = layer.toGeoJSON();
-                var area = turf.area(geojson);
-                var areaInHectares = (area / 10000).toFixed(2); // Convert square meters to hectares
-
-                geojson.properties = geojson.properties || {};
-                geojson.properties.area = areaInHectares + ' hectares'; // Add area to properties
-
-                var popupContent = `
-                    <div class="info-popup">
-                        <strong>Площа:</strong><br>
-                        ${geojson.properties.area}
-                    </div>
-                `;
-                layer.bindPopup(popupContent);
-
-                // Add click event to show metadata
-                layer.on('click', function () {
-                    var name = geojson.properties.metadata ? geojson.properties.metadata.name : 'No name';
-                    var area = geojson.properties.area ? geojson.properties.area : 'No area';
-                    layer.bindPopup('<strong>Назва:</strong> ' + name + '<br><strong>Площа:</strong> ' + area).openPopup();
-                });
+        // Додавання кнопки для експорту
+        var exportButton = L.Control.extend({
+            options: {
+                position: 'topleft'
+            },
+            onAdd: function () {
+                var container = L.DomUtil.create('button', 'export-button');
+                container.innerHTML = 'Export';
+                container.style.backgroundColor = 'white';
+                container.style.width = '30px';
+                container.style.height = '30px';
+                container.onclick = function () {
+                    var geojson = drawnItems.toGeoJSON();
+                    var blob = new Blob([JSON.stringify(geojson, null, 2)], { type: "application/json" });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement("a");
+                    a.href = url;
+                    a.download = "fields.geojson";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                };
+                return container;
             }
         });
 
-        function exportGeoJSON() {
-            if (drawnItems.getLayers().length === 0) {
-                alert("Немає полігонів для експорту.");
-                return;
+        // Додавання кнопки для імпорту
+        var importButton = L.Control.extend({
+            options: {
+                position: 'topleft'
+            },
+            onAdd: function () {
+                var container = L.DomUtil.create('button', 'import-button');
+                container.innerHTML = 'Import';
+                container.style.backgroundColor = 'white';
+                container.style.width = '30px';
+                container.style.height = '30px';
+                container.onclick = function () {
+                    var input = document.createElement("input");
+                    input.type = "file";
+                    input.accept = ".geojson";
+                    input.onchange = function (e) {
+                        var file = e.target.files[0];
+                        var reader = new FileReader();
+                        reader.onload = function (event) {
+                            var geojsonData = JSON.parse(event.target.result);
+                            L.geoJSON(geojsonData, {
+                                onEachFeature: function (feature, layer) {
+                                    drawnItems.addLayer(layer);
+                                }
+                            }).addTo(map);
+                        };
+                        reader.readAsText(file);
+                    };
+                    input.click();
+                };
+                return container;
             }
-            document.getElementById('metadata-form').style.display = 'block';
-        }
+        });
 
-        function saveAndExport() {
-            var metadata = {
-                name: document.getElementById('field-name').value
-            };
-
-            if (!metadata.name) {
-                alert("Будь ласка, введіть назву поля.");
-                return;
+        // Додавання кнопки для геолокації
+        var locateButton = L.Control.extend({
+            options: {
+                position: 'topleft'
+            },
+            onAdd: function () {
+                var container = L.DomUtil.create('button', 'locate-button');
+                container.innerHTML = 'Locate';
+                container.style.backgroundColor = 'white';
+                container.style.width = '30px';
+                container.style.height = '30px';
+                container.onclick = function () {
+                    map.locate({ setView: true, maxZoom: 16 });
+                };
+                return container;
             }
+        });
 
-            var features = drawnItems.toGeoJSON().features;
-            features.forEach(function (feature) {
-                feature.properties.metadata = metadata;
-                var area = turf.area(feature);
-                var areaInHectares = (area / 10000).toFixed(2); // Convert square meters to hectares
-                feature.properties.area = areaInHectares + ' hectares';
-            });
+        map.addControl(new exportButton());
+        map.addControl(new importButton());
+        map.addControl(new locateButton());
 
-            var data = {
-                type: "FeatureCollection",
-                features: features
-            };
-
-            var fileName = metadata.name || 'polygon-data';
-            var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = fileName + '.geojson'; // Set filename to the value of the field
-            a.click();
-
-            document.getElementById('metadata-form').style.display = 'none';
-            document.getElementById('field-name').value = ''; // Clear input field
-        }
-
-        function importGeoJSON(files) {
-            var fileReader = new FileReader();
-            fileReader.onload = function(event) {
-                var data = JSON.parse(event.target.result);
+        // Завантаження початкового GeoJSON
+        fetch('field.geojson')
+            .then(response => response.json())
+            .then(data => {
                 L.geoJSON(data, {
                     onEachFeature: function (feature, layer) {
-                        if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
-                            layer.addTo(drawnItems);
-
-                            // Add click event to show metadata
-                            layer.on('click', function () {
-                                var name = feature.properties.metadata ? feature.properties.metadata.name : 'No name';
-                                var area = feature.properties.area ? feature.properties.area : 'No area';
-                                layer.bindPopup('<strong>Назва:</strong> ' + name + '<br><strong>Площа:</strong> ' + area).openPopup();
-                            });
-                        }
+                        drawnItems.addLayer(layer);
                     }
-                });
-            };
-            for (var i = 0; i < files.length; i++) {
-                fileReader.readAsText(files[i]);
-            }
-        }
+                }).addTo(map);
+            });
 
         function onLocationFound(e) {
             var radius = e.accuracy / 2;
-
-            // Add marker and circle without popup
             L.marker(e.latlng).addTo(map);
             L.circle(e.latlng, radius).addTo(map);
         }
 
         function onLocationError(e) {
-            alert("Unable to retrieve your location: " + e.message);
+            alert(e.message);
         }
 
-        document.getElementById('export-geojson').addEventListener('click', exportGeoJSON);
-
-        document.getElementById('submit-metadata').addEventListener('click', saveAndExport);
-
-        document.getElementById('import-geojson').addEventListener('click', function() {
-            document.getElementById('file-input').click();
-        });
-
-        document.getElementById('file-input').addEventListener('change', function(event) {
-            importGeoJSON(event.target.files);
-        });
-
-        document.getElementById('locate-button').addEventListener('click', function() {
-            if (navigator.geolocation) {
-                map.locate({ setView: true, maxZoom: 16 });
-                map.on('locationfound', onLocationFound);
-                map.on('locationerror', onLocationError);
-            } else {
-                alert("Your browser does not support geolocation.");
-            }
-        });
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
     </script>
 </body>
 </html>
