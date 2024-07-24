@@ -15,7 +15,17 @@
         }
         #search-container {
             position: absolute;
-            top: 80px; /* Перемістити ще нижче */
+            top: 80px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        #file-selector {
+            position: absolute;
+            top: 120px; /* Нижче, ніж поле пошуку */
             left: 10px;
             z-index: 1000;
             background: white;
@@ -30,6 +40,11 @@
     <div id="search-container">
         <input type="text" id="search-input" placeholder="Введіть Кадастровий номер">
         <button id="search-button">Пошук</button>
+    </div>
+    <div id="file-selector">
+        <select id="file-dropdown">
+            <option value="">Оберіть файл</option>
+        </select>
     </div>
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -100,6 +115,9 @@
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
+                    if (geoJsonLayer) {
+                        map.removeLayer(geoJsonLayer);
+                    }
                     geoJsonLayer = L.geoJSON(data, {
                         style: styleFeature,
                         onEachFeature: onEachFeature
@@ -142,8 +160,29 @@
             searchByCadastralNumber(cadastralNumber);
         });
 
-        addGeoJsonLayer('data/parcels.geojson', 'Parcels');
+        function populateFileDropdown() {
+            fetch('list_files.php')
+                .then(response => response.json())
+                .then(fileList => {
+                    var dropdown = document.getElementById('file-dropdown');
+                    fileList.forEach(file => {
+                        var option = document.createElement('option');
+                        option.value = 'data/' + file;
+                        option.textContent = file;
+                        dropdown.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error loading file list:', error));
+        }
 
+        document.getElementById('file-dropdown').addEventListener('change', function() {
+            var selectedFile = this.value;
+            if (selectedFile) {
+                addGeoJsonLayer(selectedFile, 'Selected GeoJSON Layer');
+            }
+        });
+
+        populateFileDropdown();
         updateLayersControl();
     </script>
 </body>
