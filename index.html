@@ -36,6 +36,7 @@
         <script src="js/labels.js"></script>
         <script src="js/leaflet-measure.js"></script>
         <script src="data/field_4.js"></script>
+        <script src="data/parcels.geojson"></script>
         <script>
         var map = L.map('map', {
             zoomControl: false,
@@ -189,7 +190,64 @@
         });
         
         bounds_group.addLayer(layer_field_4);
+
+        // Додавання шару parcels
+        map.createPane('pane_parcels');
+        map.getPane('pane_parcels').style.zIndex = 405;
+        map.getPane('pane_parcels').style['mix-blend-mode'] = 'normal';
+        var layer_parcels = new L.geoJson(null, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_parcels',
+            layerName: 'layer_parcels',
+            pane: 'pane_parcels',
+            onEachFeature: function (feature, layer) {
+                var popupContent = '<table>\
+                        <tr>\
+                            <td colspan="2">' + (feature.properties['parcel_name'] !== null ? autolinker.link(feature.properties['parcel_name'].toLocaleString()) : '') + '</td>\
+                        </tr>\
+                        <tr>\
+                            <td colspan="2">' + (feature.properties['parcel_area'] !== null ? autolinker.link(feature.properties['parcel_area'].toLocaleString()) : '') + '</td>\
+                        </tr>\
+                    </table>';
+                var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+                layer.on('popupopen', function (e) {
+                    addClassToPopupIfMedia(content, e.popup);
+                });
+                layer.bindPopup(content, { maxHeight: 400 });
+            },
+            style: function (feature) {
+                return {
+                    pane: 'pane_parcels',
+                    opacity: 1,
+                    color: 'rgba(0,0,255,1.0)',
+                    dashArray: '',
+                    lineCap: 'butt',
+                    lineJoin: 'miter',
+                    weight: 2.0,
+                    fill: true,
+                    fillOpacity: 1,
+                    fillColor: 'rgba(0,0,255,0.0)',
+                    interactive: true,
+                }
+            }
+        });
         
+        bounds_group.addLayer(layer_parcels);
+        map.addLayer(layer_field_4);
+        map.addLayer(layer_Google_1);
+        map.addLayer(layer_parcels);
+
+        // Завантаження шару parcels
+        fetch('data/parcels.geojson')
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (data) {
+                layer_parcels.addData(data);
+                map.addLayer(layer_parcels);
+            });
+
         var baseMaps = {};
         var overlaysTree = [
             { label: '<img src="legend/field_4.png" /> field', layer: layer_field_4 },
@@ -197,15 +255,13 @@
             { label: "Кадастр", layer: layer__2 },
             { label: "Google", layer: layer_Google_1 },
             { label: "OpenStreetMap", layer: layer_OpenStreetMap_0 },
+            { label: "Parcels", layer: layer_parcels }
         ];
-        
+
         var lay = L.control.layers.tree(null, overlaysTree, {
             collapsed: true,
         });
         lay.addTo(map);
-        
-        map.addLayer(layer_field_4);
-        map.addLayer(layer_Google_1);
         setBounds();
         </script>
     </body>
