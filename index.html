@@ -16,36 +16,33 @@
         #controls {
             position: absolute;
             z-index: 1000;
-            top: 70px; /* Опустити нижче кнопок зуму */
+            top: 100px; /* Опустити ще нижче */
             left: 10px;
             display: flex;
             flex-direction: column;
+            width: 200px; /* Однакова ширина для всіх елементів */
         }
         #searchContainer {
             display: flex;
-            align-items: center;
             margin-bottom: 10px;
         }
-        #searchInput {
-            width: 150px; /* Ширина поля пошуку */
-            padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px 0 0 5px;
-        }
-        #searchButton {
-            padding: 5px 10px; /* Розмір кнопки */
-            background: #007bff; /* Колір кнопки */
-            color: white; /* Колір тексту кнопки */
-            border: 1px solid #007bff;
-            border-radius: 0 5px 5px 0; /* Розділити кути кнопки */
-            cursor: pointer;
-            border-left: none; /* Прибрати межу між полем і кнопкою */
-        }
-        #fileSelect {
-            width: 150px; /* Ширина випадаючого списку */
+        #searchInput, #fileSelect {
+            width: 100%; /* Однакова ширина */
             padding: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
+        }
+        #searchButton {
+            padding: 5px 10px;
+            background: #007bff;
+            color: white;
+            border: 1px solid #007bff;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: -1px; /* Вирівнювання кнопки з полем пошуку */
+        }
+        #fileSelect {
+            margin-bottom: 10px;
         }
     </style>
     <title>Map with GeoJSON and Popups</title>
