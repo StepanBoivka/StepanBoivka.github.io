@@ -2,12 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Map with Dynamic GeoJSON Layers</title>
-    <link rel="stylesheet" href="css/leaflet.css">
-    <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
-    <link rel="stylesheet" href="css/L.Control.Locate.min.css">
-    <link rel="stylesheet" href="css/leaflet-measure.css">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.css" />
     <style>
         html, body, #map {
             width: 100%;
@@ -30,6 +28,7 @@
             font-size: 14px;
         }
     </style>
+    <title>Map with GeoJSON and Popups</title>
 </head>
 <body>
     <div id="map"></div>
@@ -37,35 +36,107 @@
     <select id="fileSelect">
         <option>Виберіть файл</option>
     </select>
-    <script src="js/leaflet.js"></script>
-    <script src="js/L.Control.Layers.Tree.min.js"></script>
-    <script src="js/L.Control.Locate.min.js"></script>
-    <script src="js/leaflet-measure.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
     <script>
+        // Initialize the map centered on Ukraine
         var map = L.map('map', {
-            center: [48.3794, 31.1656], // Координати для України
-            zoom: 6,
-            layers: [L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-                maxZoom: 18,
-                attribution: 'Google'
-            })]
-        });
+            zoomControl: true
+        }).setView([48.3794, 31.1656], 6); // Centered on Ukraine with a zoom level of 6
 
-        // Відновлення меню шарів
-        var baseMaps = {
-            "Google": L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-                maxZoom: 18,
-                attribution: 'Google'
-            })
-        };
-        
-        var overlaysTree = [];
-        
-        var lay = L.control.layers.tree(baseMaps, overlaysTree, {
-            collapsed: true
+        // Add Google Maps layer as default
+        var googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: '&copy; <a href="https://www.google.com/maps">Google</a>'
         }).addTo(map);
 
-        // Функція для завантаження списку файлів
+        // Add OpenStreetMap layer
+        var openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+
+        var baseMaps = {
+            "Google Maps": googleLayer,
+            "OpenStreetMap": openStreetMapLayer
+        };
+
+        var overlays = {};
+
+        // Function to generate a random color
+        function getRandomColor() {
+            return '#' + Math.floor(Math.random()*16777215).toString(16);
+        }
+
+        // Object to store colors for each unique tenant
+        var tenantColors = {};
+
+        // Function to get a color based on the "Орендар" property
+        function getColor(tenant) {
+            if (tenant === null || tenant === "" || tenant === undefined) {
+                return "#ffffff"; // White color for empty "Орендар"
+            }
+            if (!tenantColors[tenant]) {
+                tenantColors[tenant] = getRandomColor();
+            }
+            return tenantColors[tenant];
+        }
+
+        // Function to create popups
+        function onEachFeature(feature, layer) {
+            if (feature.properties) {
+                var popupContent = '<table>';
+                for (var key in feature.properties) {
+                    if (feature.properties.hasOwnProperty(key)) {
+                        popupContent += '<tr><td><strong>' + key + ':</strong></td><td>' + feature.properties[key] + '</td></tr>';
+                    }
+                }
+                popupContent += '</table>';
+                layer.bindPopup(popupContent);
+            }
+        }
+
+        // Function to style the GeoJSON layer based on the "Орендар" property
+        function styleFeature(feature) {
+            return {
+                color: getColor(feature.properties["Орендар"]), // Use the color based on the "Орендар" property
+                weight: 0.5, // Reduced line weight to 0.5
+                opacity: 1, // Opacity of the boundary line
+                fillOpacity: 0.4 // Set fill opacity to 0.4
+            };
+        }
+
+        // Function to add GeoJSON layer
+        function addGeoJsonLayer(url, layerName) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    var geoJsonLayer = L.geoJSON(data, {
+                        style: styleFeature, // Apply the style function
+                        onEachFeature: onEachFeature // Add the onEachFeature function
+                    });
+                    overlays[layerName] = geoJsonLayer;
+                    geoJsonLayer.addTo(map);
+                    updateLayersControl();
+                })
+                .catch(error => console.error('Error loading GeoJSON data:', error));
+        }
+
+        var layersControl;
+
+        function updateLayersControl() {
+            if (layersControl) {
+                map.removeControl(layersControl); // Remove existing control if present
+            }
+            layersControl = L.control.layers(baseMaps, overlays, {
+                collapsed: true
+            }).addTo(map);
+        }
+
+        // Add GeoJSON layer
+        addGeoJsonLayer('data/parcels.geojson', 'Parcels');
+
+        // Function to load the list of files
         function loadFileList() {
             fetch('data/file_list.json')
                 .then(response => response.json())
@@ -81,72 +152,31 @@
                 .catch(error => console.error('Error loading file list:', error));
         }
 
-        // Функція для завантаження GeoJSON файлу на карту
-        function loadGeoJsonLayer(fileName) {
-            fetch('data/' + fileName)
-                .then(response => response.json())
-                .then(data => {
-                    if (geoJsonLayer) {
-                        map.removeLayer(geoJsonLayer);
-                    }
-                    geoJsonLayer = L.geoJson(data, {
-                        style: function (feature) {
-                            var fillColor = 'white'; // Колір за замовчуванням для пустих орендарів
-                            if (feature.properties['Орендар']) {
-                                fillColor = getRandomColor();
-                            }
-                            return {
-                                color: 'blue',
-                                weight: 0.5,
-                                fillOpacity: 0.4,
-                                fillColor: fillColor
-                            };
-                        }
-                    }).addTo(map);
-                    // Додаємо шар до меню шарів
-                    overlaysTree = [{ label: `<img src="legend/${fileName}.png" /> ${fileName}`, layer: geoJsonLayer }];
-                    lay.removeLayer();
-                    lay = L.control.layers.tree(baseMaps, overlaysTree, {
-                        collapsed: true
-                    }).addTo(map);
-                })
-                .catch(error => console.error('Error loading GeoJSON file:', error));
-        }
-
-        // Функція для генерації випадкових кольорів
-        function getRandomColor() {
-            var letters = '0123456789ABCDEF';
-            var color = '#';
-            for (var i = 0; i < 6; i++) {
-                color += letters[Math.floor(Math.random() * 16)];
-            }
-            return color;
-        }
-
-        // Змінна для збереження шару GeoJSON
-        var geoJsonLayer;
-
-        // Обробник подій для вибору файлу
+        // Function to load GeoJSON data based on selected file
         document.getElementById('fileSelect').addEventListener('change', function () {
             var fileName = this.value;
             if (fileName && fileName !== 'Виберіть файл') {
-                loadGeoJsonLayer(fileName);
+                addGeoJsonLayer('data/' + fileName, fileName);
             }
         });
 
-        // Пошук за кадастровим номером
+        // Function to search for a feature by "Кадастровий номер"
         document.getElementById('searchInput').addEventListener('input', function () {
             var searchTerm = this.value.toLowerCase();
-            geoJsonLayer.eachLayer(function (layer) {
-                var isMatch = layer.feature.properties['Кадастровий номер'] && layer.feature.properties['Кадастровий номер'].toLowerCase().includes(searchTerm);
-                layer.setStyle({ color: isMatch ? 'red' : 'blue' });
-                if (isMatch) {
-                    map.fitBounds(layer.getBounds());
-                }
-            });
+            if (overlays) {
+                Object.values(overlays).forEach(layerGroup => {
+                    layerGroup.eachLayer(layer => {
+                        var isMatch = layer.feature.properties['Кадастровий номер'] && layer.feature.properties['Кадастровий номер'].toLowerCase().includes(searchTerm);
+                        layer.setStyle({ color: isMatch ? 'red' : getColor(layer.feature.properties["Орендар"]) });
+                        if (isMatch) {
+                            map.fitBounds(layer.getBounds());
+                        }
+                    });
+                });
+            }
         });
 
-        // Завантажити список файлів при запуску
+        // Initialize file list and map
         loadFileList();
     </script>
 </body>
