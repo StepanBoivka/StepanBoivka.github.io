@@ -80,9 +80,9 @@
         function styleFeature(feature) {
             return {
                 color: getColor(feature.properties["Орендар"]), // Use the color based on the "Орендар" property
-                weight: 1, // Reduced line weight
-                opacity: 1,
-                fillOpacity: 0.5
+                weight: 0.5, // Reduced line weight to 0.5
+                opacity: 1, // Opacity of the boundary line
+                fillOpacity: 0.8 // Increased fill opacity to 0.8
             };
         }
 
