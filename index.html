@@ -221,12 +221,13 @@
             
             var baseMaps = {};
             var overlaysTree = [
-                {label: '<img src="legend/field_4.png" /> field', layer: layer_field_4},
-                {label: "Межа ОТГ", layer: layer__3},
-                {label: "Кадастр", layer: layer__2},
-                {label: "Google", layer: layer_Google_1},
-                {label: "OpenStreetMap", layer: layer_OpenStreetMap_0}
+                { label: '<img src="legend/field_4.png" /> field', layer: layer_field_4 },
+                { label: "Межа ОТГ", layer: layer__3 },
+                { label: "Кадастр", layer: layer__2 },
+                { label: "Google", layer: layer_Google_1 },
+                { label: "OpenStreetMap", layer: layer_OpenStreetMap_0 }
             ];
+            
             var lay = L.control.layers.tree(null, overlaysTree, {
                 collapsed: true
             });
