@@ -13,43 +13,54 @@
             padding: 0;
             margin: 0;
         }
-        #fileSelect, #searchInput, #searchButton {
+        #controls {
             position: absolute;
             z-index: 1000;
-            background: white;
-            padding: 5px;
-            border-radius: 5px;
-        }
-        #searchInput {
             top: 70px; /* Опустити нижче кнопок зуму */
             left: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        #searchContainer {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        #searchInput {
             width: 150px; /* Ширина поля пошуку */
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px 0 0 5px;
         }
         #searchButton {
-            top: 70px; /* Вирівняти з полем пошуку */
-            left: 170px; /* Позиція поруч з полем пошуку */
             padding: 5px 10px; /* Розмір кнопки */
             background: #007bff; /* Колір кнопки */
             color: white; /* Колір тексту кнопки */
-            border: none;
-            border-radius: 5px;
+            border: 1px solid #007bff;
+            border-radius: 0 5px 5px 0; /* Розділити кути кнопки */
             cursor: pointer;
+            border-left: none; /* Прибрати межу між полем і кнопкою */
         }
         #fileSelect {
-            top: 110px; /* Опустити нижче поля пошуку */
-            left: 10px;
             width: 150px; /* Ширина випадаючого списку */
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
     </style>
     <title>Map with GeoJSON and Popups</title>
 </head>
 <body>
     <div id="map"></div>
-    <input type="text" id="searchInput" placeholder="Пошук за кадастровим номером">
-    <button id="searchButton">Пошук</button>
-    <select id="fileSelect">
-        <option>Виберіть файл</option>
-    </select>
+    <div id="controls">
+        <div id="searchContainer">
+            <input type="text" id="searchInput" placeholder="Пошук за кадастровим номером">
+            <button id="searchButton">Пошук</button>
+        </div>
+        <select id="fileSelect">
+            <option>Виберіть файл</option>
+        </select>
+    </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
     <script>
