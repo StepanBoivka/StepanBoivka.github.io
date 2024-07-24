@@ -1,1 +1,17 @@
+#map {
+    height: 100vh;
+    width: 100vw;
+}
+
+.leaflet-control {
+    background-color: white;
+}
+
+.leaflet-draw-draw-toolbar {
+    margin-left: 10px;
+}
+
+.leaflet-draw-draw-toolbar a {
+    margin-left: 5px;
+}
 
