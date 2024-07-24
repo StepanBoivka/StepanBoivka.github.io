@@ -18,6 +18,9 @@
             top: 70px; /* Позиціювання нижче кнопок */
             left: 10px;
             z-index: 1000;
+            background: white;
+            padding: 5px;
+            border-radius: 5px;
         }
         #searchInput {
             position: absolute;
@@ -26,6 +29,8 @@
             z-index: 1000;
             padding: 5px;
             font-size: 14px;
+            background: white;
+            border-radius: 5px;
         }
     </style>
     <title>Map with GeoJSON and Popups</title>
@@ -115,6 +120,9 @@
                         style: styleFeature, // Apply the style function
                         onEachFeature: onEachFeature // Add the onEachFeature function
                     });
+                    if (overlays[layerName]) {
+                        map.removeLayer(overlays[layerName]);
+                    }
                     overlays[layerName] = geoJsonLayer;
                     geoJsonLayer.addTo(map);
                     updateLayersControl();
@@ -132,9 +140,6 @@
                 collapsed: true
             }).addTo(map);
         }
-
-        // Add GeoJSON layer
-        addGeoJsonLayer('data/parcels.geojson', 'Parcels');
 
         // Function to load the list of files
         function loadFileList() {
