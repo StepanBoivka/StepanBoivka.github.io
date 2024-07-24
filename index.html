@@ -16,21 +16,39 @@
         #controls {
             position: absolute;
             z-index: 1000;
-            top: 100px; /* Опустити ще нижче */
+            top: 10px; /* Відстань від верхнього краю */
             left: 10px;
             display: flex;
             flex-direction: column;
-            width: 200px; /* Однакова ширина для всіх елементів */
+            width: 200px; /* Ширина кнопок */
+        }
+        .control-button {
+            background: #007bff;
+            color: white;
+            border: 1px solid #007bff;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .control-content {
+            display: none;
+            margin-top: 5px;
+        }
+        .control-button.active + .control-content {
+            display: block;
         }
         #searchContainer {
             display: flex;
-            margin-bottom: 10px;
+            flex-direction: column;
         }
         #searchInput, #fileSelect {
-            width: 100%; /* Однакова ширина */
+            width: 100%; /* Однакова ширина для всіх елементів */
             padding: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
+            margin-bottom: 5px;
         }
         #searchButton {
             padding: 5px 10px;
@@ -39,10 +57,22 @@
             border: 1px solid #007bff;
             border-radius: 5px;
             cursor: pointer;
-            margin-left: -1px; /* Вирівнювання кнопки з полем пошуку */
         }
-        #fileSelect {
-            margin-bottom: 10px;
+        #geolocationButton {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            border: 1px solid #28a745;
+            border-radius: 50%;
+            padding: 10px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        #geolocationButton:hover {
+            background: #218838;
+            border-color: #1e7e34;
         }
     </style>
     <title>Карта земельних ділянок</title>
@@ -50,14 +80,19 @@
 <body>
     <div id="map"></div>
     <div id="controls">
-        <div id="searchContainer">
+        <div class="control-button" id="fileControlButton">Файли</div>
+        <div class="control-content" id="fileControlContent">
+            <select id="fileSelect">
+                <option>Виберіть файл</option>
+            </select>
+        </div>
+        <div class="control-button" id="searchControlButton">Пошук</div>
+        <div class="control-content" id="searchControlContent">
             <input type="text" id="searchInput" placeholder="Пошук за кадастровим номером">
             <button id="searchButton">Пошук</button>
         </div>
-        <select id="fileSelect">
-            <option>Виберіть файл</option>
-        </select>
     </div>
+    <div id="geolocationButton">📍</div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
     <script>
@@ -203,8 +238,35 @@
             }
         });
 
+        // Function to handle geolocation
+        document.getElementById('geolocationButton').addEventListener('click', function () {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    var lat = position.coords.latitude;
+                    var lng = position.coords.longitude;
+                    map.setView([lat, lng], 13); // Zoom in to the user's location
+                    L.marker([lat, lng]).addTo(map)
+                        .bindPopup('Ваша геолокація')
+                        .openPopup();
+                }, function (error) {
+                    console.error('Geolocation error:', error);
+                });
+            } else {
+                alert('Geolocation не підтримується вашим браузером.');
+            }
+        });
+
         // Initialize file list and map
         loadFileList();
+
+        // Toggle control content visibility
+        document.getElementById('fileControlButton').addEventListener('click', function () {
+            this.classList.toggle('active');
+        });
+
+        document.getElementById('searchControlButton').addEventListener('click', function () {
+            this.classList.toggle('active');
+        });
     </script>
 </body>
 </html>
