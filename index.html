@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Map with Dynamic GeoJSON Layers</title>
+    <link rel="stylesheet" href="css/leaflet.css">
+    <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+    <link rel="stylesheet" href="css/L.Control.Locate.min.css">
+    <link rel="stylesheet" href="css/leaflet-measure.css">
     <style>
         html, body, #map {
             width: 100%;
@@ -13,177 +15,83 @@
             padding: 0;
             margin: 0;
         }
-        #search-container {
+        #fileSelect {
             position: absolute;
-            top: 80px;
+            top: 50px; /* Змістіть вниз від кнопок */
             left: 10px;
-            z-index: 1000;
-            background: white;
-            padding: 5px;
-            border-radius: 5px;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-        }
-        #file-selector {
-            position: absolute;
-            top: 120px; /* Нижче, ніж поле пошуку */
-            left: 10px;
-            z-index: 1000;
-            background: white;
-            padding: 5px;
-            border-radius: 5px;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            z-index: 1000; /* Високий z-index, щоб бути поверх кнопок */
         }
     </style>
-    <title>Map with GeoJSON and Popups</title>
 </head>
 <body>
-    <div id="search-container">
-        <input type="text" id="search-input" placeholder="Введіть Кадастровий номер">
-        <button id="search-button">Пошук</button>
-    </div>
-    <div id="file-selector">
-        <select id="file-dropdown">
-            <option value="">Оберіть файл</option>
-        </select>
-    </div>
     <div id="map"></div>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
+    <select id="fileSelect">
+        <option>Виберіть файл</option>
+    </select>
+    <script src="js/leaflet.js"></script>
+    <script src="js/L.Control.Layers.Tree.min.js"></script>
+    <script src="js/L.Control.Locate.min.js"></script>
+    <script src="js/leaflet-measure.js"></script>
     <script>
         var map = L.map('map', {
-            zoomControl: true
-        }).setView([48.3794, 31.1656], 6); // Центр України
-
-        var googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            attribution: '&copy; <a href="https://www.google.com/maps">Google</a>'
-        }).addTo(map);
-
-        var openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            center: [48.3794, 31.1656], // Координати для України
+            zoom: 6,
+            layers: [L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                maxZoom: 18,
+                attribution: 'Google'
+            })]
         });
 
-        var baseMaps = {
-            "Google Maps": googleLayer,
-            "OpenStreetMap": openStreetMapLayer
-        };
-
-        var overlays = {};
-
-        function getRandomColor() {
-            return '#' + Math.floor(Math.random()*16777215).toString(16);
-        }
-
-        var tenantColors = {};
-
-        function getColor(tenant) {
-            if (tenant === null || tenant === "" || tenant === undefined) {
-                return "#ffffff";
-            }
-            if (!tenantColors[tenant]) {
-                tenantColors[tenant] = getRandomColor();
-            }
-            return tenantColors[tenant];
-        }
-
-        function onEachFeature(feature, layer) {
-            if (feature.properties) {
-                var popupContent = '<table>';
-                for (var key in feature.properties) {
-                    if (feature.properties.hasOwnProperty(key)) {
-                        popupContent += '<tr><td><strong>' + key + ':</strong></td><td>' + feature.properties[key] + '</td></tr>';
-                    }
-                }
-                popupContent += '</table>';
-                layer.bindPopup(popupContent);
-            }
-        }
-
-        function styleFeature(feature) {
-            return {
-                color: getColor(feature.properties["Орендар"]),
-                weight: 0.5,
-                opacity: 1,
-                fillOpacity: 0.4
-            };
-        }
-
-        var geoJsonLayer;
-
-        function addGeoJsonLayer(url, layerName) {
-            fetch(url)
+        // Функція для завантаження списку файлів
+        function loadFileList() {
+            fetch('data/file_list.json')
                 .then(response => response.json())
                 .then(data => {
-                    if (geoJsonLayer) {
-                        map.removeLayer(geoJsonLayer);
-                    }
-                    geoJsonLayer = L.geoJSON(data, {
-                        style: styleFeature,
-                        onEachFeature: onEachFeature
-                    });
-                    overlays[layerName] = geoJsonLayer;
-                    geoJsonLayer.addTo(map);
-                    updateLayersControl();
-                })
-                .catch(error => console.error('Error loading GeoJSON data:', error));
-        }
-
-        var layersControl;
-
-        function updateLayersControl() {
-            if (layersControl) {
-                map.removeControl(layersControl);
-            }
-            layersControl = L.control.layers(baseMaps, overlays, {
-                collapsed: true
-            }).addTo(map);
-        }
-
-        function searchByCadastralNumber(cadastralNumber) {
-            if (!geoJsonLayer) {
-                alert('GeoJSON layer not loaded yet.');
-                return;
-            }
-
-            geoJsonLayer.eachLayer(function(layer) {
-                if (layer.feature.properties["Кадастровий номер"] === cadastralNumber) {
-                    map.fitBounds(layer.getBounds()); // Zoom to the bounding box of the found feature
-                    layer.openPopup(); // Open the popup for the found feature
-                    return; // Stop after finding the first match
-                }
-            });
-        }
-
-        document.getElementById('search-button').addEventListener('click', function() {
-            var cadastralNumber = document.getElementById('search-input').value.trim();
-            searchByCadastralNumber(cadastralNumber);
-        });
-
-        function populateFileDropdown() {
-            fetch('list_files.php')
-                .then(response => response.json())
-                .then(fileList => {
-                    var dropdown = document.getElementById('file-dropdown');
-                    fileList.forEach(file => {
+                    var select = document.getElementById('fileSelect');
+                    data.files.forEach(file => {
                         var option = document.createElement('option');
-                        option.value = 'data/' + file;
+                        option.value = file;
                         option.textContent = file;
-                        dropdown.appendChild(option);
+                        select.appendChild(option);
                     });
                 })
                 .catch(error => console.error('Error loading file list:', error));
         }
 
-        document.getElementById('file-dropdown').addEventListener('change', function() {
-            var selectedFile = this.value;
-            if (selectedFile) {
-                addGeoJsonLayer(selectedFile, 'Selected GeoJSON Layer');
+        // Функція для завантаження GeoJSON файлу на карту
+        function loadGeoJsonLayer(fileName) {
+            fetch('data/' + fileName)
+                .then(response => response.json())
+                .then(data => {
+                    if (geoJsonLayer) {
+                        map.removeLayer(geoJsonLayer);
+                    }
+                    geoJsonLayer = L.geoJson(data, {
+                        style: function (feature) {
+                            return {
+                                color: 'blue',
+                                weight: 0.5,
+                                fillOpacity: 0.4
+                            };
+                        }
+                    }).addTo(map);
+                })
+                .catch(error => console.error('Error loading GeoJSON file:', error));
+        }
+
+        // Змінна для збереження шару GeoJSON
+        var geoJsonLayer;
+
+        // Обробник подій для вибору файлу
+        document.getElementById('fileSelect').addEventListener('change', function () {
+            var fileName = this.value;
+            if (fileName && fileName !== 'Виберіть файл') {
+                loadGeoJsonLayer(fileName);
             }
         });
 
-        populateFileDropdown();
-        updateLayersControl();
+        // Завантажити список файлів при запуску
+        loadFileList();
     </script>
 </body>
 </html>
