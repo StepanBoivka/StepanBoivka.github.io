@@ -1,19 +1,15 @@
-const fs = require('fs');
-const path = require('path');
+function handleLayer(layer) {
+    if (!layer || !layer.getLatLngs) return;
 
-export default async function handler(req, res) {
-    if (req.method === 'POST') {
-        const filePath = path.join(process.cwd(), 'public', 'field.geojson');
-        const geojson = req.body;
+    var feature = layer.feature = layer.feature || {};
+    feature.type = feature.type || "Feature";
+    var props = feature.properties = feature.properties || {};
+    props.name = prompt("Введіть назву поля:", props.name || "");
 
-        fs.writeFile(filePath, JSON.stringify(geojson, null, 2), (err) => {
-            if (err) {
-                res.status(500).json({ error: 'Failed to save file' });
-            } else {
-                res.status(200).json({ message: 'File saved successfully' });
-            }
-        });
-    } else {
-        res.status(405).json({ error: 'Method not allowed' });
+    if (layer instanceof L.Polygon) {
+        props.area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
     }
+
+    var geojson = drawnItems.toGeoJSON();
+    saveChanges(geojson);
 }
