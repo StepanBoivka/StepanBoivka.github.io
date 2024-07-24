@@ -80,7 +80,7 @@
         function styleFeature(feature) {
             return {
                 color: getColor(feature.properties["Орендар"]), // Use the color based on the "Орендар" property
-                weight: 2,
+                weight: 1, // Reduced line weight
                 opacity: 1,
                 fillOpacity: 0.5
             };
@@ -102,8 +102,13 @@
                 .catch(error => console.error('Error loading GeoJSON data:', error));
         }
 
+        var layersControl;
+
         function updateLayersControl() {
-            var lay = L.control.layers(baseMaps, overlays, {
+            if (layersControl) {
+                map.removeControl(layersControl); // Remove existing control if present
+            }
+            layersControl = L.control.layers(baseMaps, overlays, {
                 collapsed: true
             }).addTo(map);
         }
