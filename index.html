@@ -71,24 +71,6 @@
         });
         map.addControl(drawControl);
 
-        // Функція для збереження змін
-        function saveChanges(geojson) {
-            fetch('/api/save-geojson', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(geojson)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        }
-
         // Обробка подій створення та редагування
         function handleLayer(layer) {
             var feature = layer.feature = layer.feature || {};
@@ -125,6 +107,13 @@
                 L.geoJSON(data, {
                     onEachFeature: function (feature, layer) {
                         drawnItems.addLayer(layer);
+                        layer.on('click', function () {
+                            var popupContent = `
+                                <strong>Назва:</strong> ${feature.properties.name || 'Без назви'}<br>
+                                <strong>Площа:</strong> ${feature.properties.area || 'Не розрахована'}
+                            `;
+                            layer.bindPopup(popupContent).openPopup();
+                        });
                     }
                 }).addTo(map);
             });
@@ -141,6 +130,24 @@
 
         map.on('locationfound', onLocationFound);
         map.on('locationerror', onLocationError);
+
+        function saveChanges(geojson) {
+            // Замініть URL на адресу вашого API для збереження
+            fetch('/api/save-geojson', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(geojson)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
     </script>
 </body>
 </html>
