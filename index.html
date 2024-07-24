@@ -120,11 +120,16 @@
                         style: styleFeature, // Apply the style function
                         onEachFeature: onEachFeature // Add the onEachFeature function
                     });
+                    
+                    // Remove existing layer if present
                     if (overlays[layerName]) {
                         map.removeLayer(overlays[layerName]);
                     }
+                    
+                    // Add new layer and fit bounds
                     overlays[layerName] = geoJsonLayer;
                     geoJsonLayer.addTo(map);
+                    map.fitBounds(geoJsonLayer.getBounds()); // Zoom to the bounds of the new data
                     updateLayersControl();
                 })
                 .catch(error => console.error('Error loading GeoJSON data:', error));
