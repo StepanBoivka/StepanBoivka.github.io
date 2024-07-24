@@ -112,7 +112,165 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
     <script>
-        // JavaScript код для вашої карти
+        // Initialize the map centered on Ukraine
+        var map = L.map('map', {
+            zoomControl: true
+        }).setView([48.3794, 31.1656], 6); // Centered on Ukraine with a zoom level of 6
+
+        // Add Google Maps layer as default
+        var googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: '&copy; <a href="https://www.google.com/maps">Google</a>'
+        }).addTo(map);
+
+        // Add OpenStreetMap layer
+        var openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+
+        var baseMaps = {
+            "Google Maps": googleLayer,
+            "OpenStreetMap": openStreetMapLayer
+        };
+
+        var overlays = {};
+
+        // Function to generate a random color
+        function getRandomColor() {
+            return '#' + Math.floor(Math.random()*16777215).toString(16);
+        }
+
+        // Object to store colors for each unique tenant
+        var tenantColors = {};
+
+        // Function to get a color based on the "Орендар" property
+        function getColor(tenant) {
+            if (tenant === null || tenant === "" || tenant === undefined) {
+                return "#ffffff"; // White color for empty "Орендар"
+            }
+            if (!tenantColors[tenant]) {
+                tenantColors[tenant] = getRandomColor();
+            }
+            return tenantColors[tenant];
+        }
+
+        // Function to create popups
+        function onEachFeature(feature, layer) {
+            if (feature.properties) {
+                var popupContent = '<table>';
+                for (var key in feature.properties) {
+                    if (feature.properties.hasOwnProperty(key)) {
+                        popupContent += '<tr><td><strong>' + key + ':</strong></td><td>' + feature.properties[key] + '</td></tr>';
+                    }
+                }
+                popupContent += '</table>';
+                layer.bindPopup(popupContent);
+            }
+        }
+
+        // Function to style the GeoJSON layer based on the "Орендар" property
+        function styleFeature(feature) {
+            return {
+                color: getColor(feature.properties["Орендар"]), // Use the color based on the "Орендар" property
+                weight: 0.5, // Reduced line weight to 0.5
+                opacity: 1, // Opacity of the boundary line
+                fillOpacity: 0.4 // Set fill opacity to 0.4
+            };
+        }
+
+        // Function to add GeoJSON layer
+        function addGeoJsonLayer(url, layerName) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    var geoJsonLayer = L.geoJSON(data, {
+                        style: styleFeature, // Apply the style function
+                        onEachFeature: onEachFeature // Add the onEachFeature function
+                    });
+                    overlays[layerName] = geoJsonLayer;
+                    geoJsonLayer.addTo(map);
+                    updateLayersControl();
+                })
+                .catch(error => console.error('Error loading GeoJSON data:', error));
+        }
+
+        var layersControl;
+
+        function updateLayersControl() {
+            if (layersControl) {
+                map.removeControl(layersControl); // Remove existing control if present
+            }
+            layersControl = L.control.layers(baseMaps, overlays, {
+                collapsed: true
+            }).addTo(map);
+        }
+
+        // Add GeoJSON layer
+        addGeoJsonLayer('data/parcels.geojson', 'Parcels');
+
+        updateLayersControl();
+
+        // Search functionality
+        document.getElementById('searchButton').addEventListener('click', function() {
+            var searchTerm = document.getElementById('searchInput').value;
+            var found = false;
+
+            for (var layerName in overlays) {
+                if (overlays.hasOwnProperty(layerName)) {
+                    overlays[layerName].eachLayer(function(layer) {
+                        if (layer.feature && layer.feature.properties && layer.feature.properties["Кадастровий номер"] === searchTerm) {
+                            map.fitBounds(layer.getBounds());
+                            layer.openPopup();
+                            found = true;
+                        }
+                    });
+                }
+            }
+
+            if (!found) {
+                alert('Полігон не знайдено');
+            }
+        });
+
+        // File selection functionality
+        document.getElementById('fileSelect').addEventListener('change', function() {
+            var selectedFile = this.value;
+            if (selectedFile !== 'Виберіть файл') {
+                var fileUrl = 'data/' + selectedFile;
+                map.eachLayer(function(layer) {
+                    if (layer instanceof L.GeoJSON) {
+                        map.removeLayer(layer);
+                    }
+                });
+                addGeoJsonLayer(fileUrl, selectedFile);
+            }
+        });
+
+        // Geolocation button functionality
+        document.getElementById('geolocationButton').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var lat = position.coords.latitude;
+                    var lon = position.coords.longitude;
+                    map.setView([lat, lon], 13);
+                    L.marker([lat, lon]).addTo(map)
+                        .bindPopup('Ваша поточна локація')
+                        .openPopup();
+                });
+            } else {
+                alert('Геолокація не підтримується вашим браузером.');
+            }
+        });
+
+        // Toggle control visibility
+        document.getElementById('fileControlButton').addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
+
+        document.getElementById('searchControlButton').addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
     </script>
 </body>
 </html>
