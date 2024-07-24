@@ -39,6 +39,22 @@
 
         var overlays = {};
 
+        // Function to generate a random color
+        function getRandomColor() {
+            return '#' + Math.floor(Math.random()*16777215).toString(16);
+        }
+
+        // Object to store colors for each unique tenant
+        var tenantColors = {};
+
+        // Function to get a color based on the "Орендар" property
+        function getColor(tenant) {
+            if (!tenantColors[tenant]) {
+                tenantColors[tenant] = getRandomColor();
+            }
+            return tenantColors[tenant];
+        }
+
         // Function to create popups
         function onEachFeature(feature, layer) {
             if (feature.properties) {
@@ -53,18 +69,23 @@
             }
         }
 
+        // Function to style the GeoJSON layer based on the "Орендар" property
+        function styleFeature(feature) {
+            return {
+                color: getColor(feature.properties["Орендар"]), // Use the color based on the "Орендар" property
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.5
+            };
+        }
+
         // Function to add GeoJSON layer
         function addGeoJsonLayer(url, layerName) {
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     var geoJsonLayer = L.geoJSON(data, {
-                        style: {
-                            color: 'rgba(0,0,255,1.0)',
-                            weight: 2,
-                            opacity: 1,
-                            fillOpacity: 0.5
-                        },
+                        style: styleFeature, // Apply the style function
                         onEachFeature: onEachFeature // Add the onEachFeature function
                     });
                     overlays[layerName] = geoJsonLayer;
