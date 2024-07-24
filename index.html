@@ -20,25 +20,7 @@
             left: 10px;
             display: flex;
             flex-direction: column;
-            width: 160px; /* Зменшена ширина кнопок */
-        }
-        .control-button {
-            background: #007bff;
-            color: white;
-            border: 1px solid #007bff;
-            border-radius: 5px;
-            padding: 6px; /* Зменшене padding */
-            cursor: pointer;
-            text-align: center;
-            margin-bottom: 5px; /* Зменшений margin */
-            font-size: 12px; /* Зменшений font-size */
-        }
-        .control-content {
-            display: none;
-            margin-top: 5px;
-        }
-        .control-button.active + .control-content {
-            display: block;
+            width: 160px; /* Ширина елементів */
         }
         #searchContainer {
             display: flex;
@@ -50,7 +32,7 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             margin-bottom: 5px;
-            font-size: 12px; /* Зменшений font-size */
+            font-size: 12px; /* Розмір шрифту */
         }
         #searchButton {
             padding: 5px 10px;
@@ -59,7 +41,7 @@
             border: 1px solid #007bff;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 12px; /* Зменшений font-size */
+            font-size: 12px; /* Розмір шрифту */
         }
         #geolocationButton {
             position: absolute;
@@ -69,7 +51,7 @@
             color: white;
             border: 1px solid #28a745;
             border-radius: 50%;
-            padding: 8px; /* Зменшене padding */
+            padding: 8px;
             cursor: pointer;
             z-index: 1000;
             font-size: 16px; /* Розмір піктограми */
@@ -84,16 +66,12 @@
 <body>
     <div id="map"></div>
     <div id="controls">
-        <div class="control-button" id="fileControlButton">Файли</div>
-        <div class="control-content" id="fileControlContent">
+        <div id="searchContainer">
+            <input type="text" id="searchInput" placeholder="Пошук за кадастровим номером">
+            <button id="searchButton">Пошук</button>
             <select id="fileSelect">
                 <option>Виберіть файл</option>
             </select>
-        </div>
-        <div class="control-button" id="searchControlButton">Пошук</div>
-        <div class="control-content" id="searchControlContent">
-            <input type="text" id="searchInput" placeholder="Пошук за кадастровим номером">
-            <button id="searchButton">Пошук</button>
         </div>
     </div>
     <div id="geolocationButton">📍</div>
@@ -262,15 +240,6 @@
 
         // Initialize file list and map
         loadFileList();
-
-        // Toggle control content visibility
-        document.getElementById('fileControlButton').addEventListener('click', function () {
-            this.classList.toggle('active');
-        });
-
-        document.getElementById('searchControlButton').addEventListener('click', function () {
-            this.classList.toggle('active');
-        });
     </script>
 </body>
 </html>
