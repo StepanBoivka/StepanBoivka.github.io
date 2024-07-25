@@ -6,6 +6,7 @@
     <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.animatedsearchbox@1.0.0/dist/leaflet.animatedsearchbox.css" />
     <style>
         html, body, #map {
             width: 100%;
@@ -21,28 +22,6 @@
             display: flex;
             flex-direction: column;
             width: 200px; /* Ширина елементів */
-        }
-        #searchContainer {
-            display: flex;
-            flex-direction: column;
-        }
-        #searchInput {
-            width: calc(100% - 85px); /* Ширина з урахуванням кнопки */
-            padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-bottom: 5px;
-            font-size: 12px; /* Розмір шрифту */
-        }
-        #searchButton {
-            width: 80px;
-            padding: 5px;
-            background: #007bff;
-            color: white;
-            border: 1px solid #007bff;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px; /* Розмір шрифту */
         }
         #fileSelect {
             width: 100%;
@@ -75,17 +54,14 @@
 <body>
     <div id="map"></div>
     <div id="controls">
-        <div id="searchContainer">
-            <input type="text" id="searchInput" placeholder="Пошук за кадастровим номером">
-            <button id="searchButton">Пошук</button>
-            <select id="fileSelect">
-                <option>Виберіть файл</option>
-            </select>
-        </div>
+        <select id="fileSelect">
+            <option>Виберіть файл</option>
+        </select>
     </div>
     <div id="geolocationButton">📍</div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
+    <script src="https://unpkg.com/leaflet.animatedsearchbox@1.0.0/dist/leaflet.animatedsearchbox.js"></script>
     <script>
         // Initialize the map centered on Ukraine without zoom control
         var map = L.map('map', {
@@ -213,9 +189,17 @@
             }
         });
 
-        // Function to search for a feature by "Кадастровий номер"
-        document.getElementById('searchButton').addEventListener('click', function () {
-            var searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        // Initialize the AnimatedSearchBox control
+        var searchBoxControl = L.control.animatedSearchBox({
+            expanded: false,
+            placeholder: 'Пошук за кадастровим номером',
+            markers: true,
+            minLength: 2
+        }).addTo(map);
+
+        // Event handler for search box input
+        searchBoxControl.on('results', function(event) {
+            var searchTerm = event.text.toLowerCase();
             if (overlays) {
                 Object.values(overlays).forEach(layerGroup => {
                     layerGroup.eachLayer(layer => {
