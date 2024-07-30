@@ -6,6 +6,7 @@
     <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-measure@3.3.1/dist/leaflet-measure.css" />
     <style>
         html, body, #map {
             width: 100%;
@@ -16,28 +17,41 @@
         #controls {
             position: absolute;
             z-index: 1000;
-            top: 10px;
+            top: 10px; /* Відстань від верхнього краю */
             left: 10px;
             display: flex;
             flex-direction: column;
-            width: 200px;
+            width: 200px; /* Ширина елементів */
         }
         #searchContainer {
             display: flex;
             flex-direction: column;
         }
-        #searchInput, #fileSelect, #searchButton {
+        #searchInput {
+            width: calc(100% - 85px); /* Ширина з урахуванням кнопки */
             padding: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
             margin-bottom: 5px;
-            font-size: 12px;
+            font-size: 12px; /* Розмір шрифту */
         }
         #searchButton {
+            width: 80px;
+            padding: 5px;
             background: #007bff;
             color: white;
             border: 1px solid #007bff;
+            border-radius: 5px;
             cursor: pointer;
+            font-size: 12px; /* Розмір шрифту */
+        }
+        #fileSelect {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            font-size: 12px; /* Розмір шрифту */
         }
         #geolocationButton {
             position: absolute;
@@ -50,7 +64,7 @@
             padding: 8px;
             cursor: pointer;
             z-index: 1000;
-            font-size: 16px;
+            font-size: 16px; /* Розмір піктограми */
         }
         #geolocationButton:hover {
             background: #218838;
@@ -73,16 +87,20 @@
     <div id="geolocationButton">📍</div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-measure@3.3.1/dist/leaflet-measure.js"></script>
     <script>
+        // Initialize the map centered on Ukraine without zoom control
         var map = L.map('map', {
-            zoomControl: false
-        }).setView([48.3794, 31.1656], 6);
+            zoomControl: false // Disable zoom controls
+        }).setView([48.3794, 31.1656], 6); // Centered on Ukraine with a zoom level of 6
 
+        // Add Google Maps layer as default
         var googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             attribution: '&copy; <a href="https://www.google.com/maps">Google</a>'
         }).addTo(map);
 
+        // Add OpenStreetMap layer
         var openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -95,15 +113,18 @@
 
         var overlays = {};
 
+        // Function to generate a random color
         function getRandomColor() {
-            return '#' + Math.floor(Math.random() * 16777215).toString(16);
+            return '#' + Math.floor(Math.random()*16777215).toString(16);
         }
 
+        // Object to store colors for each unique tenant
         var tenantColors = {};
 
+        // Function to get a color based on the "Орендар" property
         function getColor(tenant) {
             if (tenant === null || tenant === "" || tenant === undefined) {
-                return "#ffffff";
+                return "#ffffff"; // White color for empty "Орендар"
             }
             if (!tenantColors[tenant]) {
                 tenantColors[tenant] = getRandomColor();
@@ -111,6 +132,7 @@
             return tenantColors[tenant];
         }
 
+        // Function to create popups
         function onEachFeature(feature, layer) {
             if (feature.properties) {
                 var popupContent = '<table>';
@@ -124,31 +146,35 @@
             }
         }
 
+        // Function to style the GeoJSON layer based on the "Орендар" property
         function styleFeature(feature) {
             return {
-                color: getColor(feature.properties["Орендар"]),
-                weight: 0.5,
-                opacity: 1,
-                fillOpacity: 0.4
+                color: getColor(feature.properties["Орендар"]), // Use the color based on the "Орендар" property
+                weight: 0.5, // Reduced line weight to 0.5
+                opacity: 1, // Opacity of the boundary line
+                fillOpacity: 0.4 // Set fill opacity to 0.4
             };
         }
 
+        // Function to add GeoJSON layer
         function addGeoJsonLayer(url, layerName) {
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     var geoJsonLayer = L.geoJSON(data, {
-                        style: styleFeature,
-                        onEachFeature: onEachFeature
+                        style: styleFeature, // Apply the style function
+                        onEachFeature: onEachFeature // Add the onEachFeature function
                     });
-
+                    
+                    // Remove existing layer if present
                     if (overlays[layerName]) {
                         map.removeLayer(overlays[layerName]);
                     }
-
+                    
+                    // Add new layer and fit bounds
                     overlays[layerName] = geoJsonLayer;
                     geoJsonLayer.addTo(map);
-                    map.fitBounds(geoJsonLayer.getBounds());
+                    map.fitBounds(geoJsonLayer.getBounds()); // Zoom to the bounds of the new data
                     updateLayersControl();
                 })
                 .catch(error => console.error('Error loading GeoJSON data:', error));
@@ -158,13 +184,14 @@
 
         function updateLayersControl() {
             if (layersControl) {
-                map.removeControl(layersControl);
+                map.removeControl(layersControl); // Remove existing control if present
             }
             layersControl = L.control.layers(baseMaps, overlays, {
                 collapsed: true
             }).addTo(map);
         }
 
+        // Function to load the list of files
         function loadFileList() {
             fetch('data/file_list.json')
                 .then(response => response.json())
@@ -180,6 +207,7 @@
                 .catch(error => console.error('Error loading file list:', error));
         }
 
+        // Function to load GeoJSON data based on selected file
         document.getElementById('fileSelect').addEventListener('change', function () {
             var fileName = this.value;
             if (fileName && fileName !== 'Виберіть файл') {
@@ -187,6 +215,7 @@
             }
         });
 
+        // Function to search for a feature by "Кадастровий номер"
         document.getElementById('searchButton').addEventListener('click', function () {
             var searchTerm = document.getElementById('searchInput').value.toLowerCase();
             if (overlays) {
@@ -202,12 +231,13 @@
             }
         });
 
+        // Function to geolocate the user
         document.getElementById('geolocationButton').addEventListener('click', function () {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function (position) {
                     var lat = position.coords.latitude;
                     var lng = position.coords.longitude;
-                    map.setView([lat, lng], 13);
+                    map.setView([lat, lng], 13); // Set view to user's location with zoom level 13
                     L.marker([lat, lng]).addTo(map)
                         .bindPopup('Ваша геолокація')
                         .openPopup();
@@ -219,7 +249,18 @@
             }
         });
 
-        loadFileList();
+        loadFileList(); // Load the file list on page load
+
+        // Initialize the measurement control
+        var measureControl = new L.Control.Measure({
+            position: 'topright',
+            primaryLengthUnit: 'meters', 
+            primaryAreaUnit: 'sqmeters',
+            activeColor: '#ff0000', // Red color for active measurements
+            completedColor: '#00ff00', // Green color for completed measurements
+        });
+        map.addControl(measureControl);
+
     </script>
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-CMBXL0TQLR"></script>
