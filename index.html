@@ -56,6 +56,16 @@
             background: #218838;
             border-color: #1e7e34;
         }
+        .color-box {
+            width: 12px;
+            height: 12px;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .layer-name {
+            color: black;
+            font-size: 12px;
+        }
     </style>
     <title>Карта земельних ділянок</title>
 </head>
@@ -202,7 +212,8 @@
 
             tenantList.forEach(item => {
                 overlays[item.tenant] = item.layer;
-                layersControl.addOverlay(item.layer, '<span style="color:' + getColor(item.tenant) + '">' + item.tenant + ' (' + item.area + ' га)</span>');
+                var colorBox = '<span class="color-box" style="background-color:' + getColor(item.tenant) + '"></span>';
+                layersControl.addOverlay(item.layer, colorBox + '<span class="layer-name">' + item.tenant + ' (' + item.area + ' га)</span>');
             });
         }
 
