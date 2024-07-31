@@ -109,16 +109,20 @@
         var freeLayer = L.layerGroup();
         var freeArea = 0;
 
-        function getRandomColor() {
-            return '#' + Math.floor(Math.random() * 16777215).toString(16);
-        }
+        // Заздалегідь визначені кольори
+        var predefinedColors = [
+            "#E44754", "#1B9688", "#ff9947", "#FAC1FA", "#9BBFF8",
+            "#95F1FA", "#C6F8BD", "#F7FAB2", "#FFD7A6", "#FDABAB"
+        ];
+        var colorIndex = 0;
 
         function getColor(tenant) {
             if (tenant === null || tenant === "" || tenant === undefined) {
                 return "#ffffff";
             }
             if (!tenantColors[tenant]) {
-                tenantColors[tenant] = getRandomColor();
+                tenantColors[tenant] = predefinedColors[colorIndex % predefinedColors.length];
+                colorIndex++;
             }
             return tenantColors[tenant];
         }
@@ -228,7 +232,7 @@
             if (freeLayer.getLayers().length > 0) {
                 overlays["вільні від оренди"] = freeLayer;
                 var colorBox = '<span class="color-box" style="background-color:#ffffff"></span>';
-                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди (' + freeArea.toFixed(2) + ' га)</span>');
+                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди</span>');
             }
         }
 
