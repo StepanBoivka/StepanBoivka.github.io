@@ -62,10 +62,6 @@
             display: inline-block;
             margin-right: 5px;
         }
-        .layer-name {
-            color: black;
-            font-size: 12px;
-        }
     </style>
     <title>Карта земельних ділянок</title>
 </head>
@@ -109,10 +105,9 @@
         var freeLayer = L.layerGroup();
         var freeArea = 0;
 
-        // Заздалегідь визначені кольори
-        var predefinedColors = [
-            "#E44754", "#1B9688", "#ff9947", "#FAC1FA", "#9BBFF8",
-            "#95F1FA", "#C6F8BD", "#F7FAB2", "#FFD7A6", "#FDABAB"
+        var colorPalette = [
+            '#E44754', '#1B9688', '#ff9947', '#FAC1FA', '#9BBFF8',
+            '#95F1FA', '#C6F8BD', '#F7FAB2', '#FFD7A6', '#FDABAB'
         ];
         var colorIndex = 0;
 
@@ -121,10 +116,14 @@
                 return "#ffffff";
             }
             if (!tenantColors[tenant]) {
-                tenantColors[tenant] = predefinedColors[colorIndex % predefinedColors.length];
+                tenantColors[tenant] = colorPalette[colorIndex % colorPalette.length];
                 colorIndex++;
             }
             return tenantColors[tenant];
+        }
+
+        function createColorBox(color) {
+            return '<span class="color-box" style="background-color: ' + color + ';"></span>';
         }
 
         function onEachFeature(feature, layer) {
@@ -184,8 +183,6 @@
                 .catch(error => console.error('Error loading GeoJSON data:', error));
         }
 
-        var layersControl;
-
         function updateLayersControl() {
             if (layersControl) {
                 map.removeControl(layersControl);
@@ -199,14 +196,21 @@
 
         function addTenantLayers() {
             var tenantLayers = {};
+
             Object.values(overlays).forEach(layerGroup => {
                 layerGroup.eachLayer(layer => {
                     var tenant = layer.feature.properties["Орендар"];
                     if (tenant) {
                         if (!tenantLayers[tenant]) {
                             tenantLayers[tenant] = L.layerGroup();
+                            tenantAreas[tenant] = 0;
                         }
                         tenantLayers[tenant].addLayer(layer);
+                        
+                        var area = parseFloat(layer.feature.properties["Площа розрахована"]);
+                        if (!isNaN(area)) {
+                            tenantAreas[tenant] += area;
+                        }
                     }
                 });
             });
@@ -226,12 +230,15 @@
                 tenantLayer.addTo(map);
                 overlays[tenantInfo.tenant] = tenantLayer;
             });
+            
+            // Add 'Вільні від оренди' layer last
+            addFreeLayer();
         }
 
         function addFreeLayer() {
-            var freeLayerGroup = L.layerGroup();
-            freeLayerGroup.addLayer(freeLayer);
             if (freeArea > 0) {
+                var freeLayerGroup = L.layerGroup();
+                freeLayerGroup.addLayer(freeLayer);
                 overlays['Вільні від оренди'] = freeLayerGroup;
             }
         }
@@ -259,21 +266,31 @@
         });
 
         document.getElementById('searchButton').addEventListener('click', function () {
-            var searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            if (overlays) {
-                Object.values(overlays).forEach(layerGroup => {
-                    layerGroup.eachLayer(layer => {
-                        var кадастровийНомер = layer.feature.properties['Кадастровий номер'] ? layer.feature.properties['Кадастровий номер'].toLowerCase() : '';
-                        var власник = layer.feature.properties['Власник'] ? layer.feature.properties['Власник'].toLowerCase() : '';
-                        
-                        var isMatch = кадастровийНомер.includes(searchTerm) || власник.includes(searchTerm);
-                        layer.setStyle({ color: isMatch ? 'red' : getColor(layer.feature.properties["Орендар"]) });
-                        
-                        if (isMatch) {
+            var searchValue = document.getElementById('searchInput').value.toLowerCase();
+            var found = false;
+
+            Object.values(overlays).forEach(layerGroup => {
+                layerGroup.eachLayer(layer => {
+                    var properties = layer.feature.properties;
+                    if (properties) {
+                        var cadastralNumber = properties["Кадастровий номер"];
+                        var owner = properties["Власник"];
+
+                        if (cadastralNumber && cadastralNumber.toLowerCase().includes(searchValue)) {
                             map.fitBounds(layer.getBounds());
+                            layer.openPopup();
+                            found = true;
+                        } else if (owner && owner.toLowerCase().includes(searchValue)) {
+                            map.fitBounds(layer.getBounds());
+                            layer.openPopup();
+                            found = true;
                         }
-                    });
+                    }
                 });
+            });
+
+            if (!found) {
+                alert('Нічого не знайдено');
             }
         });
 
@@ -281,28 +298,18 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function (position) {
                     var lat = position.coords.latitude;
-                    var lng = position.coords.longitude;
-                    map.setView([lat, lng], 13);
-                    L.marker([lat, lng]).addTo(map)
-                        .bindPopup('Ваша геолокація')
-                        .openPopup();
-                }, function (error) {
-                    console.error('Geolocation error:', error);
+                    var lon = position.coords.longitude;
+                    map.setView([lat, lon], 13);
+                }, function () {
+                    alert('Не вдалося отримати ваше місцезнаходження.');
                 });
             } else {
-                alert('Geolocation не підтримується вашим браузером.');
+                alert('Ваш браузер не підтримує геолокацію.');
             }
         });
 
+        // Load file list on page load
         loadFileList();
-    </script>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CMBXL0TQLR"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-CMBXL0TQLR');
     </script>
 </body>
 </html>
