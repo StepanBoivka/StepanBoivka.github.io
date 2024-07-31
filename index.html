@@ -100,6 +100,7 @@
         }
 
         var tenantColors = {};
+        var tenantAreas = {};
 
         function getColor(tenant) {
             if (tenant === null || tenant === "" || tenant === undefined) {
@@ -121,6 +122,15 @@
                 }
                 popupContent += '</table>';
                 layer.bindPopup(popupContent);
+
+                var tenant = feature.properties["Орендар"];
+                var area = parseFloat(feature.properties["Площа розрахована"]);
+                if (!isNaN(area)) {
+                    if (!tenantAreas[tenant]) {
+                        tenantAreas[tenant] = 0;
+                    }
+                    tenantAreas[tenant] += area;
+                }
             }
         }
 
@@ -182,7 +192,8 @@
 
             Object.keys(tenantLayers).forEach(tenant => {
                 overlays[tenant] = tenantLayers[tenant];
-                layersControl.addOverlay(tenantLayers[tenant], '<span style="color:' + getColor(tenant) + '">' + tenant + '</span>');
+                var areaSum = tenantAreas[tenant] ? tenantAreas[tenant].toFixed(2) : 0;
+                layersControl.addOverlay(tenantLayers[tenant], '<span style="color:' + getColor(tenant) + '">' + tenant + ' (' + areaSum + ' га)</span>');
             });
         }
 
@@ -243,12 +254,12 @@
         loadFileList();
     </script>
     <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-CMBXL0TQLR"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-CMBXL0TQLR');
-</script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CMBXL0TQLR"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-CMBXL0TQLR');
+    </script>
 </body>
 </html>
