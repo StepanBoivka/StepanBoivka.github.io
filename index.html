@@ -161,8 +161,29 @@
                 map.removeControl(layersControl);
             }
             layersControl = L.control.layers(baseMaps, overlays, {
-                collapsed: true
+                collapsed: false
             }).addTo(map);
+            addTenantLayers();
+        }
+
+        function addTenantLayers() {
+            var tenantLayers = {};
+            Object.values(overlays).forEach(layerGroup => {
+                layerGroup.eachLayer(layer => {
+                    var tenant = layer.feature.properties["Орендар"];
+                    if (tenant) {
+                        if (!tenantLayers[tenant]) {
+                            tenantLayers[tenant] = L.layerGroup();
+                        }
+                        tenantLayers[tenant].addLayer(layer);
+                    }
+                });
+            });
+
+            Object.keys(tenantLayers).forEach(tenant => {
+                overlays[tenant] = tenantLayers[tenant];
+                layersControl.addOverlay(tenantLayers[tenant], '<span style="color:' + getColor(tenant) + '">' + tenant + '</span>');
+            });
         }
 
         function loadFileList() {
