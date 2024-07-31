@@ -104,13 +104,13 @@
         };
 
         var overlays = {};
+        var tenantColors = {};
+        var tenantAreas = {};
+        var freeLayer = L.layerGroup();
 
         function getRandomColor() {
             return '#' + Math.floor(Math.random() * 16777215).toString(16);
         }
-
-        var tenantColors = {};
-        var tenantAreas = {};
 
         function getColor(tenant) {
             if (tenant === null || tenant === "" || tenant === undefined) {
@@ -136,10 +136,14 @@
                 var tenant = feature.properties["Орендар"];
                 var area = parseFloat(feature.properties["Площа розрахована"]);
                 if (!isNaN(area)) {
-                    if (!tenantAreas[tenant]) {
-                        tenantAreas[tenant] = 0;
+                    if (tenant === null || tenant === "" || tenant === undefined) {
+                        freeLayer.addLayer(layer);
+                    } else {
+                        if (!tenantAreas[tenant]) {
+                            tenantAreas[tenant] = 0;
+                        }
+                        tenantAreas[tenant] += area;
                     }
-                    tenantAreas[tenant] += area;
                 }
             }
         }
@@ -184,6 +188,7 @@
                 collapsed: false
             }).addTo(map);
             addTenantLayers();
+            addFreeLayer();
         }
 
         function addTenantLayers() {
@@ -215,6 +220,14 @@
                 var colorBox = '<span class="color-box" style="background-color:' + getColor(item.tenant) + '"></span>';
                 layersControl.addOverlay(item.layer, colorBox + '<span class="layer-name">' + item.tenant + ' (' + item.area + ' га)</span>');
             });
+        }
+
+        function addFreeLayer() {
+            if (freeLayer.getLayers().length > 0) {
+                overlays["вільні від оренди"] = freeLayer;
+                var colorBox = '<span class="color-box" style="background-color:#ffffff"></span>';
+                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди</span>');
+            }
         }
 
         function loadFileList() {
