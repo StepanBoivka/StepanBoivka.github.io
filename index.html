@@ -107,6 +107,7 @@
         var tenantColors = {};
         var tenantAreas = {};
         var freeLayer = L.layerGroup();
+        var freeArea = 0;
 
         function getRandomColor() {
             return '#' + Math.floor(Math.random() * 16777215).toString(16);
@@ -138,6 +139,7 @@
                 if (!isNaN(area)) {
                     if (tenant === null || tenant === "" || tenant === undefined) {
                         freeLayer.addLayer(layer);
+                        freeArea += area;
                     } else {
                         if (!tenantAreas[tenant]) {
                             tenantAreas[tenant] = 0;
@@ -226,7 +228,7 @@
             if (freeLayer.getLayers().length > 0) {
                 overlays["вільні від оренди"] = freeLayer;
                 var colorBox = '<span class="color-box" style="background-color:#ffffff"></span>';
-                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди</span>');
+                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди (' + freeArea.toFixed(2) + ' га)</span>');
             }
         }
 
