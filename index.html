@@ -190,10 +190,19 @@
                 });
             });
 
-            Object.keys(tenantLayers).forEach(tenant => {
-                overlays[tenant] = tenantLayers[tenant];
-                var areaSum = tenantAreas[tenant] ? tenantAreas[tenant].toFixed(2) : 0;
-                layersControl.addOverlay(tenantLayers[tenant], '<span style="color:' + getColor(tenant) + '">' + tenant + ' (' + areaSum + ' га)</span>');
+            var tenantList = Object.keys(tenantLayers).map(tenant => {
+                return {
+                    tenant: tenant,
+                    layer: tenantLayers[tenant],
+                    area: tenantAreas[tenant] ? tenantAreas[tenant].toFixed(2) : 0
+                };
+            });
+
+            tenantList.sort((a, b) => b.area - a.area);
+
+            tenantList.forEach(item => {
+                overlays[item.tenant] = item.layer;
+                layersControl.addOverlay(item.layer, '<span style="color:' + getColor(item.tenant) + '">' + item.tenant + ' (' + item.area + ' га)</span>');
             });
         }
 
