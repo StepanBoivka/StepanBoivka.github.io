@@ -23,21 +23,45 @@
             width: 200px;
         }
         #searchContainer {
-            display: flex;
-            flex-direction: column;
+            position: relative;
         }
-        #searchInput, #fileSelect, #searchButton {
+        #searchInput, #fileSelect {
             padding: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
-            margin-bottom: 5px;
             font-size: 12px;
+            transition: width 0.3s;
+        }
+        #searchInput {
+            width: 150px;
+        }
+        #fileSelect {
+            width: 150px;
+            margin-top: 5px;
         }
         #searchButton {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 50px;
+            border: none;
             background: #007bff;
             color: white;
-            border: 1px solid #007bff;
             cursor: pointer;
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+            font-size: 12px;
+        }
+        #searchContainer.expanded #searchInput,
+        #searchContainer.expanded #fileSelect {
+            width: 250px;
+        }
+        #searchContainer.expanded #searchButton {
+            width: 100px;
+        }
+        #searchButton:hover {
+            background: #0056b3;
         }
         #geolocationButton {
             position: absolute;
@@ -258,11 +282,20 @@
                 .catch(error => console.error('Error loading file list:', error));
         }
 
-        document.getElementById('fileSelect').addEventListener('change', function () {
-            var selectedFile = this.value;
-            if (selectedFile !== 'Виберіть файл') {
-                addGeoJsonLayer('data/' + selectedFile, selectedFile);
-            }
+        document.getElementById('fileSelect').addEventListener('focus', function () {
+            document.getElementById('searchContainer').classList.add('expanded');
+        });
+
+        document.getElementById('searchInput').addEventListener('focus', function () {
+            document.getElementById('searchContainer').classList.add('expanded');
+        });
+
+        document.getElementById('searchInput').addEventListener('blur', function () {
+            document.getElementById('searchContainer').classList.remove('expanded');
+        });
+
+        document.getElementById('fileSelect').addEventListener('blur', function () {
+            document.getElementById('searchContainer').classList.remove('expanded');
         });
 
         document.getElementById('searchButton').addEventListener('click', function () {
