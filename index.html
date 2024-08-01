@@ -163,7 +163,18 @@
             };
         }
 
+        function clearOverlays() {
+            for (var layerName in overlays) {
+                if (overlays.hasOwnProperty(layerName)) {
+                    map.removeLayer(overlays[layerName]);
+                }
+            }
+            overlays = {}; // Очистити об'єкт з шарами
+        }
+
         function addGeoJsonLayer(url, layerName) {
+            clearOverlays(); // Очистити старі полігони
+
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
@@ -171,10 +182,6 @@
                         style: styleFeature,
                         onEachFeature: onEachFeature
                     });
-
-                    if (overlays[layerName]) {
-                        map.removeLayer(overlays[layerName]);
-                    }
 
                     overlays[layerName] = geoJsonLayer;
                     geoJsonLayer.addTo(map);
