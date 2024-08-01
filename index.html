@@ -191,7 +191,7 @@
                 map.removeControl(layersControl);
             }
             layersControl = L.control.layers(baseMaps, overlays, {
-                collapsed: false
+                collapsed: true // Меню згорнуте за замовчуванням
             }).addTo(map);
             addTenantLayers();
             addFreeLayer();
