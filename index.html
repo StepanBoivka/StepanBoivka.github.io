@@ -57,6 +57,9 @@
             color: black;
             font-size: 12px;
         }
+        .leaflet-control-search {
+            margin-top: 55px; /* Змістити поле пошуку вниз */
+        }
     </style>
     <title>Карта земельних ділянок</title>
 </head>
@@ -181,6 +184,7 @@
         }
 
         var layersControl;
+        var searchControl;
 
         function updateLayersControl() {
             if (layersControl) {
@@ -237,6 +241,7 @@
                 .then(response => response.json())
                 .then(data => {
                     var select = document.getElementById('fileSelect');
+                    select.innerHTML = '<option>Виберіть файл</option>';
                     data.files.forEach(file => {
                         var option = document.createElement('option');
                         option.value = file;
@@ -270,7 +275,10 @@
         });
 
         function addSearchControl(layer) {
-            var searchControl = new L.Control.Search({
+            if (searchControl) {
+                map.removeControl(searchControl);
+            }
+            searchControl = new L.Control.Search({
                 layer: layer,
                 propertyName: 'Кадастровий номер',
                 zoom: 15,
