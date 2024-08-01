@@ -56,34 +56,15 @@
             background: #218838;
             border-color: #1e7e34;
         }
-        #side-panel {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 250px;
-            height: 90%;
-            background: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            padding: 10px;
-            overflow-y: auto;
-            z-index: 1000;
+        .color-box {
+            width: 12px;
+            height: 12px;
+            display: inline-block;
+            margin-right: 5px;
         }
-        #side-panel h2 {
-            margin-top: 0;
-        }
-        #attributesTable {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        #attributesTable th, #attributesTable td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-        #attributesTable tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        #attributesTable tr:hover {
-            background-color: #f1f1f1;
+        .layer-name {
+            color: black;
+            font-size: 12px;
         }
     </style>
     <title>Карта земельних ділянок</title>
@@ -95,26 +76,11 @@
             <input type="text" id="searchInput" placeholder="Кадастровий номер">
             <button id="searchButton">Пошук</button>
             <select id="fileSelect">
-                <option>Сільська рада</option>
+                <option>Виберіть файл</option>
             </select>
         </div>
     </div>
     <div id="geolocationButton">📍</div>
-    <div id="side-panel">
-        <h2>Атрибути</h2>
-        <table id="attributesTable">
-            <thead>
-                <tr>
-                    <th>Кадастровий номер</th>
-                    <th>Власник</th>
-                    <th>Площа ДЗК</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Дані будуть додані динамічно -->
-            </tbody>
-        </table>
-    </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
     <script>
@@ -162,18 +128,28 @@
         }
 
         function onEachFeature(feature, layer) {
-            addAttributesToPanel(feature, layer);
-            var tenant = feature.properties["Орендар"];
-            var area = parseFloat(feature.properties["Площа розрахована"]);
-            if (!isNaN(area)) {
-                if (tenant === null || tenant === "" || tenant === undefined) {
-                    freeLayer.addLayer(layer);
-                    freeArea += area;
-                } else {
-                    if (!tenantAreas[tenant]) {
-                        tenantAreas[tenant] = 0;
+            if (feature.properties) {
+                var popupContent = '<table>';
+                for (var key in feature.properties) {
+                    if (feature.properties.hasOwnProperty(key)) {
+                        popupContent += '<tr><td><strong>' + key + ':</strong></td><td>' + feature.properties[key] + '</td></tr>';
                     }
-                    tenantAreas[tenant] += area;
+                }
+                popupContent += '</table>';
+                layer.bindPopup(popupContent);
+
+                var tenant = feature.properties["Орендар"];
+                var area = parseFloat(feature.properties["Площа розрахована"]);
+                if (!isNaN(area)) {
+                    if (tenant === null || tenant === "" || tenant === undefined) {
+                        freeLayer.addLayer(layer);
+                        freeArea += area;
+                    } else {
+                        if (!tenantAreas[tenant]) {
+                            tenantAreas[tenant] = 0;
+                        }
+                        tenantAreas[tenant] += area;
+                    }
                 }
             }
         }
@@ -255,76 +231,68 @@
         function addFreeLayer() {
             if (freeLayer.getLayers().length > 0) {
                 overlays["вільні від оренди"] = freeLayer;
-                layersControl.addOverlay(freeLayer, 'Вільні від оренди (' + freeArea.toFixed(2) + ' га)');
+                var colorBox = '<span class="color-box" style="background-color:#ffffff"></span>';
+                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди (' + freeArea.toFixed(2) + ' га)</span>');
             }
         }
 
-        document.getElementById('searchButton').addEventListener('click', function() {
-            var searchValue = document.getElementById('searchInput').value;
-            if (searchValue) {
-                Object.values(overlays).forEach(layerGroup => {
-                    layerGroup.eachLayer(layer => {
-                        if (layer.feature.properties["Кадастровий номер"] === searchValue) {
-                            map.fitBounds(layer.getBounds());
-                        }
+        function loadFileList() {
+            fetch('data/file_list.json')
+                .then(response => response.json())
+                .then(data => {
+                    var select = document.getElementById('fileSelect');
+                    data.files.forEach(file => {
+                        var option = document.createElement('option');
+                        option.value = file;
+                        option.textContent = file;
+                        select.appendChild(option);
                     });
-                });
-            }
-        });
-
-        document.getElementById('geolocationButton').addEventListener('click', function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    var lat = position.coords.latitude;
-                    var lng = position.coords.longitude;
-                    map.setView([lat, lng], 13);
-                });
-            } else {
-                alert("Геолокація не підтримується вашим браузером.");
-            }
-        });
-
-        function addAttributesToPanel(feature, layer) {
-            var row = document.createElement('tr');
-            row.dataset.id = feature.properties['Кадастровий номер'];
-            row.innerHTML = `
-                <td>${feature.properties['Кадастровий номер'] || ''}</td>
-                <td>${feature.properties['Власник'] || ''}</td>
-                <td>${feature.properties['Площа ДЗК'] || ''}</td>
-            `;
-            row.addEventListener('click', function() {
-                var id = this.dataset.id;
-                zoomToFeature(id);
-            });
-            document.getElementById('attributesTable').getElementsByTagName('tbody')[0].appendChild(row);
+                })
+                .catch(error => console.error('Error loading file list:', error));
         }
 
-        function zoomToFeature(id) {
-            Object.values(overlays).forEach(layerGroup => {
+        document.getElementById('fileSelect').addEventListener('change', function () {
+            var selectedFile = this.value;
+            if (selectedFile !== 'Виберіть файл') {
+                addGeoJsonLayer('data/' + selectedFile, selectedFile);
+            }
+        });
+
+        document.getElementById('searchButton').addEventListener('click', function () {
+            var input = document.getElementById('searchInput').value;
+            var found = false;
+            Object.keys(overlays).forEach(layerName => {
+                var layerGroup = overlays[layerName];
                 layerGroup.eachLayer(layer => {
-                    if (layer.feature.properties['Кадастровий номер'] === id) {
+                    if (layer.feature.properties["Кадастровий номер"] === input) {
                         map.fitBounds(layer.getBounds());
+                        layer.openPopup();
+                        found = true;
                     }
                 });
             });
-        }
-
-        document.getElementById('fileSelect').addEventListener('change', function() {
-            var selectedLayer = this.value;
-            var url = '';
-            switch (selectedLayer) {
-                case 'Сільська рада':
-                    url = 'data/village-council.geojson'; // Замініть на актуальний URL
-                    break;
-                // Додайте інші випадки за потреби
-            }
-            if (url) {
-                addGeoJsonLayer(url, selectedLayer);
+            if (!found) {
+                alert('Не знайдено');
             }
         });
 
-        // Завантаження базового шару
-        addGeoJsonLayer('data/village-council.geojson', 'Сільська рада'); // Замініть на актуальний URL
+        document.getElementById('geolocationButton').addEventListener('click', function () {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    var lat = position.coords.latitude;
+                    var lng = position.coords.longitude;
+                    var marker = L.marker([lat, lng]).addTo(map);
+                    map.setView([lat, lng], 15);
+                }, function () {
+                    alert('Не вдалося отримати вашу геолокацію.');
+                });
+            } else {
+                alert('Ваш браузер не підтримує геолокацію.');
+            }
+        });
+
+        loadFileList();
+        updateLayersControl();
     </script>
 </body>
 </html>
