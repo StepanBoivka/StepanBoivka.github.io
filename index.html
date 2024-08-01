@@ -138,7 +138,6 @@
                 layer.bindPopup(popupContent);
 
                 var tenant = feature.properties["Орендар"];
-                var owner = feature.properties["Власник"]; // Додаємо власника
                 var area = parseFloat(feature.properties["Площа розрахована"]);
                 if (!isNaN(area)) {
                     if (tenant === null || tenant === "" || tenant === undefined) {
@@ -239,11 +238,49 @@
 
         function addFreeLayer() {
             if (freeLayer.getLayers().length > 0) {
-                overlays["вільні від орендаря"] = freeLayer;
+                overlays["вільні від оренди"] = freeLayer;
                 var colorBox = '<span class="color-box" style="background-color:#ffffff"></span>';
-                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">Вільні ділянки (' + freeArea.toFixed(2) + ' га)</span>');
+                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди (' + freeArea.toFixed(2) + ' га)</span>');
             }
         }
+
+        function loadFileList() {
+            fetch('data/file_list.json')
+                .then(response => response.json())
+                .then(data => {
+                    var select = document.getElementById('fileSelect');
+                    select.innerHTML = '<option>Виберіть файл</option>';
+                    data.files.forEach(file => {
+                        var option = document.createElement('option');
+                        option.value = file;
+                        option.textContent = file;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error loading file list:', error));
+        }
+
+        document.getElementById('fileSelect').addEventListener('change', function () {
+            var selectedFile = this.value;
+            if (selectedFile !== 'Виберіть файл') {
+                addGeoJsonLayer('data/' + selectedFile, selectedFile);
+            }
+        });
+
+        document.getElementById('geolocationButton').addEventListener('click', function () {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    var lat = position.coords.latitude;
+                    var lng = position.coords.longitude;
+                    var marker = L.marker([lat, lng]).addTo(map);
+                    map.setView([lat, lng], 15);
+                }, function () {
+                    alert('Не вдалося отримати вашу геолокацію.');
+                });
+            } else {
+                alert('Ваш браузер не підтримує геолокацію.');
+            }
+        });
 
         function addSearchControl(layer) {
             if (searchControl) {
@@ -251,43 +288,16 @@
             }
             searchControl = new L.Control.Search({
                 layer: layer,
-                propertyName: ['Кадастровий номер', 'Власник'], // Додаємо обидва поля для пошуку
+                propertyName: 'Кадастровий номер',
                 zoom: 15,
                 initial: false,
-                textPlaceholder: 'пошук', // Заміна тексту підказки
-                moveToLocation: function (latlng, title, map) {
-                    L.DomUtil.get('map').scrollIntoView(); // Прокрутка до карти
-                    L.marker(latlng).addTo(map).bindPopup(title).openPopup();
-                    map.setView(latlng, 15);
-                }
+                textPlaceholder: 'пошук' // Заміна тексту підказки
             });
             map.addControl(searchControl);
         }
 
-        function handleFileSelect(event) {
-            var file = event.target.files[0];
-            if (file) {
-                var url = URL.createObjectURL(file);
-                addGeoJsonLayer(url, file.name);
-            }
-        }
-
-        document.getElementById('fileSelect').addEventListener('change', handleFileSelect);
-
-        document.getElementById('geolocationButton').addEventListener('click', function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    var lat = position.coords.latitude;
-                    var lng = position.coords.longitude;
-                    map.setView([lat, lng], 15);
-                    L.marker([lat, lng]).addTo(map).bindPopup('Ви тут');
-                });
-            } else {
-                alert('Ваш браузер не підтримує геолокацію.');
-            }
-        });
-
-        // Інші налаштування та завантаження карт
+        loadFileList();
+        updateLayersControl();
     </script>
 </body>
 </html>
