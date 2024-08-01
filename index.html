@@ -6,6 +6,7 @@
     <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.0/dist/leaflet-search.min.css" />
     <style>
         html, body, #map {
             width: 100%;
@@ -22,22 +23,12 @@
             flex-direction: column;
             width: 200px;
         }
-        #searchContainer {
-            display: flex;
-            flex-direction: column;
-        }
-        #searchInput, #fileSelect, #searchButton {
+        #fileSelect {
             padding: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
             margin-bottom: 5px;
             font-size: 12px;
-        }
-        #searchButton {
-            background: #007bff;
-            color: white;
-            border: 1px solid #007bff;
-            cursor: pointer;
         }
         #geolocationButton {
             position: absolute;
@@ -72,17 +63,14 @@
 <body>
     <div id="map"></div>
     <div id="controls">
-        <div id="searchContainer">
-            <input type="text" id="searchInput" placeholder="Кадастровий номер">
-            <button id="searchButton">Пошук</button>
-            <select id="fileSelect">
-                <option>Виберіть файл</option>
-            </select>
-        </div>
+        <select id="fileSelect">
+            <option>Виберіть файл</option>
+        </select>
     </div>
     <div id="geolocationButton">📍</div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
+    <script src="https://unpkg.com/leaflet-search@3.0.0/dist/leaflet-search.min.js"></script>
     <script>
         var map = L.map('map', {
             zoomControl: false
@@ -187,6 +175,7 @@
                     geoJsonLayer.addTo(map);
                     map.fitBounds(geoJsonLayer.getBounds());
                     updateLayersControl();
+                    addSearchControl(geoJsonLayer);
                 })
                 .catch(error => console.error('Error loading GeoJSON data:', error));
         }
@@ -265,24 +254,6 @@
             }
         });
 
-        document.getElementById('searchButton').addEventListener('click', function () {
-            var input = document.getElementById('searchInput').value;
-            var found = false;
-            Object.keys(overlays).forEach(layerName => {
-                var layerGroup = overlays[layerName];
-                layerGroup.eachLayer(layer => {
-                    if (layer.feature.properties["Кадастровий номер"] === input) {
-                        map.fitBounds(layer.getBounds());
-                        layer.openPopup();
-                        found = true;
-                    }
-                });
-            });
-            if (!found) {
-                alert('Не знайдено');
-            }
-        });
-
         document.getElementById('geolocationButton').addEventListener('click', function () {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function (position) {
@@ -297,6 +268,16 @@
                 alert('Ваш браузер не підтримує геолокацію.');
             }
         });
+
+        function addSearchControl(layer) {
+            var searchControl = new L.Control.Search({
+                layer: layer,
+                propertyName: 'Кадастровий номер',
+                zoom: 15,
+                initial: false
+            });
+            map.addControl(searchControl);
+        }
 
         loadFileList();
         updateLayersControl();
