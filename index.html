@@ -58,7 +58,7 @@
             font-size: 12px;
         }
         .leaflet-control-search {
-            top: 50px !important; /* Змістити поле пошуку вниз */
+            top: 60px !important; /* Змістити поле пошуку вниз */
         }
     </style>
     <title>Карта земельних ділянок</title>
@@ -282,7 +282,8 @@
                 layer: layer,
                 propertyName: 'Кадастровий номер',
                 zoom: 15,
-                initial: false
+                initial: false,
+                textPlaceholder: 'пошук' // Заміна тексту підказки
             });
             map.addControl(searchControl);
         }
