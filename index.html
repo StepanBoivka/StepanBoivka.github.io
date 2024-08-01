@@ -6,7 +6,6 @@
     <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-locatecontrol/dist/L.Control.Locate.min.css" />
     <style>
         html, body, #map {
             width: 100%;
@@ -40,6 +39,23 @@
             border: 1px solid #007bff;
             cursor: pointer;
         }
+        #geolocationButton {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            border: 1px solid #28a745;
+            border-radius: 50%;
+            padding: 8px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 16px;
+        }
+        #geolocationButton:hover {
+            background: #218838;
+            border-color: #1e7e34;
+        }
         .color-box {
             width: 12px;
             height: 12px;
@@ -64,9 +80,9 @@
             </select>
         </div>
     </div>
+    <div id="geolocationButton">📍</div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
-    <script src="https://unpkg.com/leaflet-locatecontrol/dist/L.Control.Locate.min.js"></script>
     <script>
         var map = L.map('map', {
             zoomControl: false
@@ -175,7 +191,7 @@
                 map.removeControl(layersControl);
             }
             layersControl = L.control.layers(baseMaps, overlays, {
-                collapsed: true // Меню згорнуте за замовчуванням
+                collapsed: false
             }).addTo(map);
             addTenantLayers();
             addFreeLayer();
@@ -216,7 +232,7 @@
             if (freeLayer.getLayers().length > 0) {
                 overlays["вільні від оренди"] = freeLayer;
                 var colorBox = '<span class="color-box" style="background-color:#ffffff"></span>';
-                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди (' + freeArea.toFixed(2) + ' га)</span>');
+                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди</span>');
             }
         }
 
@@ -257,15 +273,22 @@
             }
         });
 
-        L.control.locate({
-            position: 'topleft',
-            strings: {
-                title: "Показати моє місцезнаходження"
-            },
-            locateOptions: {
-                maxZoom: 13
+        document.getElementById('geolocationButton').addEventListener('click', function () {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    var lat = position.coords.latitude;
+                    var lng = position.coords.longitude;
+                    map.setView([lat, lng], 13);
+                    L.marker([lat, lng]).addTo(map)
+                        .bindPopup('Ваша геолокація')
+                        .openPopup();
+                }, function (error) {
+                    console.error('Geolocation error:', error);
+                });
+            } else {
+                alert('Geolocation не підтримується вашим браузером.');
             }
-        }).addTo(map);
+        });
 
         loadFileList();
     </script>
