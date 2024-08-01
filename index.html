@@ -62,6 +62,14 @@
         }
     </style>
     <title>Карта земельних ділянок</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CMBXL0TQLR"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-CMBXL0TQLR');
+    </script>
 </head>
 <body>
     <div id="map"></div>
@@ -232,12 +240,12 @@
             if (freeLayer.getLayers().length > 0) {
                 overlays["вільні від оренди"] = freeLayer;
                 var colorBox = '<span class="color-box" style="background-color:#ffffff"></span>';
-                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди (' + freeArea.toFixed(2) + ' га)</span>');
+                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">Вільні від оренди (' + freeArea.toFixed(2) + ' га)</span>');
             }
         }
 
         function loadFileList() {
-            fetch('data/file_list.json')
+            fetch('file-list.json')
                 .then(response => response.json())
                 .then(data => {
                     var select = document.getElementById('fileSelect');
