@@ -239,56 +239,65 @@
         function addFreeLayer() {
             if (freeLayer.getLayers().length > 0) {
                 overlays["вільні від оренди"] = freeLayer;
-                layersControl.addOverlay(freeLayer, '<span class="layer-name">Вільні від оренди (' + freeArea.toFixed(2) + ' га)</span>');
+                var colorBox = '<span class="color-box" style="background-color:#ffffff"></span>';
+                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди (' + freeArea.toFixed(2) + ' га)</span>');
             }
         }
 
-        function addSearchControl(geoJsonLayer) {
-            if (searchControl) {
-                map.removeControl(searchControl);
-            }
-            searchControl = new L.Control.Search({
-                layer: geoJsonLayer,
-                propertyName: 'Кадастровий номер',
-                circleLocation: false,
-                initial: false,
-                zoom: 16
-            });
-
-            map.addControl(searchControl);
+        function loadFileList() {
+            fetch('data/file_list.json')
+                .then(response => response.json())
+                .then(data => {
+                    var select = document.getElementById('fileSelect');
+                    select.innerHTML = '<option>Виберіть раду</option>';
+                    data.files.forEach(file => {
+                        var option = document.createElement('option');
+                        option.value = file;
+                        option.textContent = file;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error loading file list:', error));
         }
 
         document.getElementById('fileSelect').addEventListener('change', function () {
             var selectedFile = this.value;
             if (selectedFile !== 'Виберіть раду') {
                 addGeoJsonLayer('data/' + selectedFile, selectedFile);
-                updateURL(selectedFile); // Оновити URL після вибору файлу
             }
         });
 
-        // Завантаження файлу з URL при завантаженні сторінки
-        document.addEventListener('DOMContentLoaded', function () {
-            const fileName = getFileNameFromURL();
-            if (fileName) {
-                addGeoJsonLayer('data/' + fileName, fileName);
-                const select = document.getElementById('fileSelect');
-                select.value = fileName;
+        document.getElementById('geolocationButton').addEventListener('click', function () {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    var lat = position.coords.latitude;
+                    var lng = position.coords.longitude;
+                    var marker = L.marker([lat, lng]).addTo(map);
+                    map.setView([lat, lng], 15);
+                }, function () {
+                    alert('Не вдалося отримати вашу геолокацію.');
+                });
+            } else {
+                alert('Ваш браузер не підтримує геолокацію.');
             }
         });
 
-        // Функція для оновлення URL з назвою файлу
-        function updateURL(fileName) {
-            const url = new URL(window.location);
-            url.searchParams.set('file', fileName);
-            window.history.pushState({}, '', url);
+        function addSearchControl(layer) {
+            if (searchControl) {
+                map.removeControl(searchControl);
+            }
+            searchControl = new L.Control.Search({
+                layer: layer,
+                propertyName: 'Кадастровий номер',
+                zoom: 15,
+                initial: false,
+                textPlaceholder: 'пошук' // Заміна тексту підказки
+            });
+            map.addControl(searchControl);
         }
 
-        // Функція для отримання назви файлу з URL
-        function getFileNameFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('file');
-        }
-
+        loadFileList();
+        updateLayersControl();
     </script>
 </body>
 </html>
