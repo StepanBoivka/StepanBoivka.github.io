@@ -62,6 +62,14 @@
         }
     </style>
     <title>Карта земельних ділянок</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CMBXL0TQLR"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-CMBXL0TQLR');
+    </script>
 </head>
 <body>
     <div id="map"></div>
@@ -239,24 +247,38 @@
         function loadFileList() {
             fetch('data/file_list.json')
                 .then(response => response.json())
-                .then(files => {
-                    var fileSelect = document.getElementById('fileSelect');
-                    fileSelect.innerHTML = '<option>Виберіть файл</option>'; // Очистити існуючі опції
-                    files.forEach(file => {
+                .then(data => {
+                    var select = document.getElementById('fileSelect');
+                    select.innerHTML = '<option>Виберіть раду</option>';
+                    data.files.forEach(file => {
                         var option = document.createElement('option');
-                        option.value = file.url;
-                        option.textContent = file.name;
-                        fileSelect.appendChild(option);
+                        option.value = file;
+                        option.textContent = file;
+                        select.appendChild(option);
                     });
                 })
                 .catch(error => console.error('Error loading file list:', error));
         }
 
         document.getElementById('fileSelect').addEventListener('change', function () {
-            var selectedFileUrl = this.value;
-            if (selectedFileUrl !== 'Виберіть файл') {
-                var selectedFileName = this.options[this.selectedIndex].text;
-                addGeoJsonLayer(selectedFileUrl, selectedFileName);
+            var selectedFile = this.value;
+            if (selectedFile !== 'Виберіть раду') {
+                addGeoJsonLayer('data/' + selectedFile, selectedFile);
+            }
+        });
+
+        document.getElementById('geolocationButton').addEventListener('click', function () {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    var lat = position.coords.latitude;
+                    var lng = position.coords.longitude;
+                    var marker = L.marker([lat, lng]).addTo(map);
+                    map.setView([lat, lng], 15);
+                }, function () {
+                    alert('Не вдалося отримати вашу геолокацію.');
+                });
+            } else {
+                alert('Ваш браузер не підтримує геолокацію.');
             }
         });
 
@@ -267,22 +289,15 @@
             searchControl = new L.Control.Search({
                 layer: layer,
                 propertyName: 'Кадастровий номер',
-                circleLocation: false,
-                moveToLocation: function (latlng) {
-                    map.setView(latlng, 15);
-                }
-            });
-            searchControl.on('search:locationfound', function (e) {
-                e.layer.openPopup();
+                zoom: 15,
+                initial: false,
+                textPlaceholder: 'пошук' // Заміна тексту підказки
             });
             map.addControl(searchControl);
         }
 
-        document.getElementById('geolocationButton').addEventListener('click', function () {
-            map.locate({setView: true, maxZoom: 15});
-        });
-
         loadFileList();
+        updateLayersControl();
     </script>
 </body>
 </html>
