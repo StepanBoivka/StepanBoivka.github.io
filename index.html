@@ -23,12 +23,29 @@
             flex-direction: column;
             width: 200px;
         }
-        #fileSelect, #yearSelect {
+        #fileSelect {
             padding: 5px;
             border: 1px solid #ccc;
             border-radius: 5px;
             margin-bottom: 5px;
             font-size: 12px;
+        }
+        #geolocationButton {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            border: 1px solid #28a745;
+            border-radius: 50%;
+            padding: 8px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 16px;
+        }
+        #geolocationButton:hover {
+            background: #218838;
+            border-color: #1e7e34;
         }
         .color-box {
             width: 12px;
@@ -52,10 +69,8 @@
         <select id="fileSelect">
             <option>Виберіть файл</option>
         </select>
-        <select id="yearSelect">
-            <option value="">Виберіть рік</option>
-        </select>
     </div>
+    <div id="geolocationButton">📍</div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
     <script src="https://unpkg.com/leaflet-search@3.0.0/dist/leaflet-search.min.js"></script>
@@ -154,15 +169,6 @@
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    populateYearSelect(data); // Заповнення списку років
-                    var selectedYear = document.getElementById('yearSelect').value;
-                    if (selectedYear) {
-                        data.features = data.features.filter(function(feature) {
-                            var date = new Date(feature.properties["Дата НГО"]);
-                            return date.getFullYear().toString() === selectedYear;
-                        });
-                    }
-
                     var geoJsonLayer = L.geoJSON(data, {
                         style: styleFeature,
                         onEachFeature: onEachFeature
@@ -175,26 +181,6 @@
                     addSearchControl(geoJsonLayer);
                 })
                 .catch(error => console.error('Error loading GeoJSON data:', error));
-        }
-
-        function populateYearSelect(data) {
-            var years = new Set();
-            data.features.forEach(function(feature) {
-                var date = new Date(feature.properties["Дата НГО"]);
-                if (!isNaN(date.getFullYear())) {
-                    years.add(date.getFullYear().toString());
-                }
-            });
-
-            var yearSelect = document.getElementById('yearSelect');
-            yearSelect.innerHTML = '<option value="">Виберіть рік</option>'; // Додати початковий варіант
-
-            Array.from(years).sort().forEach(function(year) {
-                var option = document.createElement('option');
-                option.value = year;
-                option.textContent = year;
-                yearSelect.appendChild(option);
-            });
         }
 
         var layersControl;
@@ -236,69 +222,67 @@
             tenantList.sort((a, b) => b.area - a.area);
 
             tenantList.forEach(item => {
-                var tenantLabel = `<div class="color-box" style="background-color:${getColor(item.tenant)}"></div><span class="layer-name">${item.tenant} (${item.area} га)</span>`;
-                layersControl.addOverlay(item.layer, tenantLabel);
+                overlays[item.tenant] = item.layer;
+                var colorBox = '<span class="color-box" style="background-color:' + getColor(item.tenant) + '"></span>';
+                layersControl.addOverlay(item.layer, colorBox + '<span class="layer-name">' + item.tenant + ' (' + item.area + ' га)</span>');
             });
         }
 
         function addFreeLayer() {
-            var freeLabel = `<div class="color-box" style="background-color:#ffffff; border: 1px solid #ccc;"></div><span class="layer-name">Вільні ділянки (${freeArea.toFixed(2)} га)</span>`;
-            layersControl.addOverlay(freeLayer, freeLabel);
+            if (freeLayer.getLayers().length > 0) {
+                overlays["вільні від оренди"] = freeLayer;
+                var colorBox = '<span class="color-box" style="background-color:#ffffff"></span>';
+                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди (' + freeArea.toFixed(2) + ' га)</span>');
+            }
         }
 
-        function addSearchControl(geoJsonLayer) {
+        function loadFileList() {
+            fetch('data/file_list.json')
+                .then(response => response.json())
+                .then(files => {
+                    var fileSelect = document.getElementById('fileSelect');
+                    fileSelect.innerHTML = '<option>Виберіть файл</option>'; // Очистити існуючі опції
+                    files.forEach(file => {
+                        var option = document.createElement('option');
+                        option.value = file.url;
+                        option.textContent = file.name;
+                        fileSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error loading file list:', error));
+        }
+
+        document.getElementById('fileSelect').addEventListener('change', function () {
+            var selectedFileUrl = this.value;
+            if (selectedFileUrl !== 'Виберіть файл') {
+                var selectedFileName = this.options[this.selectedIndex].text;
+                addGeoJsonLayer(selectedFileUrl, selectedFileName);
+            }
+        });
+
+        function addSearchControl(layer) {
             if (searchControl) {
                 map.removeControl(searchControl);
             }
             searchControl = new L.Control.Search({
-                layer: geoJsonLayer,
+                layer: layer,
                 propertyName: 'Кадастровий номер',
                 circleLocation: false,
-                moveToLocation: function(latlng, title, map) {
-                    map.setView(latlng, 18); // Зумування до полігону
+                moveToLocation: function (latlng) {
+                    map.setView(latlng, 15);
                 }
             });
-
-            searchControl.on('search:locationfound', function(e) {
-                if (e.layer._popup) {
-                    e.layer.openPopup();
-                }
+            searchControl.on('search:locationfound', function (e) {
+                e.layer.openPopup();
             });
-
-            searchControl.addTo(map);
+            map.addControl(searchControl);
         }
 
-        document.getElementById('fileSelect').addEventListener('change', function() {
-            var fileName = this.value;
-            if (fileName !== "Виберіть файл") {
-                var filePath = "geojsons/" + fileName;
-                addGeoJsonLayer(filePath, fileName);
-            }
+        document.getElementById('geolocationButton').addEventListener('click', function () {
+            map.locate({setView: true, maxZoom: 15});
         });
 
-        document.getElementById('yearSelect').addEventListener('change', function() {
-            var fileName = document.getElementById('fileSelect').value;
-            if (fileName !== "Виберіть файл") {
-                var filePath = "geojsons/" + fileName;
-                addGeoJsonLayer(filePath, fileName);
-            }
-        });
-
-        fetch('geojsons/')
-            .then(response => response.text())
-            .then(data => {
-                var fileSelect = document.getElementById('fileSelect');
-                var files = data.split('\n');
-                files.forEach(function(file) {
-                    if (file.trim() !== "") {
-                        var option = document.createElement('option');
-                        option.value = file.trim();
-                        option.textContent = file.trim();
-                        fileSelect.appendChild(option);
-                    }
-                });
-            })
-            .catch(error => console.error('Error loading GeoJSON files:', error));
+        loadFileList();
     </script>
 </body>
 </html>
