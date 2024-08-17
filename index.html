@@ -76,7 +76,7 @@
             border-radius: 5px;
             padding: 10px;
             z-index: 1001;
-            display: none; /* Приховано за замовчуванням */
+            display: none;
         }
         #closeButton {
             position: absolute;
@@ -110,7 +110,7 @@
             font-size: 12px;
         }
         .leaflet-control-search {
-            top: 50px !important; /* Змістити поле пошуку вниз */
+            top: 50px !important;
         }
     </style>
     <title>Карта земельних ділянок</title>
@@ -127,7 +127,10 @@
     <div id="map"></div>
     <div id="controls">
         <select id="fileSelect">
-            <option>Виберіть файл</option>
+            <option value="">Виберіть файл</option>
+            <option value="file1">Файл 1</option>
+            <option value="file2">Файл 2</option>
+            <!-- Додайте тут ваші файли -->
         </select>
     </div>
     <div id="geolocationButton">📍</div>
@@ -241,12 +244,11 @@
         }
 
         function addGeoJsonLayer(url, layerName) {
-            clearOverlays(); // Очистити старі полігони
-
+            clearOverlays(); // Очистити шари перед додаванням нового
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    var geoJsonLayer = L.geoJSON(data, {
+                    var geoJsonLayer = L.geoJson(data, {
                         style: styleFeature,
                         onEachFeature: onEachFeature
                     });
