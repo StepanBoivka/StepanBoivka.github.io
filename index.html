@@ -162,17 +162,25 @@
             };
         }
 
-        function clearOverlays() {
+        function resetData() {
             for (var layerName in overlays) {
                 if (overlays.hasOwnProperty(layerName)) {
                     map.removeLayer(overlays[layerName]);
                 }
             }
-            overlays = {}; // Очистити об'єкт з шарами
+            freeLayer.clearLayers();
+            freeArea = 0;
+            tenantColors = {};
+            tenantAreas = {};
+            overlays = {};
+            if (layersControl) {
+                map.removeControl(layersControl);
+                layersControl = null;
+            }
         }
 
         function addGeoJsonLayer(url, layerName) {
-            clearOverlays(); // Очистити старі полігони
+            resetData(); // Очистити дані перед завантаженням нового файлу
 
             fetch(url)
                 .then(response => response.json())
@@ -238,49 +246,10 @@
 
         function addFreeLayer() {
             if (freeLayer.getLayers().length > 0) {
-                overlays["вільні від оренди"] = freeLayer;
-                var colorBox = '<span class="color-box" style="background-color:#ffffff"></span>';
-                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди (' + freeArea.toFixed(2) + ' га)</span>');
+                overlays["Вільні ділянки"] = freeLayer;
+                layersControl.addOverlay(freeLayer, '<span class="color-box" style="background-color:#ffffff"></span><span class="layer-name">Вільні ділянки (' + freeArea.toFixed(2) + ' га)</span>');
             }
         }
-
-        function loadFileList() {
-            fetch('data/file_list.json')
-                .then(response => response.json())
-                .then(data => {
-                    var select = document.getElementById('fileSelect');
-                    select.innerHTML = '<option>Виберіть раду</option>';
-                    data.files.forEach(file => {
-                        var option = document.createElement('option');
-                        option.value = file;
-                        option.textContent = file;
-                        select.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error loading file list:', error));
-        }
-
-        document.getElementById('fileSelect').addEventListener('change', function () {
-            var selectedFile = this.value;
-            if (selectedFile !== 'Виберіть раду') {
-                addGeoJsonLayer('data/' + selectedFile, selectedFile);
-            }
-        });
-
-        document.getElementById('geolocationButton').addEventListener('click', function () {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function (position) {
-                    var lat = position.coords.latitude;
-                    var lng = position.coords.longitude;
-                    var marker = L.marker([lat, lng]).addTo(map);
-                    map.setView([lat, lng], 15);
-                }, function () {
-                    alert('Не вдалося отримати вашу геолокацію.');
-                });
-            } else {
-                alert('Ваш браузер не підтримує геолокацію.');
-            }
-        });
 
         function addSearchControl(layer) {
             if (searchControl) {
@@ -289,15 +258,58 @@
             searchControl = new L.Control.Search({
                 layer: layer,
                 propertyName: 'Кадастровий номер',
-                zoom: 15,
-                initial: false,
-                textPlaceholder: 'пошук' // Заміна тексту підказки
+                circleLocation: false,
+                moveToLocation: function(latlng, title, map) {
+                    map.setView(latlng, 16);
+                }
             });
-            map.addControl(searchControl);
+            searchControl.addTo(map);
         }
 
-        loadFileList();
-        updateLayersControl();
+        // Додайте варіанти файлів до випадаючого списку
+        var files = [
+            { name: 'Файл 1', url: 'file1.geojson' },
+            { name: 'Файл 2', url: 'file2.geojson' }
+        ];
+
+        var fileSelect = document.getElementById('fileSelect');
+        files.forEach(file => {
+            var option = document.createElement('option');
+            option.value = file.url;
+            option.text = file.name;
+            fileSelect.appendChild(option);
+        });
+
+        fileSelect.addEventListener('change', function() {
+            var selectedFile = fileSelect.value;
+            if (selectedFile) {
+                addGeoJsonLayer(selectedFile, selectedFile);
+            }
+        });
+
+        // Додаємо обробник кліку для кнопки геолокації
+        document.getElementById('geolocationButton').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var lat = position.coords.latitude;
+                    var lng = position.coords.longitude;
+                    var accuracy = position.coords.accuracy;
+
+                    var circle = L.circle([lat, lng], {
+                        color: 'blue',
+                        fillColor: '#30f',
+                        fillOpacity: 0.2,
+                        radius: accuracy
+                    }).addTo(map);
+
+                    map.setView([lat, lng], 14);
+                }, function(error) {
+                    console.error("Помилка отримання геолокації: " + error.message);
+                });
+            } else {
+                alert("Геолокація не підтримується вашим браузером.");
+            }
+        });
     </script>
 </body>
 </html>
