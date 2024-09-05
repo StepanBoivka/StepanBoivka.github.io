@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.0/dist/leaflet-search.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
     <style>
         html, body, #map {
             width: 100%;
@@ -58,7 +60,10 @@
             font-size: 12px;
         }
         .leaflet-control-search {
-            top: 50px !important; /* Змістити поле пошуку вниз */
+            top: 50px !important;
+        }
+        .select2-container {
+            width: 100% !important; /* Розтягнути Select2 по ширині */
         }
     </style>
     <title>Карта земельних ділянок</title>
@@ -79,9 +84,12 @@
         </select>
     </div>
     <div id="geolocationButton">📍</div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
     <script src="https://unpkg.com/leaflet-search@3.0.0/dist/leaflet-search.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <script>
         var map = L.map('map', {
             zoomControl: false
@@ -107,13 +115,6 @@
         var tenantAreas = {};
         var freeLayer = L.layerGroup();
         var freeArea = 0;
-
-        // Заздалегідь визначені кольори
-        var predefinedColors = [
-            "#E44754", "#1B9688", "#ff9947", "#FAC1FA", "#9BBFF8",
-            "#95F1FA", "#C6F8BD", "#F7FAB2", "#FFD7A6", "#FDABAB"
-        ];
-        var colorIndex = 0;
 
         function getColor(tenant) {
             if (tenant === null || tenant === "" || tenant === undefined) {
@@ -168,11 +169,11 @@
                     map.removeLayer(overlays[layerName]);
                 }
             }
-            overlays = {}; // Очистити об'єкт з шарами
+            overlays = {}; 
         }
 
         function addGeoJsonLayer(url, layerName) {
-            clearOverlays(); // Очистити старі полігони
+            clearOverlays(); 
 
             fetch(url)
                 .then(response => response.json())
@@ -199,105 +200,47 @@
                 map.removeControl(layersControl);
             }
             layersControl = L.control.layers(baseMaps, overlays, {
-                collapsed: true // Меню згорнуте за замовчуванням
+                collapsed: true 
             }).addTo(map);
             addTenantLayers();
             addFreeLayer();
-        }
-
-        function addTenantLayers() {
-            var tenantLayers = {};
-            Object.values(overlays).forEach(layerGroup => {
-                layerGroup.eachLayer(layer => {
-                    var tenant = layer.feature.properties["Орендар"];
-                    if (tenant) {
-                        if (!tenantLayers[tenant]) {
-                            tenantLayers[tenant] = L.layerGroup();
-                        }
-                        tenantLayers[tenant].addLayer(layer);
-                    }
-                });
-            });
-
-            var tenantList = Object.keys(tenantLayers).map(tenant => {
-                return {
-                    tenant: tenant,
-                    layer: tenantLayers[tenant],
-                    area: tenantAreas[tenant] ? tenantAreas[tenant].toFixed(2) : 0
-                };
-            });
-
-            tenantList.sort((a, b) => b.area - a.area);
-
-            tenantList.forEach(item => {
-                overlays[item.tenant] = item.layer;
-                var colorBox = '<span class="color-box" style="background-color:' + getColor(item.tenant) + '"></span>';
-                layersControl.addOverlay(item.layer, colorBox + '<span class="layer-name">' + item.tenant + ' (' + item.area + ' га)</span>');
-            });
-        }
-
-        function addFreeLayer() {
-            if (freeLayer.getLayers().length > 0) {
-                overlays["вільні від оренди"] = freeLayer;
-                var colorBox = '<span class="color-box" style="background-color:#ffffff"></span>';
-                layersControl.addOverlay(freeLayer, colorBox + '<span class="layer-name">вільні від оренди (' + freeArea.toFixed(2) + ' га)</span>');
-            }
         }
 
         function loadFileList() {
             fetch('data/file_list.json')
                 .then(response => response.json())
                 .then(data => {
-                    var select = document.getElementById('fileSelect');
-                    select.innerHTML = '<option>Виберіть раду</option>';
+                    var select = $('#fileSelect'); // Використовуємо jQuery для Select2
+                    select.html('<option>Виберіть раду</option>');
                     data.files.forEach(file => {
-                        var option = document.createElement('option');
-                        option.value = file;
-                        option.textContent = file;
-                        select.appendChild(option);
+                        var option = new Option(file, file);
+                        select.append(option);
                     });
+                    select.trigger('change'); // Оновлюємо Select2 після додавання опцій
                 })
                 .catch(error => console.error('Error loading file list:', error));
         }
 
-        document.getElementById('fileSelect').addEventListener('change', function () {
-            var selectedFile = this.value;
-            if (selectedFile !== 'Виберіть раду') {
-                addGeoJsonLayer('data/' + selectedFile, selectedFile);
-            }
-        });
-
-        document.getElementById('geolocationButton').addEventListener('click', function () {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function (position) {
-                    var lat = position.coords.latitude;
-                    var lng = position.coords.longitude;
-                    var marker = L.marker([lat, lng]).addTo(map);
-                    map.setView([lat, lng], 15);
-                }, function () {
-                    alert('Не вдалося отримати вашу геолокацію.');
-                });
-            } else {
-                alert('Ваш браузер не підтримує геолокацію.');
-            }
-        });
-
-        function addSearchControl(layer) {
-            if (searchControl) {
-                map.removeControl(searchControl);
-            }
-            searchControl = new L.Control.Search({
-                layer: layer,
-                propertyName: 'Кадастровий номер',
-                zoom: 15,
-                initial: false,
-                textPlaceholder: 'пошук' // Заміна тексту підказки
+        $(document).ready(function() {
+            $('#fileSelect').select2({
+                placeholder: "Виберіть раду",
+                allowClear: true,
+                width: 'resolve'
             });
-            map.addControl(searchControl);
-        }
+
+            $('#fileSelect').on('change', function () {
+                var selectedFile = $(this).val();
+                if (selectedFile !== 'Виберіть раду') {
+                    addGeoJsonLayer('data/' + selectedFile, selectedFile);
+                }
+            });
+        });
+
+        document.getElementById('geolocationButton').addEventListener('click', function() {
+            map.locate({ setView: true, maxZoom: 16 });
+        });
 
         loadFileList();
-        updateLayersControl();
     </script>
 </body>
 </html>
