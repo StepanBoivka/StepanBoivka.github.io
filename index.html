@@ -262,7 +262,11 @@
 
         document.getElementById('fileSelect').addEventListener('change', function () {
             var selectedFile = this.value;
-            if (selectedFile !== 'Виберіть раду') {
+            if (selectedFile !== 'Виберіть файл') {
+                gtag('event', 'select_content', {
+                    'content_type': 'file',
+                    'item_id': selectedFile
+                });
                 addGeoJsonLayer('data/' + selectedFile, selectedFile);
             }
         });
