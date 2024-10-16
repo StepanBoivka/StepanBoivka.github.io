@@ -62,6 +62,22 @@
         .leaflet-control-search {
             top: 50px !important; /* Змістити поле пошуку вниз */
         }
+        #exportButton {
+            position: absolute;
+            bottom: 50px;
+            right: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 14px;
+        }
+        #exportButton:hover {
+            background: #0056b3;
+        }
     </style>
     <title>Карта земельних ділянок</title>
     <!-- Google tag (gtag.js) -->
@@ -81,6 +97,7 @@
         </select>
     </div>
     <div id="geolocationButton">📍</div>
+    <button id="exportButton">Експорт в список</button>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
     <script src="https://unpkg.com/leaflet-search@3.0.0/dist/leaflet-search.min.js"></script>
@@ -358,12 +375,65 @@ function addTenantLayers() {
             }
             searchControl = new L.Control.Search({
                 layer: layer,
-                propertyName: 'Кадастровий номер',
-                zoom: 15,
+                propertyName: '_searchField',
                 initial: false,
-                textPlaceholder: 'пошук' // Заміна тексту підказки
+                textPlaceholder: 'Пошук за кадастровим номером або власником',
+                filterData: function(text, records) {
+                    var jsons = records;
+                    var ret = {};
+
+                    text = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Екрануємо спеціальні символи
+                    var reg = new RegExp(text, 'i');
+                    
+                    for (var i in jsons) {
+                        try {
+                            var props = jsons[i].layer.feature && jsons[i].layer.feature.properties ? jsons[i].layer.feature.properties : {};
+                            var kadastrovyNomer = props['Кадастровий номер'] || '';
+                            var vlasnyk = props['Власник'] || '';
+                            
+                            console.log('Перевірка:', kadastrovyNomer, vlasnyk);
+
+                            if (reg.test(kadastrovyNomer) || reg.test(vlasnyk)) {
+                                ret[i] = jsons[i];
+                                console.log('Знайдено співпадіння:', i, kadastrovyNomer, vlasnyk);
+                            }
+                        } catch (error) {
+                            console.error('Помилка при обробці об\'єкта:', error, jsons[i]);
+                        }
+                    }
+                    
+                    console.log('Кількість знайдених результатів:', Object.keys(ret).length);
+                    return ret;
+                },
+                buildTip: function(text, val) {
+                    try {
+                        var props = val.layer.feature && val.layer.feature.properties ? val.layer.feature.properties : {};
+                        var kadastrovyNomer = props['Кадастровий номер'] || 'Не вказано';
+                        var vlasnyk = props['Власник'] || 'Не вказано';
+                        return '<a href="#">Кадастровий номер: ' + kadastrovyNomer + '<br>Власник: ' + vlasnyk + '</a>';
+                    } catch (error) {
+                        console.error('Помилка при створенні підказки:', error);
+                        return '<a href="#">Помилка: неможливо відобразити дані</a>';
+                    }
+                },
+                moveToLocation: function(latlng, title, map) {
+                    if (latlng.layer && latlng.layer.getBounds) {
+                        map.fitBounds(latlng.layer.getBounds());
+                    } else {
+                        map.setView(latlng, 15);
+                    }
+                }
             });
             map.addControl(searchControl);
+
+            // Додаємо спеціальне поле для пошуку до кожного об'єкта
+            layer.eachLayer(function(layer) {
+                if (layer.feature && layer.feature.properties) {
+                    var props = layer.feature.properties;
+                    var searchField = (props['Кадастровий номер'] || '') + ' ' + (props['Власник'] || '');
+                    layer.feature.properties._searchField = searchField;
+                }
+            });
         }
 
         // Завантаження даних при завантаженні сторінки
@@ -392,6 +462,104 @@ function addTenantLayers() {
         });
         loadFileList();
         updateLayersControl();
+
+// Додаємо нову функцію для збору даних з карти
+        function collectMapData() {
+            var data = [];
+            // Перевіряємо, чи є активний шар ділянок
+            var activeLayer = null;
+            for (var key in overlays) {
+                if (overlays.hasOwnProperty(key) && key !== "Поля обробітку") {
+                    activeLayer = overlays[key];
+                    break;
+                }
+            }
+            
+            if (activeLayer) {
+                activeLayer.eachLayer(layer => {
+                    if (layer.feature && layer.feature.properties) {
+                        data.push(layer.feature.properties);
+                    }
+                });
+            }
+            return data;
+        }
+
+        // Функція для конвертації даних у CSV
+       function convertToCSV(objArray) {
+            var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+            var str = '';
+            var headers = Object.keys(array[0]).filter(key => key !== '_searchField' && key !== 'Посилання');
+
+            str += headers.join(',') + '\r\n';
+
+            for (var i = 0; i < array.length; i++) {
+                var line = '';
+                for (var index in headers) {
+                    if (line != '') line += ',';
+                    var key = headers[index];
+                    var value = array[i][key];
+                    
+                    // Перевірка на null або undefined
+                    if (value === null || value === undefined) {
+                        value = '';
+                    } else {
+                        // Особлива обробка для різних типів полів
+                        if (key === "Площа" || key === "Площа розрахована" || key === "Площа ДЗК" || key === "НГО") {
+                            if (typeof value === 'number') {
+                                value = value.toFixed(4); // Форматуємо число з 4 знаками після коми
+                            } else if (typeof value === 'string') {
+                                // Якщо значення є рядком, спробуємо перетворити його на число
+                                var numValue = parseFloat(value);
+                                if (!isNaN(numValue)) {
+                                    value = numValue.toFixed(4);
+                                }
+                            }
+                        } else if (key === "Дата НГО") {
+                            // Переконуємося, що дата коректно форматована
+                            value = value.toString();
+                        } else if (typeof value === 'string') {
+                            value = value.replace(/"/g, '""'); // Екранування лапок
+                            value = '"' + value + '"'; // Огортання значення в лапки
+                        } else if (typeof value === 'object') {
+                            value = JSON.stringify(value).replace(/"/g, '""');
+                            value = '"' + value + '"'; // Огортання значення в лапки
+                        }
+                    }
+                    
+                    line += value;
+                }
+                str += line + '\r\n';
+            }
+            return str;
+        }
+        // Функція для завантаження CSV файлу
+        function downloadCSV(csv, filename) {
+            var blob = new Blob(["\ufeff", csv], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement("a");
+            if (link.download !== undefined) {
+                var url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+        // Додаємо обробник події для кнопки експорту
+        document.getElementById('exportButton').addEventListener('click', function() {
+            var data = collectMapData();
+            if (data.length > 0) {
+                var csv = convertToCSV(data);
+                downloadCSV(csv, 'map_data.csv');
+            } else {
+                alert('Немає даних для експорту. Будь ласка, виберіть файл з даними спочатку.');
+            }
+        });
+
+
+        
     </script>
 </body>
 </html>
