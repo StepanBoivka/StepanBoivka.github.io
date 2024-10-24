@@ -110,29 +110,54 @@
 <body class="bg-gray-50">
     <div class="container mx-auto px-4 py-6">
         <!-- Заголовок -->
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-xl font-bold text-gray-800">Статистика по раді: <span id="councilName">Не вибрано</span></h1>
-            <a href="index.html" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">
-                Повернутися до карти
-            </a>
-        </div>
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-xl font-bold text-gray-800">Статистика по раді: <span id="councilName">Не вибрано</span></h1>
+</div>
 
-        <!-- Загальна статистика -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="stats-card">
+       <!-- Загальна статистика -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <!-- Група 1: Загальні показники -->
+    <div class="stats-card">
+        <div class="flex flex-col gap-3">
+            <div>
                 <div class="stats-label">Загальна площа</div>
                 <div class="stats-value text-blue-600" id="totalArea">0 га</div>
             </div>
-            <div class="stats-card">
+            <div class="border-t border-gray-200 pt-2">
                 <div class="stats-label">Кількість ділянок</div>
-                <div class="stats-value text-green-600" id="totalParcels">0</div>
-            </div>
-            <div class="stats-card">
-                <div class="stats-label">Вільні ділянки</div>
-                <div class="stats-value text-orange-600" id="freeParcels">0</div>
+                <div class="stats-value text-blue-600" id="totalParcels">0</div>
             </div>
         </div>
+    </div>
 
+    <!-- Група 2: Вільні ділянки -->
+    <div class="stats-card">
+        <div class="flex flex-col gap-3">
+            <div>
+                <div class="stats-label">Площа вільних від оренди</div>
+                <div class="stats-value text-orange-500" id="freeArea">0 га</div>
+            </div>
+            <div class="border-t border-gray-200 pt-2">
+                <div class="stats-label">Кількість вільних ділянок</div>
+                <div class="stats-value text-orange-500" id="freeParcels">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Група 3: Кількісні показники -->
+    <div class="stats-card">
+        <div class="flex flex-col gap-3">
+            <div>
+                <div class="stats-label">Кількість орендарів</div>
+                <div class="stats-value text-purple-600" id="tenantsCount">0</div>
+            </div>
+            <div class="border-t border-gray-200 pt-2">
+                <div class="stats-label">Кількість власників</div>
+                <div class="stats-value text-purple-600" id="ownersCount">0</div>
+            </div>
+        </div>
+    </div>
+</div>
         <!-- Таблиця орендарів -->
         <div class="stats-card mb-4">
             <h3 class="table-title">Інформація по орендарях</h3>
@@ -221,96 +246,119 @@
         }
 
         function processData(data) {
-            if (!data.features || !Array.isArray(data.features)) {
-                console.error('Некоректний формат даних');
-                return;
+    if (!data.features || !Array.isArray(data.features)) {
+        console.error('Некоректний формат даних');
+        return;
+    }
+
+    const features = data.features;
+    const uniqueOwners = new Set(); // Для унікальних власників
+    
+    const stats = features.reduce((acc, feature) => {
+        const area = parseFloat(feature.properties['Площа розрахована'] || 0);
+        const tenant = feature.properties['Орендар'];
+        const owner = feature.properties['Власник'];
+        const expiryYear = feature.properties['Рік завершення'];
+
+        // Загальна статистика
+        acc.totalArea += area;
+        acc.totalParcels++;
+        if (!tenant) {
+            acc.freeParcels++;
+            acc.freeArea += area;
+        }
+
+        // Додаємо власника до Set
+        if (owner && owner.trim() !== '') {
+            uniqueOwners.add(owner);
+        }
+
+        // Статистика по орендарях
+        if (tenant) {
+            if (!acc.tenants[tenant]) {
+                acc.tenants[tenant] = {
+                    count: 0,
+                    area: 0
+                };
             }
-
-            const features = data.features;
-            
-            const stats = features.reduce((acc, feature) => {
-                const area = parseFloat(feature.properties['Площа розрахована'] || 0);
-                const tenant = feature.properties['Орендар'];
-                const owner = feature.properties['Власник'];
-                const expiryYear = feature.properties['Рік завершення'];
-
-                // Загальна статистика
-                acc.totalArea += area;
-                acc.totalParcels++;
-                if (!tenant) acc.freeParcels++;
-
-                // Статистика по орендарях
-                if (tenant) {
-                    if (!acc.tenants[tenant]) {
-                        acc.tenants[tenant] = {
-                            count: 0,
-                            area: 0
-                        };
-                    }
-                    acc.tenants[tenant].count++;
-                    acc.tenants[tenant].area += area;
-                }
-
-                // Статистика по власниках
-                if (owner) {
-                    if (!acc.owners[owner]) {
-                        acc.owners[owner] = {
-                            count: 0,
-                            area: 0
-                        };
-                    }
-                    acc.owners[owner].count++;
-                    acc.owners[owner].area += area;
-                }
-
-                // Статистика по роках завершення з прив'язкою до орендарів
-                if (tenant && expiryYear) {
-                    const year = parseInt(expiryYear);
-                    if (!isNaN(year)) {
-                        if (!acc.expiryYears[year]) {
-                            acc.expiryYears[year] = {
-                                count: 0,
-                                area: 0,
-                                tenants: {}
-                            };
-                        }
-                        if (!acc.expiryYears[year].tenants[tenant]) {
-                            acc.expiryYears[year].tenants[tenant] = {
-                                count: 0,
-                                area: 0
-                            };
-                        }
-                        acc.expiryYears[year].count++;
-                        acc.expiryYears[year].area += area;
-                        acc.expiryYears[year].tenants[tenant].count++;
-                        acc.expiryYears[year].tenants[tenant].area += area;
-                    }
-                }
-
-                return acc;
-            }, {
-                totalArea: 0,
-                totalParcels: 0,
-                freeParcels: 0,
-                tenants: {},
-                owners: {},
-                expiryYears: {}
-            });
-
-            updateUI(stats);
+            acc.tenants[tenant].count++;
+            acc.tenants[tenant].area += area;
         }
 
-        function updateUI(stats) {
-            // Оновлення загальної статистики
-            document.getElementById('totalArea').textContent = `${stats.totalArea.toFixed(2)} га`;
-            document.getElementById('totalParcels').textContent = stats.totalParcels;
-            document.getElementById('freeParcels').textContent = stats.freeParcels;
-
-            // Оновлення таблиць
-            updateDetailsTable(stats.tenants, 'detailsTableBody', stats.totalArea);
-            updateDetailsTable(stats.owners, 'ownersTableBody');
-            updateMatrixTable(stats.expiryYears, stats.tenants);
+        // Статистика по власниках
+        if (owner) {
+            if (!acc.owners[owner]) {
+                acc.owners[owner] = {
+                    count: 0,
+                    area: 0
+                };
+            }
+            acc.owners[owner].count++;
+            acc.owners[owner].area += area;
         }
+
+        // Статистика по роках завершення
+        if (tenant && expiryYear) {
+            const year = parseInt(expiryYear);
+            if (!isNaN(year)) {
+                if (!acc.expiryYears[year]) {
+                    acc.expiryYears[year] = {
+                        count: 0,
+                        area: 0,
+                        tenants: {}
+                    };
+                }
+                if (!acc.expiryYears[year].tenants[tenant]) {
+                    acc.expiryYears[year].tenants[tenant] = {
+                        count: 0,
+                        area: 0
+                    };
+                }
+                acc.expiryYears[year].count++;
+                acc.expiryYears[year].area += area;
+                acc.expiryYears[year].tenants[tenant].count++;
+                acc.expiryYears[year].tenants[tenant].area += area;
+            }
+        }
+
+        return acc;
+    }, {
+        totalArea: 0,
+        totalParcels: 0,
+        freeParcels: 0,
+        freeArea: 0,
+        tenants: {},
+        owners: {},
+        expiryYears: {}
+    });
+
+    stats.uniqueOwnersCount = uniqueOwners.size;
+
+    updateUI(stats);
+}
+
+
+       function updateUI(stats) {
+    // Оновлення загальної статистики
+    document.getElementById('totalArea').textContent = `${stats.totalArea.toFixed(2)} га`;
+    document.getElementById('totalParcels').textContent = stats.totalParcels;
+    document.getElementById('freeParcels').textContent = stats.freeParcels;
+    document.getElementById('freeArea').textContent = `${stats.freeArea.toFixed(2)} га`;
+    document.getElementById('tenantsCount').textContent = Object.keys(stats.tenants).length;
+    document.getElementById('ownersCount').textContent = stats.uniqueOwnersCount;
+
+    // Оновлення таблиць
+    updateDetailsTable(stats.tenants, 'detailsTableBody', stats.totalArea);
+    updateDetailsTable(stats.owners, 'ownersTableBody');
+    updateMatrixTable(stats.expiryYears, stats.tenants);
+}
+
+// Функція для підрахунку площі вільних ділянок
+function calculateFreeArea(stats) {
+    const totalLeasedArea = Object.values(stats.tenants)
+        .reduce((sum, tenant) => sum + tenant.area, 0);
+    return stats.totalArea - totalLeasedArea;
+}
 
         function updateDetailsTable(data, tableId, totalArea = 0) {
             const tbody = document.getElementById(tableId);
