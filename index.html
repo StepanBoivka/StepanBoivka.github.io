@@ -343,7 +343,10 @@
         document.getElementById('statisticsButton').addEventListener('click', function() {
     var selectedFile = document.getElementById('fileSelect').value;
     if (selectedFile && selectedFile !== 'Виберіть файл') {
-        window.location.href = 'statistics.html?file=' + encodeURIComponent(selectedFile);
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+        const statisticsUrl = `statistics.html?file=${encodeURIComponent(selectedFile)}${id ? `&id=${id}` : ''}`;
+        window.location.href = statisticsUrl;
     } else {
         alert('Будь ласка, спочатку виберіть файл з даними.');
     }
