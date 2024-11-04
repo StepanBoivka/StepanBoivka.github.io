@@ -756,21 +756,17 @@ function addTenantLayers() {
                     for (var i in jsons) {
                         try {
                             var props = jsons[i].layer.feature && jsons[i].layer.feature.properties ? jsons[i].layer.feature.properties : {};
-                            var kadastrovyNomer = props['адастровий оер'] || '';
+                            var kadastrovyNomer = props['Кадастровий номер'] || '';
                             var vlasnyk = props['Власник'] || '';
                             
-                            console.log('Перевірка:', kadastrovyNomer, vlasnyk);
-
                             if (reg.test(kadastrovyNomer) || reg.test(vlasnyk)) {
                                 ret[i] = jsons[i];
-                                console.log('Знайдено співпадіння:', i, kadastrovyNomer, vlasnyk);
                             }
                         } catch (error) {
                             console.error('Помилка при обробці об\'єкта:', error, jsons[i]);
                         }
                     }
                     
-                    console.log('Кількість знайдених результатів:', Object.keys(ret).length);
                     return ret;
                 },
                 buildTip: function(text, val) {
@@ -778,7 +774,7 @@ function addTenantLayers() {
                         var props = val.layer.feature && val.layer.feature.properties ? val.layer.feature.properties : {};
                         var kadastrovyNomer = props['Кадастровий номер'] || 'Не вказано';
                         var vlasnyk = props['Власник'] || 'Не вказано';
-                        return '<a href="#">адастровий номер: ' + kadastrovyNomer + '<br>Власник: ' + vlasnyk + '</a>';
+                        return '<a href="#">Кадастровий номер: ' + kadastrovyNomer + '<br>Власник: ' + vlasnyk + '</a>';
                     } catch (error) {
                         console.error('Помилка при створенні підказки:', error);
                         return '<a href="#">Помилка: неможливо відобразити дані</a>';
@@ -794,7 +790,7 @@ function addTenantLayers() {
             });
             map.addControl(searchControl);
 
-            // Ддаємо спеціальне поле для пошуку до кожного об'єкта
+            // Оновлюємо пошукове поле для кожного об'єкта
             layer.eachLayer(function(layer) {
                 if (layer.feature && layer.feature.properties) {
                     var props = layer.feature.properties;
@@ -969,7 +965,7 @@ window.onclick = function(event) {
 
 // Функція створення маркера
 function createMarker(center, kadNum, isOwn) {
-    var color = isOwn ? '#28a745' : '#dc3545'; // Зелений для своїх, червоний для чужих
+    var color = isOwn ? '#28a745' : '#dc3545'; // Зелени�� для своїх, червоний для чужих
     return L.marker(center, {
         icon: L.divIcon({
             className: 'custom-div-icon',
@@ -1254,7 +1250,7 @@ document.getElementById('exportButton').addEventListener('click', function() {
             }
         }
 
-        // Додайте кнопку експорту в панель інструентів Leaflet.draw
+        // Додайте кнопку експорту в панель інструенті�� Leaflet.draw
         L.Control.ExportGeoJSON = L.Control.extend({
             onAdd: function(map) {
                 var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
