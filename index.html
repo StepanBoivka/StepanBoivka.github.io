@@ -447,7 +447,7 @@
             "Дата реєстрації",
             "Орендар",
             "Дата реєстрації оренди",
-            "ата авершенн",
+            "��та авершенн",
             "Вид обмеження",
             "Цільове",
             "Посилання",
@@ -475,7 +475,7 @@
                 // Розподіляємо інформацію по вкладкам
                 switch (key) {
                     case "Кадастровий номер":
-                    case "Площа розрахована":
+                    case "Площа розрахован��":
                     case "Власник":
                     case "Орендар":
                     case "Дата реєстрації оренди":
@@ -557,11 +557,16 @@
 
         function clearOverlays() {
     for (var layerName in overlays) {
-        if (overlays.hasOwnProperty(layerName) && layerName !== "Поля обробітку") { // Не очищуємо "Поля обробітку"
+        if (overlays.hasOwnProperty(layerName) && layerName !== "Поля обробітку") { // Перевіряємо точну назву
             map.removeLayer(overlays[layerName]);
         }
     }
-    overlays = { "Поля обробіку": fieldLayer }; // Зберігаємо цей шар
+    // Зберігаємо тільки шар полів, якщо він існує
+    var fieldLayerTemp = overlays["Поля обробітку"];
+    overlays = {};
+    if (fieldLayerTemp) {
+        overlays["Поля обробітку"] = fieldLayerTemp;
+    }
 }
 
         function addGeoJsonLayer(url, layerName) {
@@ -698,7 +703,7 @@ map.on('zoomend', function() {
             // Додаємо до меню шарів
             overlays["Поля обробітку"] = fieldLayer;
             var colorBox = '<span class="color-box" style="background-color:transparent; border: 2px solid yellow"></span>';
-            layersControl.addOverlay(fieldLayer, colorBox + '<span class="layer-name">П��л обробітку</span>');
+            layersControl.addOverlay(fieldLayer, colorBox + '<span class="layer-name">Пл обробітку</span>');
         })
         .catch(error => console.error('Error loading Field GeoJSON data:', error));
 }
@@ -867,7 +872,7 @@ function addTenantLayers() {
             var data = [];
             var selectedFile = document.getElementById('fileSelect').value;
             
-            // Перевірямо, чи є активний шар длянок
+            // Перевірямо, чи є активний шар дляно��
             if (overlays[selectedFile]) {
                 overlays[selectedFile].eachLayer(layer => {
                     if (layer.feature && layer.feature.properties) {
