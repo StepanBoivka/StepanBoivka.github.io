@@ -447,7 +447,7 @@
             "Дата реєстрації",
             "Орендар",
             "Дата реєстрації оренди",
-            "��та авершенн",
+            "та авершенн",
             "Вид обмеження",
             "Цільове",
             "Посилання",
@@ -475,7 +475,7 @@
                 // Розподіляємо інформацію по вкладкам
                 switch (key) {
                     case "Кадастровий номер":
-                    case "Площа розрахован��":
+                    case "Площа розрахована":
                     case "Власник":
                     case "Орендар":
                     case "Дата реєстрації оренди":
@@ -803,7 +803,7 @@ function addTenantLayers() {
                                 ret[i] = jsons[i];
                             }
                         } catch (error) {
-                            console.error('Помилка при обробці об\'єкта:', error, jsons[i]);
+                            console.error('Помилка при обробці о\'єкта:', error, jsons[i]);
                         }
                     }
                     
@@ -872,7 +872,7 @@ function addTenantLayers() {
             var data = [];
             var selectedFile = document.getElementById('fileSelect').value;
             
-            // Перевірямо, чи є активний шар дляно��
+            // Перевірямо, чи є активний шар дляно
             if (overlays[selectedFile]) {
                 overlays[selectedFile].eachLayer(layer => {
                     if (layer.feature && layer.feature.properties) {
@@ -1166,17 +1166,48 @@ document.getElementById('exportButton').addEventListener('click', function() {
         });
         map.addControl(drawControl);
 
-        map.on(L.Draw.Event.CREATED, function (e) {
-            var type = e.layerType,
-                layer = e.layer;
+        // Функція для розрахунку площі полігону
+        function calculatePolygonArea(layer) {
+            var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+            var areaInHectares = (area / 10000).toFixed(2); // Перетворення в гектари
+            return areaInHectares;
+        }
 
-            if (type === 'polygon') {
-                var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                var areaInHectares = (area / 10000).toFixed(2); // Перетворення в гектари
-                layer.bindPopup('Полігон створено! Площа: ' + areaInHectares + ' га').openPopup();
+        // Функція для оновлення попапу з площею
+        function updateAreaPopup(layer) {
+            var areaInHectares = calculatePolygonArea(layer);
+            layer.setPopupContent('Площа: ' + areaInHectares + ' га');
+        }
+
+        // Обробник створення полігону
+        map.on(L.Draw.Event.CREATED, function (e) {
+            var layer = e.layer;
+            
+            if (e.layerType === 'polygon') {
+                var areaInHectares = calculatePolygonArea(layer);
+                layer.bindPopup('Площа: ' + areaInHectares + ' га').openPopup();
             }
 
             editableLayers.addLayer(layer);
+        });
+
+        // Обробник редагування полігонів
+        map.on(L.Draw.Event.EDITED, function (e) {
+            var layers = e.layers;
+            layers.eachLayer(function (layer) {
+                if (layer instanceof L.Polygon) {
+                    updateAreaPopup(layer);
+                    layer.openPopup();
+                }
+            });
+        });
+
+        // Обробник зміни під час редагування
+        map.on('editable:editing', function (e) {
+            var layer = e.layer;
+            if (layer instanceof L.Polygon) {
+                updateAreaPopup(layer);
+            }
         });
 
         // Оновлена функція exportToGeoJSON
