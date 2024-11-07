@@ -447,7 +447,7 @@
             "Дата реєстрації",
             "Орендар",
             "Дата реєстрації оренди",
-            "та авершенн",
+            "а авершенн",
             "Вид обмеження",
             "Цільове",
             "Посилання",
@@ -625,7 +625,7 @@
 
         // Визначаємо мінімальний і максимальний рівень зуму для відобраення написів
         var minZoomForLabels = 15; // Мінімальний зум, на якому видно написи
-        var maxZoomForLabels = 18; // Максимальний зум, на якому видно написи
+        var maxZoomForLabels = 18; // Максимальний зум, на якому видно нписи
 
         function styleFieldFeature(feature) {
             return {
@@ -964,7 +964,7 @@ function addTenantLayers() {
             }
             ws['!cols'] = wscols;
 
-            // Додавання листа до книги
+            // Додавання листа до кни��и
             XLSX.utils.book_append_sheet(wb, ws, "Діянки");
 
             // Збереження файлу
@@ -1166,7 +1166,7 @@ document.getElementById('exportButton').addEventListener('click', function() {
         });
         map.addControl(drawControl);
 
-        // Функція для розрахунку площі полігону
+        // Функція для розрахунку площі полі��ону
         function calculatePolygonArea(layer) {
             var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
             var areaInHectares = (area / 10000).toFixed(2); // Перетворення в гектари
@@ -1210,12 +1210,71 @@ document.getElementById('exportButton').addEventListener('click', function() {
             }
         });
 
-        // Оновлена функція exportToGeoJSON
+        // Додайте функцію для конвертації в KML
+        function convertToKML(geojson, notes) {
+            var kml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            kml += '<kml xmlns="http://www.opengis.net/kml/2.2">\n';
+            kml += '<Document>\n';
+
+            geojson.features.forEach(function(feature, index) {
+                kml += '  <Placemark>\n';
+                
+                // Додаємо назву та опис
+                var note = feature.properties.note || ''; // Беремо примітку з властивостей feature
+                var area = feature.properties.area || '0'; // Беремо площу з властивостей
+                
+                kml += '    <name>Полігон ' + (index + 1) + '</name>\n';
+                kml += '    <description>';
+                kml += '<![CDATA[';
+                kml += 'Площа: ' + area + ' га<br>';
+                kml += 'Примітка: ' + note;
+                kml += ']]>';
+                kml += '</description>\n';
+                
+                // Додаємо стиль
+                kml += '    <Style>\n';
+                kml += '      <LineStyle>\n';
+                kml += '        <color>ff000000</color>\n';
+                kml += '        <width>2</width>\n';
+                kml += '      </LineStyle>\n';
+                kml += '      <PolyStyle>\n';
+                kml += '        <color>4d0000ff</color>\n';
+                kml += '      </PolyStyle>\n';
+                kml += '    </Style>\n';
+                
+                // Додаємо координати
+                kml += '    <Polygon>\n';
+                kml += '      <outerBoundaryIs>\n';
+                kml += '        <LinearRing>\n';
+                kml += '          <coordinates>\n';
+                
+                // Конвертуємо координати
+                if (feature.geometry && feature.geometry.type === 'Polygon') {
+                    feature.geometry.coordinates[0].forEach(function(coord) {
+                        kml += '            ' + coord[0] + ',' + coord[1] + ',0\n';
+                    });
+                }
+                
+                kml += '          </coordinates>\n';
+                kml += '        </LinearRing>\n';
+                kml += '      </outerBoundaryIs>\n';
+                kml += '    </Polygon>\n';
+                kml += '  </Placemark>\n';
+            });
+
+            kml += '</Document>\n';
+            kml += '</kml>';
+            
+            return kml;
+        }
+
+        // Оновіть функцію exportToGeoJSON
         function exportToGeoJSON() {
             var modal = document.getElementById('exportModal');
             var span = modal.getElementsByClassName("close")[0];
             var confirmBtn = document.getElementById('confirmExport');
             var filenameInput = document.getElementById('exportFilename');
+            var formatSelect = document.getElementById('exportFormat');
             var polygonsList = document.getElementById('polygonsList');
 
             // Встановлюємо дефолтну назву файлу
@@ -1252,13 +1311,12 @@ document.getElementById('exportButton').addEventListener('click', function() {
 
             modal.style.display = "block";
 
-            // Закриття модального вікна при кліку на хрестик
+            // Закриття модального вікна
             span.onclick = function() {
                 modal.style.display = "none";
                 filenameInput.value = '';
             }
 
-            // Закриття модального вікна при кліку поза ним
             window.onclick = function(event) {
                 if (event.target == modal) {
                     modal.style.display = "none";
@@ -1266,12 +1324,12 @@ document.getElementById('exportButton').addEventListener('click', function() {
                 }
             }
 
-            // Обробка кліку на кнопку експорту
+            // Обробка експорту
             confirmBtn.onclick = function() {
                 var geojson = editableLayers.toGeoJSON();
                 var notesMap = {};
 
-                // Збираємо всі примітки в об'єкт
+                // Збираємо всі примітки
                 document.querySelectorAll('.polygon-note').forEach(function(textarea) {
                     notesMap[textarea.dataset.layerId] = textarea.value;
                 });
@@ -1300,14 +1358,24 @@ document.getElementById('exportButton').addEventListener('click', function() {
                     }
                 });
 
-                // Отримуємо назву файлу
+                // Отримуємо назву файлу і формат
                 var filename = filenameInput.value || defaultFilename;
-                if (!filename.endsWith('.geojson')) {
-                    filename += '.geojson';
+                var format = formatSelect.value;
+
+                // Експортуємо в вибраному форматі
+                if (format === 'kml') {
+                    if (!filename.endsWith('.kml')) {
+                        filename += '.kml';
+                    }
+                    var kml = convertToKML(geojson, notesMap);
+                    var dataStr = "data:text/xml;charset=utf-8," + encodeURIComponent(kml);
+                } else {
+                    if (!filename.endsWith('.geojson')) {
+                        filename += '.geojson';
+                    }
+                    var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(geojson));
                 }
 
-                // Експортуємо файл
-                var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(geojson));
                 var downloadAnchorNode = document.createElement('a');
                 downloadAnchorNode.setAttribute("href", dataStr);
                 downloadAnchorNode.setAttribute("download", filename);
@@ -1368,10 +1436,17 @@ document.getElementById('exportButton').addEventListener('click', function() {
     <div id="exportModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h5>Експорт GeoJSON</h5>
+            <h5>Експорт даних</h5>
             <div class="mb-3">
                 <label for="exportFilename" class="form-label">Назва файлу</label>
                 <input type="text" class="form-control" id="exportFilename" placeholder="Введіть назву файлу...">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Формат файлу</label>
+                <select class="form-select" id="exportFormat">
+                    <option value="geojson">GeoJSON</option>
+                    <option value="kml">KML</option>
+                </select>
             </div>
             <div class="mb-3">
                 <label class="form-label">Полігони</label>
