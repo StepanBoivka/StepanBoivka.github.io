@@ -361,8 +361,17 @@
                 title: "Показати моє місцезнаходження"
             },
             locateOptions: {
-                enableHighAccuracy: true
-            }
+        enableHighAccuracy: true, // Використовувати GPS якщо доступно
+        maxZoom: 16, // Максимальний зум при позиціонуванні
+        timeout: 10000, // Таймаут визначення позиції (мс)
+        maximumAge: 0, // Максимальний вік кешованої позиції (мс)
+        watch: true // Режим стеження
+    },
+    watchOptions: {
+        timeout: 30000, // Час між оновленнями в режимі стеження (мс)
+        maximumAge: 3000 // Максимальний вік даних позиції
+    }
+    
         }).addTo(map);
 
         var googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
