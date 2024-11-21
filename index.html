@@ -571,51 +571,41 @@
     }
 }
 
-        function addGeoJsonLayer(url, layerName) {
+        async function addGeoJsonLayer(url, layerName) {
             clearOverlays();
-            // Очищаємо площі перед новим підрахунком
             tenantAreas = {};
             freeArea = 0;
 
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    // Зберігаємо оригінальні дані
-                    originalGeoJsonData = data;
-                    
-                    // Створюємо новий шар
-                    var geoJsonLayer = L.geoJSON(data, {
-                        style: styleFeature,
-                        onEachFeature: onEachFeature
-                    });
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                // Зберігаємо оригінальні дані
+                originalGeoJsonData = data;
+                
+                // Створюємо новий шар
+                var geoJsonLayer = L.geoJSON(data, {
+                    style: styleFeature,
+                    onEachFeature: onEachFeature
+                });
 
-                    // Заповнюємо список полів
-                    var fieldSelect = document.getElementById('fieldSelect');
-                    fieldSelect.innerHTML = '<option value="">Всі поля</option>';
-                    
-                    // Отримуємо унікальні назви полів
-                    var uniqueFields = new Set();
-                    data.features.forEach(feature => {
-                        if (feature.properties && feature.properties['Назва поля']) {
-                            uniqueFields.add(feature.properties['Назва поля']);
-                        }
-                    });
-                    
-                    // Додаємо опції до select
-                    Array.from(uniqueFields).sort().forEach(fieldName => {
-                        var option = document.createElement('option');
-                        option.value = fieldName;
-                        option.textContent = fieldName;
-                        fieldSelect.appendChild(option);
-                    });
+                // Заповнюємо список полів
+                updateFieldSelect(data);
 
-                    overlays[layerName] = geoJsonLayer;
-                    geoJsonLayer.addTo(map);
-                    map.fitBounds(geoJsonLayer.getBounds());
-                    updateLayersControl();
-                    addSearchControl(geoJsonLayer);
-                })
-                .catch(error => console.error('Error loading GeoJSON data:', error));
+                overlays[layerName] = geoJsonLayer;
+                geoJsonLayer.addTo(map);
+                map.fitBounds(geoJsonLayer.getBounds());
+                updateLayersControl();
+                addSearchControl(geoJsonLayer);
+
+                return true;
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
         }
 
         var layersControl;
@@ -651,20 +641,80 @@
     });
 }
 function loadFileList() {
-            fetch(dataPath +'file_list.json')
-                .then(response => response.json())
-                .then(data => {
-                    var select = document.getElementById('fileSelect');
-                    select.innerHTML = '<option>Виберіть раду</option>';
-                    data.files.forEach(file => {
-                        var option = document.createElement('option');
-                        option.value = file;
-                        option.textContent = file;
-                        select.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error loading file list:', error));
+    fetch(dataPath + 'file_list.json')
+        .then(response => response.json())
+        .then(data => {
+            var select = document.getElementById('fileSelect');
+            select.innerHTML = '<option>Виберіть раду</option>';
+            // Тільки заповнюємо список, без завантаження даних
+            data.files.forEach(file => {
+                var option = document.createElement('option');
+                option.value = file;
+                option.textContent = file.replace('.geojson', ''); // Прибираємо розширення для відображення
+                select.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading file list:', error);
+            alert('Помилка завантаження списку файлів');
+        });
+}
+
+// Оновлений обробник події зміни вибору файлу
+document.getElementById('fileSelect').addEventListener('change', function() {
+    var selectedFile = this.value;
+    if (selectedFile && selectedFile !== 'Виберіть раду') {
+        // Показуємо індикатор завантаження
+        this.disabled = true;
+        var loadingOption = document.createElement('option');
+        loadingOption.text = 'Завантаження...';
+        this.add(loadingOption, 0);
+        this.value = 'Завантаження...';
+
+        // Відстежуємо подію у GA
+        gtag('event', 'select_content', {
+            'content_type': 'file',
+            'item_id': selectedFile
+        });
+
+        // Завантажуємо тільки вибраний файл
+        addGeoJsonLayer(dataPath + selectedFile, selectedFile)
+            .then(() => {
+                // Видаляємо індикатор завантаження
+                this.remove(0);
+                this.disabled = false;
+                this.value = selectedFile;
+            })
+            .catch(error => {
+                console.error('Error loading GeoJSON:', error);
+                alert('Помилка завантаження даних');
+                this.remove(0);
+                this.disabled = false;
+                this.value = 'Виберіть раду';
+            });
+    }
+});
+
+function updateFieldSelect(data) {
+    var fieldSelect = document.getElementById('fieldSelect');
+    fieldSelect.innerHTML = '<option value="">Всі поля</option>';
+    
+    // Отримуємо унікальні назви полів
+    var uniqueFields = new Set();
+    data.features.forEach(feature => {
+        if (feature.properties && feature.properties['Назва поля']) {
+            uniqueFields.add(feature.properties['Назва поля']);
         }
+    });
+    
+    // Додаємо опції до select
+    Array.from(uniqueFields).sort().forEach(fieldName => {
+        var option = document.createElement('option');
+        option.value = fieldName;
+        option.textContent = fieldName;
+        fieldSelect.appendChild(option);
+    });
+}
 
         document.getElementById('fileSelect').addEventListener('change', function () {
             var selectedFile = this.value;
