@@ -373,22 +373,34 @@
         }
 
         async function loadAndProcessData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const selectedFile = urlParams.get('file');
+            
             if (!selectedFile) {
                 console.error('Файл не вибрано');
                 return;
             }
-
+        
             try {
+                // Показуємо індикатор завантаження
+                document.getElementById('councilName').textContent = 'Завантаження...';
+                
                 const response = await fetch(`${dataPath}${selectedFile}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
                 const data = await response.json();
+                
+                // Оновлюємо назву після успішного завантаження
+                document.getElementById('councilName').textContent = selectedFile.replace('.geojson', '');
+                
                 // Фільтруємо тільки оригінальні записи
                 data.features = data.features.filter(f => f.properties.type === 'original');
                 processData(data);
             } catch (error) {
                 console.error('Помилка завантаження даних:', error);
+                document.getElementById('councilName').textContent = 'Помилка завантаження';
                 alert('Помилка завантаження даних. Спробуйте ще раз.');
             }
         }
