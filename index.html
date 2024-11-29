@@ -380,7 +380,7 @@
     <script>
     // Отримання парметрів з URL
         const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id'); // Отримання значення параметра 'id'
+        const id = urlParams.get('id'); // Отриман��я значення параметра 'id'
 
         var map = L.map('map', {
             zoomControl: false
@@ -1480,42 +1480,59 @@ document.getElementById('exportButton').addEventListener('click', function() {
 
         // Добавляем функцию обновления индикатора свежести данных
         function updateDataFreshnessIndicator(data) {
-            const indicator = document.getElementById('dataFreshnessText');
-            const icon = document.querySelector('.data-freshness-indicator i');
-            
-            // Находим самую новую и самую старую дату обновления
-            let dates = data.features
-                .map(f => f.properties["Дата оновлення"])
-                .filter(d => d) // Убираем пустые значения
-                .map(d => new Date(d));
-            
-            if (dates.length === 0) {
-                indicator.textContent = 'Немає даних';
-                icon.className = 'bi bi-clock-history text-light me-1';
-                return;
-            }
+    const indicator = document.getElementById('dataFreshnessText');
+    const icon = document.querySelector('.data-freshness-indicator i');
+    
+    // Получаем все даты обновления
+    let dates = data.features
+        .map(f => f.properties["Дата оновлення"])
+        .filter(d => d)
+        .map(d => new Date(d));
+    
+    if (dates.length === 0) {
+        indicator.textContent = 'Немає даних';
+        icon.className = 'bi bi-clock-history text-light me-1';
+        return;
+    }
 
-            const latestDate = new Date(Math.max.apply(null, dates));
-            const now = new Date();
-            const monthsOld = (now - latestDate) / (1000 * 60 * 60 * 24 * 30);
+    const now = new Date();
+    
+    // Считаем статистику по датам
+    const stats = dates.reduce((acc, date) => {
+        const monthsOld = (now - date) / (1000 * 60 * 60 * 24 * 30);
+        if (monthsOld < 1) acc.fresh++;
+        else if (monthsOld < 2) acc.medium++;
+        else acc.old++;
+        return acc;
+    }, { fresh: 0, medium: 0, old: 0 });
+    
+    // Рассчитываем проценты
+    const total = dates.length;
+    const freshPercent = Math.round((stats.fresh / total) * 100);
+    const mediumPercent = Math.round((stats.medium / total) * 100);
+    const oldPercent = Math.round((stats.old / total) * 100);
+    
+    // Определяем общий статус
+    let text, className;
+    if (freshPercent >= 70) { // Если 70% и более данных свежие
+        text = `Актуально ${freshPercent}%`;
+        className = 'freshness-good';
+    } else if (freshPercent + mediumPercent >= 70) { // Если 70% и более данных не старше 2 месяцев
+        text = `До 2 міс ${freshPercent + mediumPercent}%`;
+        className = 'freshness-warning';
+    } else {
+        text = `Застаріло ${oldPercent}%`;
+        className = 'freshness-bad';
+    }
 
-            let text;
-            let className;
-
-            if (monthsOld < 1) {
-                text = 'Актуально';
-                className = 'freshness-good';
-            } else if (monthsOld < 2) {
-                text = 'До 2 міс';
-                className = 'freshness-warning';
-            } else {
-                text = '> 2 міс';
-                className = 'freshness-bad';
-            }
-
-            indicator.textContent = text;
-            icon.className = `bi bi-clock-history me-1 ${className}`;
-        }
+    // Добавляем всплывающую подсказку с детальной информацией
+    const tooltip = `Актуально (до 1 міс): ${freshPercent}%\nДо 2 міс: ${mediumPercent}%\nЗастаріло: ${oldPercent}%`;
+    
+    indicator.textContent = text;
+    indicator.title = tooltip;
+    icon.className = `bi bi-clock-history me-1 ${className}`;
+    icon.title = tooltip;
+}
     </script>
 
     <!-- Modal for GeoJSON export -->
