@@ -1327,7 +1327,6 @@ document.getElementById('exportButton').addEventListener('click', function() {
                 kml += '      </LineStyle>\n';
                 kml += '      <PolyStyle>\n';
                 kml += '        <color>4d0000ff</color>\n';
-                kml += '      </PolyStyle>\n';
                 
                 // Додаємо координати
                 kml += '    <Polygon>\n';
@@ -1578,10 +1577,6 @@ document.getElementById('exportButton').addEventListener('click', function() {
     } else {
         text = `Застаріло ${oldPercent}%`;
         className = 'freshness-bad';
-    }
-
-    if (noDatePercent > 0) {
-        text += ` • Без дати ${noDatePercent}%`;
     }
 
     const tooltip = `Актуально (до 1 міс): ${freshPercent}%\n` +
