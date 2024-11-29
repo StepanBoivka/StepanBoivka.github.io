@@ -90,58 +90,42 @@
         width: 150px; /* Для дуже малих екранів */
     }
 }
-.popup-tabs {
-    display: flex;
-    border-bottom: 1px solid #ccc;
-}
-
-.popup-tab {
-    padding: 8px 12px;
-    cursor: pointer;
-    background: #f1f1f1;
-    border: 1px solid #ccc;
-    border-bottom: none;
-    margin-right: 2px;
-    font-size: 12px;
-}
-
-.popup-tab.active {
-    background: #fff;
-    border-bottom: 1px solid #fff;
-    margin-bottom: -1px;
-}
-
+/* Оновлені стилі для спливаючого вікна */
 .popup-content {
-    display: none;
-    padding: 10px;
-    font-size: 12px;
-}
-
-.popup-content.active {
-    display: block;
+    padding: 8px;
+    font-size: 11px;
+    max-height: 300px;
+    overflow: auto;
 }
 
 .popup-content table {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 0 5px;
+    border-spacing: 0 3px;
 }
 
 .popup-content td {
-    padding: 2px 0;
+    padding: 1px 0;
     vertical-align: top;
+    line-height: 1.2;
 }
 
 .popup-content td.property-name {
     font-weight: bold;
-    padding-right: 10px;
+    padding-right: 8px;
     white-space: nowrap;
 }
 
 .popup-content td.property-value {
-    padding-left: 5px;
+    padding-left: 4px;
 }
-/* Додайте ці стилі до існуючого блоку <style> */
+
+/* Видаліть старі стилі для вкладок */
+.popup-tabs,
+.popup-tab {
+    display: none;
+}
+
 .modal {
     display: none;
     position: fixed;
@@ -191,7 +175,7 @@
     }
     50% {
         transform: scale(1.2);
-        opacity: 0.8;
+        opacity: 0.8);
     }
     100% {
         transform: scale(1);
@@ -243,6 +227,27 @@
     .select-custom-small {
         width: 60px; /* Для дуже малих екранів */
     }
+}
+
+.popup-link {
+    text-align: center;
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px solid #eee;
+}
+
+.popup-link a {
+    display: inline-block;
+    color: #198754; /* Bootstrap зелений колір */
+    text-decoration: none;
+}
+
+.popup-link i {
+    font-size: 18px;
+}
+
+.popup-link a:hover {
+    color: #157347; /* Темніший зелений при наведенні */
 }
     </style>
 
@@ -431,15 +436,7 @@
 
         function onEachFeature(feature, layer) {
     if (feature.properties) {
-        var popupContent = '<div class="popup-tabs">' +
-            '<div class="popup-tab active" data-tab="ownership">Основна</div>' +
-            '<div class="popup-tab" data-tab="lease">Інше</div>' +
-            
-            '</div>';
-
-        var ownershipContent = '<div class="popup-content active" id="ownership"><table>';
-        var leaseContent = '<div class="popup-content" id="lease"><table>';
-        var otherContent = '<div class="popup-content" id="other"><table>';
+        var popupContent = '<div class="popup-content active" id="ownership"><table>';
 
         // Визначаємо порядок відображення властивостей
         var orderedKeys = [
@@ -449,65 +446,57 @@
             "Дата реєстрації",
             "Орендар",
             "Дата реєстрації оренди",
-            "а авершенн",
+            "Дата завершення",
             "Вид обмеження",
-            "Цільове",
-            "Посилання",
             "Дата оновлення"
         ];
 
-        // Додаємо всі інші ключі, які не вказані в orderedKeys
-        for (var key in feature.properties) {
-            if (orderedKeys.indexOf(key) === -1) {
-                orderedKeys.push(key);
-            }
-        }
-
+        // Додаємо властивості у вказаному порядку
         orderedKeys.forEach(function(key) {
             if (feature.properties.hasOwnProperty(key)) {
-                var value = feature.properties[key];
-                var row = '<tr><td class="property-name">' + key + ':</td><td class="property-value">';
-                if (key === "Посилання" && value) {
-                    row += '<a href="' + value + '" target="_blank"><span class="link-icon"></span><span class="link-text">інформація ЗК</span></a>';
-                } else {
-                    row += value;
-                }
-                row += '</td></tr>';
-
-                // Розподіляємо інформацію по вкладкам
-                switch (key) {
-                    case "Кадастровий номер":
-                    case "Площа розрахована":
-                    case "Власник":
-                    case "Орендар":
-                    case "Дата реєстрації оренди":
-                    case "Дата реєстрації":
-                    case "Дата завершення":
-                    case "Вид обмеження":
-                    case "Пилння":
-                    case "Дата оновлення":
-                        ownershipContent += row;
-                        break;
-                        case "Вид обмеження:":
-                        
-                        case "Дата реєстрації":
-                        case "Дата завершення":
-                                             
-                        leaseContent += row;
-                        break;
-                    default:
-                        
-                }
+                var value = feature.properties[key] || '';
+                var row = '<tr><td class="property-name">' + key + ':</td><td class="property-value">' + value + '</td></tr>';
+                popupContent += row;
             }
         });
 
-        ownershipContent += '</table></div>';
-        leaseContent += '</table></div>';
-        otherContent += '</table></div>';
-
-        popupContent += ownershipContent + leaseContent + otherContent;
+        popupContent += '</table>';
         
-        var popup = L.popup({maxWidth: 300, maxHeight: 300});
+        // Додаємо посилання з піктограмою
+        var cadastralNumber = feature.properties["Кадастровий номер"] || '';
+        if (cadastralNumber) {
+            var publicUrl = 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber;
+            var isOutdated = false;
+            var updateDate = feature.properties["Дата оновлення"];
+            
+            // Проверяем дату обновления
+            if (!updateDate) {
+                isOutdated = true;
+            } else {
+                var updateDateTime = new Date(updateDate);
+                var twoMonthsAgo = new Date();
+                twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+                if (updateDateTime < twoMonthsAgo) {
+                    isOutdated = true;
+                }
+            }
+
+            popupContent += '<div class="popup-link">' +
+                          '<a href="' + publicUrl + '" target="_blank" title="інформація з сервісів ДЗК">' +
+                          '<i class="bi bi-info-circle"></i></a>';
+            
+            // Добавляем иконку устаревших данных если нужно
+            if (isOutdated) {
+                popupContent += ' <i class="bi bi-exclamation-triangle-fill text-warning" ' +
+                              'title="Інформація може бути застарілою"></i>';
+            }
+            
+            popupContent += '</div>';
+        }
+        
+        popupContent += '</div>';
+        
+        var popup = L.popup({maxWidth: 300});
         popup.setContent(popupContent);
         layer.bindPopup(popup);
 
