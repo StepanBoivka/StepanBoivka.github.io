@@ -254,6 +254,21 @@
     font-size: 0.9em;
     color: #666;
 }
+    .data-freshness-indicator {
+        font-size: 0.8rem;
+    }
+    .data-freshness-indicator i {
+        font-size: 1rem;
+    }
+    .freshness-good {
+        color: #28a745 !important;
+    }
+    .freshness-warning {
+        color: #ffc107 !important;
+    }
+    .freshness-bad {
+        color: #dc3545 !important;
+    }
     </style>
 
     <!-- Google Analytics -->
@@ -282,6 +297,12 @@
                 <select class="form-select form-select-sm bg-dark text-light border-secondary select-custom-small ms-2" id="fieldSelect">
                     <option value="">Всі поля</option>
                 </select>
+                
+                <!-- Добавляем индикатор актуальности данных -->
+                <div class="data-freshness-indicator ms-2 d-flex align-items-center">
+                    <i class="bi bi-clock-history text-light me-1"></i>
+                    <small class="text-light" id="dataFreshnessText"></small>
+                </div>
             </div>
 
             <!-- Кнопки справа -->
@@ -589,6 +610,9 @@
                 map.fitBounds(geoJsonLayer.getBounds());
                 updateLayersControl();
                 addSearchControl(geoJsonLayer);
+
+                // Обновляем индикатор свежести данных
+                updateDataFreshnessIndicator(data);
 
                 return true;
             } catch (error) {
@@ -1453,6 +1477,45 @@ document.getElementById('exportButton').addEventListener('click', function() {
                 alert('Будь ласка, спочатку виберіть файл з даними.');
             }
         });
+
+        // Добавляем функцию обновления индикатора свежести данных
+        function updateDataFreshnessIndicator(data) {
+            const indicator = document.getElementById('dataFreshnessText');
+            const icon = document.querySelector('.data-freshness-indicator i');
+            
+            // Находим самую новую и самую старую дату обновления
+            let dates = data.features
+                .map(f => f.properties["Дата оновлення"])
+                .filter(d => d) // Убираем пустые значения
+                .map(d => new Date(d));
+            
+            if (dates.length === 0) {
+                indicator.textContent = 'Немає даних';
+                icon.className = 'bi bi-clock-history text-light me-1';
+                return;
+            }
+
+            const latestDate = new Date(Math.max.apply(null, dates));
+            const now = new Date();
+            const monthsOld = (now - latestDate) / (1000 * 60 * 60 * 24 * 30);
+
+            let text;
+            let className;
+
+            if (monthsOld < 1) {
+                text = 'Актуально';
+                className = 'freshness-good';
+            } else if (monthsOld < 2) {
+                text = 'До 2 міс';
+                className = 'freshness-warning';
+            } else {
+                text = '> 2 міс';
+                className = 'freshness-bad';
+            }
+
+            indicator.textContent = text;
+            icon.className = `bi bi-clock-history me-1 ${className}`;
+        }
     </script>
 
     <!-- Modal for GeoJSON export -->
