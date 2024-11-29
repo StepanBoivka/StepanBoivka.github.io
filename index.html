@@ -249,6 +249,11 @@
 .popup-link a:hover {
     color: #157347; /* Темніший зелений при наведенні */
 }
+
+.popup-link .text-end {
+    font-size: 0.9em;
+    color: #666;
+}
     </style>
 
     <!-- Google Analytics -->
@@ -438,7 +443,7 @@
     if (feature.properties) {
         var popupContent = '<div class="popup-content active" id="ownership"><table>';
 
-        // Визначаємо порядок відображення властивостей
+        // Определяем порядок отображения свойств
         var orderedKeys = [
             "Кадастровий номер",
             "Площа розрахована",
@@ -447,11 +452,10 @@
             "Орендар",
             "Дата реєстрації оренди",
             "Дата завершення",
-            "Вид обмеження",
-            "Дата оновлення"
+            "Вид обмеження"
         ];
 
-        // Додаємо властивості у вказаному порядку
+        // Добавляем свойства в указанном порядке
         orderedKeys.forEach(function(key) {
             if (feature.properties.hasOwnProperty(key)) {
                 var value = feature.properties[key] || '';
@@ -462,14 +466,13 @@
 
         popupContent += '</table>';
         
-        // Додаємо посилання з піктограмою
+        // Добавляем нижнюю часть с иконками и датой обновления
         var cadastralNumber = feature.properties["Кадастровий номер"] || '';
         if (cadastralNumber) {
             var publicUrl = 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber;
             var isOutdated = false;
             var updateDate = feature.properties["Дата оновлення"];
             
-            // Проверяем дату обновления
             if (!updateDate) {
                 isOutdated = true;
             } else {
@@ -481,17 +484,14 @@
                 }
             }
 
-            popupContent += '<div class="popup-link">' +
-                          '<a href="' + publicUrl + '" target="_blank" title="інформація з сервісів ДЗК">' +
-                          '<i class="bi bi-info-circle"></i></a>';
-            
-            // Добавляем иконку устаревших данных если нужно
-            if (isOutdated) {
-                popupContent += ' <i class="bi bi-exclamation-triangle-fill text-warning" ' +
-                              'title="Інформація може бути застарілою"></i>';
-            }
-            
-            popupContent += '</div>';
+            popupContent += '<div class="popup-link d-flex justify-content-between align-items-center">' +
+                           '<a href="' + publicUrl + '" target="_blank" title="інформація з сервісів ДЗК">' +
+                           '<i class="bi bi-info-circle"></i></a>' +
+                           '<div class="text-end">' + 
+                           (updateDate || '') +
+                           (isOutdated ? ' <i class="bi bi-exclamation-triangle-fill text-warning" ' +
+                           'title="Інформація може бути застарілою"></i>' : '') +
+                           '</div></div>';
         }
         
         popupContent += '</div>';
@@ -1478,6 +1478,10 @@ document.getElementById('exportButton').addEventListener('click', function() {
                 </div>
             </div>
             <button class="btn btn-primary" id="confirmExport">Експортувати</button>
+        </div>
+    </div>
+</body>
+</html>            <button class="btn btn-primary" id="confirmExport">Експортувати</button>
         </div>
     </div>
 </body>
