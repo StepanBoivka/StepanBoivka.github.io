@@ -380,7 +380,7 @@
     <script>
     // Отримання парметрів з URL
         const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id'); // Отриман��я значення параметра 'id'
+        const id = urlParams.get('id'); // Отримання значення параметра 'id'
 
         var map = L.map('map', {
             zoomControl: false
@@ -1483,11 +1483,18 @@ document.getElementById('exportButton').addEventListener('click', function() {
     const indicator = document.getElementById('dataFreshnessText');
     const icon = document.querySelector('.data-freshness-indicator i');
     
-    // Получаем все даты обновления
+    // Получаем все даты обновления и конвертируем их корректно
     let dates = data.features
         .map(f => f.properties["Дата оновлення"])
         .filter(d => d)
-        .map(d => new Date(d));
+        .map(d => {
+            // Преобразуем строку даты в формате "DD.MM.YYYY" в объект Date
+            if (typeof d === 'string') {
+                const [day, month, year] = d.split('.').map(Number);
+                return new Date(year, month - 1, day); // месяцы в JS начинаются с 0
+            }
+            return new Date(d);
+        });
     
     if (dates.length === 0) {
         indicator.textContent = 'Немає даних';
@@ -1497,9 +1504,15 @@ document.getElementById('exportButton').addEventListener('click', function() {
 
     const now = new Date();
     
+    // Выводим отладочную информацию
+    console.log('Dates:', dates.map(d => d.toISOString()));
+    console.log('Now:', now.toISOString());
+    
     // Считаем статистику по датам
     const stats = dates.reduce((acc, date) => {
         const monthsOld = (now - date) / (1000 * 60 * 60 * 24 * 30);
+        console.log('Date:', date, 'Months old:', monthsOld);
+        
         if (monthsOld < 1) acc.fresh++;
         else if (monthsOld < 2) acc.medium++;
         else acc.old++;
@@ -1512,12 +1525,15 @@ document.getElementById('exportButton').addEventListener('click', function() {
     const mediumPercent = Math.round((stats.medium / total) * 100);
     const oldPercent = Math.round((stats.old / total) * 100);
     
+    console.log('Stats:', { fresh: stats.fresh, medium: stats.medium, old: stats.old });
+    console.log('Percents:', { fresh: freshPercent, medium: mediumPercent, old: oldPercent });
+    
     // Определяем общий статус
     let text, className;
-    if (freshPercent >= 70) { // Если 70% и более данных свежие
+    if (freshPercent >= 70) {
         text = `Актуально ${freshPercent}%`;
         className = 'freshness-good';
-    } else if (freshPercent + mediumPercent >= 70) { // Если 70% и более данных не старше 2 месяцев
+    } else if (freshPercent + mediumPercent >= 70) {
         text = `До 2 міс ${freshPercent + mediumPercent}%`;
         className = 'freshness-warning';
     } else {
@@ -1525,7 +1541,6 @@ document.getElementById('exportButton').addEventListener('click', function() {
         className = 'freshness-bad';
     }
 
-    // Добавляем всплывающую подсказку с детальной информацией
     const tooltip = `Актуально (до 1 міс): ${freshPercent}%\nДо 2 міс: ${mediumPercent}%\nЗастаріло: ${oldPercent}%`;
     
     indicator.textContent = text;
