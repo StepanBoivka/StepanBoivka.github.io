@@ -130,7 +130,7 @@
     text-overflow: ellipsis;
 }
 
-/* Оновлені стилі для спливаючого вікн�� */
+/* Оновлені стилі для спливаючого вікн���� */
 .popup-content {
     padding: 8px;
     font-size: 11px;
@@ -306,8 +306,15 @@
     .freshness-warning {
         color: #ffc107 !important;
     }
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.3; }
+        100% { opacity: 1; }
+    }
+
     .freshness-bad {
         color: #dc3545 !important;
+        animation: blink 2s ease-in-out infinite;
     }
     </style>
 
@@ -387,7 +394,7 @@
 <div id="cadastralModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
-        <h5>Пошук за кадастровими номер</h5>
+        <h5>Пошук за кадас��ровими номер</h5>
         
         <!-- Tabs -->
         <div class="nav nav-tabs mb-3" id="cadastralTabs" role="tablist">
@@ -792,19 +799,23 @@ function updateFieldSelect(data) {
             }
         });
         function addFieldLayer() {
-            fetch(dataPath + 'field.geojson')
-                .then(response => response.json())
+    fetch(dataPath + 'field.geojson')
+        .then(response => response.json())
         .then(data => {
             fieldLayer = L.geoJSON(data, {
                 style: styleFieldFeature,
                 onEachFeature: function (feature, layer) {
-                    if (feature.properties && feature.properties.area) {
-                        var area = feature.properties.area; 
-                        // Додаємо підказку лише з числом площі
-                        layer.bindTooltip(area.toString(), {
+                    if (feature.properties) {
+                        var area = feature.properties.area || ''; 
+                        var name = feature.properties.name || '';
+                        // Формуємо текст підказки з назвою поля та площею
+                        var tooltipText = name + '\n' + area.toString() + ' га';
+                        
+                        // Додаємо підказку з назвою та площею
+                        layer.bindTooltip(tooltipText, {
                             permanent: true,   // Постійна підказка
                             direction: 'center', // Позиціонування в центрі полігону
-                            className: 'area-tooltip', // Додтковий клас для стилізації
+                            className: 'area-tooltip', // Додатковий клас для стилізації
                             opacity: 0 // Спочатку підказки приховані
                         });
                     }
@@ -813,14 +824,14 @@ function updateFieldSelect(data) {
 
             // Оновлюємо видимість підказок відповідно до поточного рівня зуму
             updateLabelsVisibility();
-// Додаємо подію для оновлння виимості підказк ри зміні зуму
-map.on('zoomend', function() {
-    updateLabelsVisibility();
-});
-            // Додаємо до меню шарів
+            
+            map.on('zoomend', function() {
+                updateLabelsVisibility();
+            });
+            
             overlays["Поля обробітку"] = fieldLayer;
             var colorBox = '<span class="color-box" style="background-color:transparent; border: 2px solid yellow"></span>';
-            layersControl.addOverlay(fieldLayer, colorBox + '<span class="layer-name">Пл обробітку</span>');
+            layersControl.addOverlay(fieldLayer, colorBox + '<span class="layer-name">Поля обробітку</span>');
         })
         .catch(error => console.error('Error loading Field GeoJSON data:', error));
 }
@@ -1545,7 +1556,6 @@ document.getElementById('exportButton').addEventListener('click', function() {
             return acc;
         }
         
-        // Конвертуємо дату
         const [day, month, year] = date.split('.').map(Number);
         const dateObj = new Date(year, month - 1, day);
         acc.dates.push(dateObj);
@@ -1555,9 +1565,18 @@ document.getElementById('exportButton').addEventListener('click', function() {
     const dates = datesInfo.dates;
     const noDateCount = datesInfo.noDate;
     
+    if (dates.length === 0 && noDateCount === totalRecords) {
+        indicator.textContent = 'Немає дат оновлення';
+        icon.className = 'bi bi-clock-history freshness-bad me-1';
+        document.querySelector('.data-freshness-indicator').classList.add('freshness-bad');
+        icon.title = `Записів без дати оновлення: ${noDateCount}`;
+        return;
+    }
+
     if (dates.length === 0 && noDateCount === 0) {
         indicator.textContent = 'Немає даних';
         icon.className = 'bi bi-clock-history text-light me-1';
+        document.querySelector('.data-freshness-indicator').classList.remove('freshness-bad');
         return;
     }
 
@@ -1589,6 +1608,13 @@ document.getElementById('exportButton').addEventListener('click', function() {
     } else {
         text = `Застаріло ${oldPercent}%`;
         className = 'freshness-bad';
+        // Добавляем класс для анимации к родительскому элементу
+        document.querySelector('.data-freshness-indicator').classList.add('freshness-bad');
+    }
+
+    // Удаляем класс анимации если статус не "плохой"
+    if (className !== 'freshness-bad') {
+        document.querySelector('.data-freshness-indicator').classList.remove('freshness-bad');
     }
 
     const tooltip = `Актуально (до 1 міс): ${freshPercent}%\n` +
