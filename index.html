@@ -130,7 +130,7 @@
     text-overflow: ellipsis;
 }
 
-/* Оновлені стилі для спливаючого вікна */
+/* Оновлені стилі для спливаючого вікн�� */
 .popup-content {
     padding: 8px;
     font-size: 11px;
@@ -345,26 +345,38 @@
                 </div>
             </div>
 
-            <!-- Кнопки справа -->
+            <!-- Замініть блок кнопок справа на цей код -->
             <div class="d-flex align-items-center">
-                <button class="btn btn-outline-light btn-transparent btn-sm d-flex align-items-center justify-content-center me-1" 
-                    id="cadastralSearchButton" 
-                    title="Пошук за списком кадастрових номерів"
-                    style="width: 32px; height: 32px;">
-                    <i class="bi bi-search"></i>
-                </button>
-                <button class="btn btn-outline-light btn-transparent btn-sm d-flex align-items-center justify-content-center me-1" 
-                        id="exportButton" 
-                        title="Експорт в список"
-                        style="width: 32px; height: 32px;">
-                    <i class="bi bi-table"></i>
-                </button>
-                <button class="btn btn-outline-light btn-transparent btn-sm d-flex align-items-center justify-content-center" 
-                        id="statisticsButton" 
-                        title="Статистика"
-                        style="width: 32px; height: 32px;">
-                    <i class="bi bi-pie-chart-fill"></i>
-                </button>
+                <div class="dropdown">
+                    <button class="btn btn-outline-light btn-transparent btn-sm dropdown-toggle" 
+                            type="button" 
+                            id="toolsDropdown" 
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false"
+                            style="width: 32px; height: 32px;">
+                        <i class="bi bi-tools"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="toolsDropdown">
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center" id="cadastralSearchButton">
+                                <i class="bi bi-search me-2"></i>
+                                Пошук за кадастровими номерами
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center" id="exportButton">
+                                <i class="bi bi-table me-2"></i>
+                                Експорт в Excel
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center" id="statisticsButton">
+                                <i class="bi bi-pie-chart-fill me-2"></i>
+                                Статистика
+                            </button>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </nav>
