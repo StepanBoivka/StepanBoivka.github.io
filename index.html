@@ -312,7 +312,7 @@
         100% { opacity: 1; }
     }
 
-    .freshness-bad {
+    .freshness-бад {
         color: #dc3545 !important;
         animation: blink 2s ease-in-out infinite;
     }
@@ -1141,30 +1141,37 @@
         }
 
         function processAreaAndTenant(feature, layer) {
-            const tenant = feature.properties["Орендар"];
-            const selectedField = document.getElementById('fieldSelect').value;
-            let area;
+    const tenant = feature.properties["Орендар"];
+    const selectedField = document.getElementById('fieldSelect').value;
+    let area = 0;
+    let shouldCount = false;
 
-            if (selectedField) {
-                if (feature.properties["type"] === "split") {
-                    area = parseFloat(feature.properties["Площа частини"]);
-                }
-            } else {
-                if (feature.properties["type"] === "original") {
-                    area = parseFloat(feature.properties["Площа розрахована"]);
-                }
-            }
-
-            if (!isNaN(area)) {
-                if (!tenant) {
-                    freeLayer.addLayer(layer);
-                    freeArea += area;
-                } else {
-                    if (!tenantAreas[tenant]) tenantAreas[tenant] = 0;
-                    tenantAreas[tenant] += area;
-                }
-            }
+    // Визначаємо чи потрібно рахувати цю ділянку
+    if (selectedField) {
+        // Якщо вибрано конкретне поле, рахуємо тільки частини (split)
+        if (feature.properties["type"] === "split") {
+            area = parseFloat(feature.properties["Площа частини"]);
+            shouldCount = true;
         }
+    } else {
+        // Якщо поле не вибрано, рахуємо тільки оригінальні ділянки
+        if (feature.properties["type"] === "original") {
+            area = parseFloat(feature.properties["Площа розрахована"]);
+            shouldCount = true;
+        }
+    }
+
+    // Додаємо площу тільки якщо потрібно рахувати цю ділянку
+    if (shouldCount && !isNaN(area)) {
+        if (!tenant) {
+            freeLayer.addLayer(layer);
+            freeArea += area;
+        } else {
+            if (!tenantAreas[tenant]) tenantAreas[tenant] = 0;
+            tenantAreas[tenant] += area;
+        }
+    }
+}
 
         // Предопределенные цвета
         const predefinedColors = [
@@ -1385,8 +1392,8 @@
             
             if (dates.length === 0 && noDate === totalRecords) {
                 indicator.textContent = 'Немає дат оновлення';
-                icon.className = 'bi bi-clock-history freshness-bad me-1';
-                document.querySelector('.data-freshness-indicator').classList.add('freshness-bad');
+                icon.className = 'bi bi-clock-history freshness-бад me-1';
+                document.querySelector('.data-freshness-indicator').classList.add('freshness-бад');
                 icon.title = `Записів без дати оновлення: ${noDate}`;
                 return;
             }
@@ -1394,7 +1401,7 @@
             if (dates.length === 0 && noDate === 0) {
                 indicator.textContent = 'Немає даних';
                 icon.className = 'bi bi-clock-history text-light me-1';
-                document.querySelector('.data-freshness-indicator').classList.remove('freshness-bad');
+                document.querySelector('.data-freshness-indicator').classList.remove('freshness-бад');
                 return;
             }
     
@@ -1421,8 +1428,8 @@
                 className = 'freshness-warning';
             } else {
                 text = `Застаріло ${oldPercent}%`;
-                className = 'freshness-bad';
-                document.querySelector('.data-freshness-indicator').classList.add('freshness-bad');
+                className = 'freshness-бад';
+                document.querySelector('.data-freshness-indicator').classList.add('freshness-бад');
             }
     
             if (className !== 'freshness-бад') {
