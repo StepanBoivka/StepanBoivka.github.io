@@ -3,7 +3,6 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Карта земельних ділянок</title>
     
     <!-- CSS -->
@@ -18,25 +17,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 
     <style>
-        * {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        /* Разрешаем выделение текста в текстовых полях */
-        input, textarea {
-            -webkit-user-select: text;
-            -khtml-user-select: text;
-            -moz-user-select: text;
-            -ms-user-select: text;
-            user-select: text;
-        }
-        
         html, body {
     width: 100%;
     height: 100%;
@@ -201,7 +181,7 @@
     background-color: #fefefe;
     margin: 15% auto;
     padding: 20px;
-    border: 1px solid #888;
+    border: 1px солід #888;
     width: 80%;
     max-width: 500px;
     border-radius: 5px;
@@ -262,7 +242,7 @@
 
 .tab-content {
     padding: 15px;
-    border: 1px solid #dee2e6;
+    border: 1px солід #dee2e6;
     border-top: none;
     border-radius: 0 0 4px 4px;
 }
@@ -390,25 +370,31 @@
                 </select>
                 
                 <!-- Добавляем индикатор актуальности данных -->
-                <div class="data-freshness-indicator ms-2">
-                    <i class="bi bi-clock-history text-light" data-bs-toggle="tooltip" data-bs-placement="bottom"></i>
-                    <small class="text-light d-none" id="dataFreshnessText"></small>
+                <div class="data-freshness-indicator ms-2 d-flex align-items-center">
+                    <i class="bi bi-clock-history text-light me-1"></i>
+                    <small class="text-light" id="dataFreshnessText"></small>
                 </div>
             </div>
 
             <!-- Замініть блок кнопок справа на цей код -->
             <div class="d-flex align-items-center">
                 <div id="clearSelectionContainer" class="ms-2" style="display:none;">
-                    <button class="btn btn-outline-warning btn-sm px-2" onclick="clearSelection()" title="Очистити виділення">
-                        <i class="bi bi-x-lg"></i>
+                    <button class="btn btn-outline-warning btn-transparent btn-sm" 
+                            onclick="clearSelection()" 
+                            style="width: 32px; height: 32px;"
+                            title="Очистити виділення">
+                        <i class="bi bi-trash3"></i>
                     </button>
                 </div>
                 <div id="excelExportContainer" class="ms-2" style="display:none;">
-                    <button class="btn btn-outline-success btn-sm px-2 me-2" onclick="exportSelectedToExcel()" title="Експорт виділеного">
+                    <button class="btn btn-outline-success btn-transparent btn-sm" 
+                            onclick="exportSelectedToExcel()"
+                            style="width: 32px; height: 32px;"
+                            title="Експортувати виділені">
                         <i class="bi bi-file-earmark-excel"></i>
                     </button>
                 </div>
-                <div class="dropdown">
+                <div class="dropdown ms-2">
                     <button class="btn btn-outline-light btn-transparent btn-sm dropdown-toggle" 
                             type="button" 
                             id="toolsDropdown" 
@@ -542,9 +528,6 @@
         let cadastralModal;
         let ownMarkersLayer, othersMarkersLayer; // Только объявляем, но не инициализируем
         let editableLayers; // Добавляем в глобальные переменные
-        let isMultiSelectMode = false;
-        let touchStartTime = 0;
-        const LONG_PRESS_DURATION = 500; // 500ms для долгого нажатия
 
         // Получение параметров из URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -793,47 +776,60 @@
 
         // Функция обновления информации о выделении
         function updateSelectionInfo() {
-            let totalArea = 0;
-            const selectedCount = selectedFeatures.size;
-            selectedFeatures.forEach(featureId => {
-                Object.values(overlays).forEach(layerGroup => {
-                    layerGroup.eachLayer(layer => {
-                        if (L.stamp(layer) === featureId && layer.feature?.properties["Площа розрахована"]) {
-                            totalArea += parseFloat(layer.feature.properties["Площа розрахована"]);
-                        }
-                    });
-                });
-            });
+    // Використовуємо Map для зберігання унікальних ділянок та їх площ
+    const uniqueFeatures = new Map();
+    const selectedCount = selectedFeatures.size;
 
-            const infoElement = document.getElementById('selectionInfo');
-            const clearBtnContainer = document.getElementById('clearSelectionContainer');
+    selectedFeatures.forEach(featureId => {
+        Object.values(overlays).forEach(layerGroup => {
+            layerGroup.eachLayer(layer => {
+                if (L.stamp(layer) === featureId && layer.feature) {
+                    const props = layer.feature.properties;
+                    const kadNum = props["Кадастровий номер"];
+                    const area = parseFloat(props["Площа розрахована"]) || 0;
 
-            if (selectedCount > 0) {
-                if (!infoElement) {
-                    const info = L.control({position: 'bottomleft'});
-                    info.onAdd = function() {
-                        const div = L.DomUtil.create('div', 'selection-info');
-                        div.id = 'selectionInfo';
-                        div.style.background = 'white';
-                        div.style.color = 'black';
-                        div.style.padding = '6px';
-                        div.style.border = '2px solid #666';
-                        div.style.borderRadius = '4px';
-                        return div;
-                    };
-                    info.addTo(map);
+                    // Зберігаємо площу тільки для унікального кадастрового номера
+                    if (kadNum && !uniqueFeatures.has(kadNum)) {
+                        uniqueFeatures.set(kadNum, area);
+                    }
                 }
-                document.getElementById('selectionInfo').innerHTML =
-                    `Виділено ділянок: ${selectedCount}<br>` +
-                    `Загальна площа: ${totalArea.toFixed(4)} га`;
-                clearBtnContainer.style.display = 'inline-block';
-                document.getElementById('excelExportContainer').style.display = 'inline-block';
-            } else {
-                if (infoElement) infoElement.remove();
-                clearBtnContainer.style.display = 'none';
-                document.getElementById('excelExportContainer').style.display = 'none';
-            }
+            });
+        });
+    });
+
+    // Підраховуємо загальну площу унікальних ділянок
+    const totalArea = Array.from(uniqueFeatures.values()).reduce((sum, area) => sum + area, 0);
+    const uniqueCount = uniqueFeatures.size;
+
+    const infoElement = document.getElementById('selectionInfo');
+    const clearBtnContainer = document.getElementById('clearSelectionContainer');
+
+    if (uniqueCount > 0) {
+        if (!infoElement) {
+            const info = L.control({position: 'bottomleft'});
+            info.onAdd = function() {
+                const div = L.DomUtil.create('div', 'selection-info');
+                div.id = 'selectionInfo';
+                div.style.background = 'white';
+                div.style.color = 'black';
+                div.style.padding = '6px';
+                div.style.border = '2px солід #666';
+                div.style.borderRadius = '4px';
+                return div;
+            };
+            info.addTo(map);
         }
+        document.getElementById('selectionInfo').innerHTML =
+            `Виділено ділянок: ${uniqueCount}<br>` +
+            `Загальна площа: ${totalArea.toFixed(4)} га`;
+        clearBtnContainer.style.display = 'inline-block';
+        document.getElementById('excelExportContainer').style.display = 'inline-block';
+    } else {
+        if (infoElement) infoElement.remove();
+        clearBtnContainer.style.display = 'none';
+        document.getElementById('excelExportContainer').style.display = 'none';
+    }
+}
 
         // Модифицируем функцию initMap
         function initMap() {
@@ -1016,11 +1012,6 @@
             }
             document.getElementById('clearSelectionContainer').style.display = 'none';
             document.getElementById('excelExportContainer').style.display = 'none';
-            isMultiSelectMode = false;
-            const statusElement = document.getElementById('selectionModeStatus');
-            if (statusElement) {
-                statusElement.remove();
-            }
         }
 
         // Инициализируем обработчик выбора файла
@@ -1107,45 +1098,11 @@
                 createPopupContent(feature, layer);
                 processAreaAndTenant(feature, layer);
                 
-                // Добавляем обработчики touch-событий
-                layer.on('touchstart', function(e) {
-                    touchStartTime = Date.now();
-                });
-
-                layer.on('touchend', function(e) {
-                    const touchDuration = Date.now() - touchStartTime;
-                    
-                    // Если это было долгое нажатие
-                    if (touchDuration >= LONG_PRESS_DURATION) {
-                        isMultiSelectMode = !isMultiSelectMode;
-                        L.DomEvent.stopPropagation(e);
-                        // Показываем статус режима выделения
-                        showSelectionModeStatus();
-                        return;
-                    }
-
-                    // Для обычного нажатия
-                    if (!e.originalEvent.target.closest('.leaflet-popup')) {
-                        L.DomEvent.stopPropagation(e);
-                        if (isMultiSelectMode) {
-                            toggleFeatureSelection(layer);
-                        } else {
-                            clearSelection();
-                            toggleFeatureSelection(layer);
-                        }
-                    }
-                });
-
-                // Оставляем существующий обработчик клика для десктопов
+                // Добавляем обработчик клика для выделения
                 layer.on('click', function(e) {
                     if (!e.originalEvent.target.closest('.leaflet-popup')) {
                         L.DomEvent.stopPropagation(e);
-                        if (isCtrlPressed || isMultiSelectMode) {
-                            toggleFeatureSelection(layer);
-                        } else {
-                            clearSelection();
-                            toggleFeatureSelection(layer);
-                        }
+                        toggleFeatureSelection(layer);
                     }
                 });
             }
@@ -1468,8 +1425,8 @@
                 document.querySelector('.data-freshness-indicator').classList.add('freshness-bad');
             }
     
-            if (className !== 'freshness-bad') {
-                document.querySelector('.data-freshness-indicator').classList.remove('freshness-bad');
+            if (className !== 'freshness-бад') {
+                document.querySelector('.data-freshness-indicator').classList.remove('freshness-бад');
             }
     
             const tooltip = `Актуально (до 1 міс): ${freshPercent}%\n` +
@@ -1497,33 +1454,47 @@
     
         // ...rest of your existing code...
         function exportSelectedToExcel() {
-            const rows = [
-                ["Кадастровий номер","Площа","Власник","Орендар"]
-            ];
-            selectedFeatures.forEach(featureId => {
-                Object.values(overlays).forEach(layerGroup => {
-                    layerGroup.eachLayer(layer => {
-                        if (L.stamp(layer) === featureId && layer.feature) {
-                            const props = layer.feature.properties;
-                            rows.push([
-                                props["Кадастровий номер"] || "",
-                                props["Площа розрахована"] || "",
-                                props["Власник"] || "",
-                                props["Орендар"] || ""
-                            ]);
-                        }
-                    });
-                });
+    const rows = [
+        ["Кадастровий номер","Площа","Власник","Орендар"]
+    ];
+    
+    // Використовуємо Map для зберігання унікальних ділянок
+    const uniqueFeatures = new Map();
+    
+    selectedFeatures.forEach(featureId => {
+        Object.values(overlays).forEach(layerGroup => {
+            layerGroup.eachLayer(layer => {
+                if (L.stamp(layer) === featureId && layer.feature) {
+                    const props = layer.feature.properties;
+                    const kadNum = props["Кадастровий номер"];
+                    
+                    // Перевіряємо чи не додали вже цей кадастровий номер
+                    if (kadNum && !uniqueFeatures.has(kadNum)) {
+                        uniqueFeatures.set(kadNum, [
+                            kadNum,
+                            props["Площа розрахована"] || "",
+                            props["Власник"] || "",
+                            props["Орендар"] || ""
+                        ]);
+                    }
+                }
             });
-            if (rows.length < 2) {
-                alert("Немає даних для експорту");
-                return;
-            }
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet(rows);
-            XLSX.utils.book_append_sheet(wb, ws, "Selected");
-            XLSX.writeFile(wb, "виділені ділянки.xlsx");
-        }
+        });
+    });
+    
+    // Додаємо унікальні записи до масиву
+    uniqueFeatures.forEach(row => rows.push(row));
+    
+    if (rows.length < 2) {
+        alert("Немає даних для експорту");
+        return;
+    }
+    
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, "Selected");
+    XLSX.writeFile(wb, "виділені ділянки.xlsx");
+}
 
         // После объявления глобальных переменных добавить:
         cadastralModal = document.getElementById("cadastralModal");
@@ -1951,29 +1922,6 @@
                 updateDataFreshnessIndicator(filteredData);
             }
         });
-
-        function showSelectionModeStatus() {
-            const existingStatus = document.getElementById('selectionModeStatus');
-            if (existingStatus) {
-                existingStatus.remove();
-            }
-
-            if (isMultiSelectMode) {
-                const status = L.control({position: 'topleft'});
-                status.onAdd = function() {
-                    const div = L.DomUtil.create('div', 'selection-mode-status');
-                    div.id = 'selectionModeStatus';
-                    div.style.background = 'rgba(0, 0, 0, 0.7)';
-                    div.style.color = 'white';
-                    div.style.padding = '5px 10px';
-                    div.style.borderRadius = '4px';
-                    div.style.margin = '10px';
-                    div.innerHTML = 'Режим множинного виділення';
-                    return div;
-                };
-                status.addTo(map);
-            }
-        }
     </script>
 </body>
 </html>
