@@ -379,12 +379,14 @@
             <!-- Замініть блок кнопок справа на цей код -->
             <div class="d-flex align-items-center">
                 <div id="clearSelectionContainer" class="ms-2" style="display:none;">
-                    <button class="btn btn-outline-warning btn-sm" onclick="clearSelection()">
-                        Очистити виділення
+                    <button class="btn btn-outline-warning btn-sm px-2" onclick="clearSelection()" title="Очистити виділення">
+                        <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
                 <div id="excelExportContainer" class="ms-2" style="display:none;">
-                    <button class="btn btn-outline-success btn-sm" onclick="exportSelectedToExcel()">Експорт</button>
+                    <button class="btn btn-outline-success btn-sm px-2 me-2" onclick="exportSelectedToExcel()" title="Експорт виділеного">
+                        <i class="bi bi-file-earmark-excel"></i>
+                    </button>
                 </div>
                 <div class="dropdown">
                     <button class="btn btn-outline-light btn-transparent btn-sm dropdown-toggle" 
@@ -520,6 +522,9 @@
         let cadastralModal;
         let ownMarkersLayer, othersMarkersLayer; // Только объявляем, но не инициализируем
         let editableLayers; // Добавляем в глобальные переменные
+        let isMultiSelectMode = false;
+        let touchStartTime = 0;
+        const LONG_PRESS_DURATION = 500; // 500ms для долгого нажатия
 
         // Получение параметров из URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -991,6 +996,11 @@
             }
             document.getElementById('clearSelectionContainer').style.display = 'none';
             document.getElementById('excelExportContainer').style.display = 'none';
+            isMultiSelectMode = false;
+            const statusElement = document.getElementById('selectionModeStatus');
+            if (statusElement) {
+                statusElement.remove();
+            }
         }
 
         // Инициализируем обработчик выбора файла
@@ -1077,11 +1087,45 @@
                 createPopupContent(feature, layer);
                 processAreaAndTenant(feature, layer);
                 
-                // Добавляем обработчик клика для выделения
+                // Добавляем обработчики touch-событий
+                layer.on('touchstart', function(e) {
+                    touchStartTime = Date.now();
+                });
+
+                layer.on('touchend', function(e) {
+                    const touchDuration = Date.now() - touchStartTime;
+                    
+                    // Если это было долгое нажатие
+                    if (touchDuration >= LONG_PRESS_DURATION) {
+                        isMultiSelectMode = !isMultiSelectMode;
+                        L.DomEvent.stopPropagation(e);
+                        // Показываем статус режима выделения
+                        showSelectionModeStatus();
+                        return;
+                    }
+
+                    // Для обычного нажатия
+                    if (!e.originalEvent.target.closest('.leaflet-popup')) {
+                        L.DomEvent.stopPropagation(e);
+                        if (isMultiSelectMode) {
+                            toggleFeatureSelection(layer);
+                        } else {
+                            clearSelection();
+                            toggleFeatureSelection(layer);
+                        }
+                    }
+                });
+
+                // Оставляем существующий обработчик клика для десктопов
                 layer.on('click', function(e) {
                     if (!e.originalEvent.target.closest('.leaflet-popup')) {
                         L.DomEvent.stopPropagation(e);
-                        toggleFeatureSelection(layer);
+                        if (isCtrlPressed || isMultiSelectMode) {
+                            toggleFeatureSelection(layer);
+                        } else {
+                            clearSelection();
+                            toggleFeatureSelection(layer);
+                        }
                     }
                 });
             }
@@ -1887,6 +1931,29 @@
                 updateDataFreshnessIndicator(filteredData);
             }
         });
+
+        function showSelectionModeStatus() {
+            const existingStatus = document.getElementById('selectionModeStatus');
+            if (existingStatus) {
+                existingStatus.remove();
+            }
+
+            if (isMultiSelectMode) {
+                const status = L.control({position: 'topleft'});
+                status.onAdd = function() {
+                    const div = L.DomUtil.create('div', 'selection-mode-status');
+                    div.id = 'selectionModeStatus';
+                    div.style.background = 'rgba(0, 0, 0, 0.7)';
+                    div.style.color = 'white';
+                    div.style.padding = '5px 10px';
+                    div.style.borderRadius = '4px';
+                    div.style.margin = '10px';
+                    div.innerHTML = 'Режим множинного виділення';
+                    return div;
+                };
+                status.addTo(map);
+            }
+        }
     </script>
 </body>
 </html>
