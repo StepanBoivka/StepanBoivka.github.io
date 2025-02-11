@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/leaflet.draw.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
     <style>
         html, body {
@@ -392,6 +393,26 @@
     background-color: var(--bs-dark);
     color: var(--bs-light);
 }
+    /* Оновлений CSS для текстових полів у модальному вікні */
+.modal textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+.modal textarea:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.modal .tab-content {
+    padding: 15px;
+    background: #fff;
+}
     </style>
 </head>
 <body>
@@ -481,34 +502,41 @@
 <div id="cadastralModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
-        <h5>Пошук за кадастровими номер</h5>
+        <h5>Пошук за кадастровими номерами</h5>
         
-        <!-- Tabs -->
-        <div class="nav nav-tabs mb-3" id="cadastralTabs" role="tablist">
-            <button class="nav-link active" id="own-tab" data-bs-toggle="tab" data-bs-target="#own" type="button" role="tab" aria-controls="own" aria-selected="true">
-                Свої длянки
-            </button>
-            <button class="nav-link" id="others-tab" data-bs-toggle="tab" data-bs-target="#others" type="button" role="tab" aria-controls="others" aria-selected="false">
-                Чужі ділянки
-            </button>
-        </div>
+        <ul class="nav nav-tabs" id="cadastralTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="own-tab" data-bs-toggle="tab" data-bs-target="#own" type="button">
+                    Свої ділянки
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="others-tab" data-bs-toggle="tab" data-bs-target="#others" type="button">
+                    Чужі ділянки
+                </button>
+            </li>
+        </ul>
 
-        <!-- Tab Content -->
         <div class="tab-content" id="cadastralTabContent">
-            <!-- Own Plots Tab -->
-            <div class="tab-pane fade show active" id="own" role="tabpanel" aria-labelledby="own-tab">
-                <p>Вставте список своїх кадастрових номерів (кожен з нового рядка)</p>
-                <textarea id="ownCadastralList" class="form-control mb-2" rows="6" placeholder="Наприкд:&#10;6821555100:05:006:0001&#10;6821555100:05:006:0002"></textarea>
+            <div class="tab-pane fade show active" id="own" role="tabpanel">
+                <p class="text-muted mb-2">Вставте список своїх кадастрових номерів (кожен з нового рядка)</p>
+                <textarea id="ownCadastralList" 
+                          class="form-control" 
+                          placeholder="Наприклад:&#10;6821555100:05:006:0001&#10;6821555100:05:006:0002"></textarea>
             </div>
             
-            <!-- Others' Plots Tab -->
-            <div class="tab-pane fade" id="others" role="tabpanel" aria-labelledby="others-tab">
-                <p>Вставте список ужих кадастрових номерів (кожен з новоо рядка)</p>
-                <textarea id="othersCadastralList" class="form-control mb-2" rows="6" placeholder="Наприклад:&#10;6821555100:05:006:0003&#10;6821555100:05:006:0004"></textarea>
+            <div class="tab-pane fade" id="others" role="tabpanel">
+                <p class="text-muted mb-2">Вставте список чужих кадастрових номерів (кожен з нового рядка)</p>
+                <textarea id="othersCadastralList" 
+                          class="form-control" 
+                          placeholder="Наприклад:&#10;6821555100:05:006:0003&#10;6821555100:05:006:0004"></textarea>
             </div>
         </div>
 
-        <button class="btn btn-primary mt-3" id="searchCadastral">Пошук</button>
+        <div class="mt-3">
+            <button type="button" class="btn btn-primary" id="searchCadastral">Пошук</button>
+            <button type="button" class="btn btn-secondary ms-2" onclick="clearCadastralLists()">Очистити</button>
+        </div>
     </div>
 </div>
 
@@ -535,6 +563,27 @@
             </div>
         </div>
         <button class="btn btn-primary" id="confirmExport">Експортувати</button>
+    </div>
+</div>
+
+<!-- Знайдіть div з id="exportModal" і додайте після нього новий модал -->
+<div id="loadModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h5>Завантаження полігонів</h5>
+        <div class="mb-3">
+            <label for="fileInput" class="form-label">Виберіть GeoJSON або KML файл</label>
+            <input type="file" class="form-control" id="fileInput" accept=".geojson,.kml">
+        </div>
+        <div class="mb-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="clearExisting">
+                <label class="form-check-label" for="clearExisting">
+                    Очистити існуючі полігони перед завантаженням
+                </label>
+            </div>
+        </div>
+        <button class="btn btn-primary" id="confirmLoad">Завантажити</button>
     </div>
 </div>
 
@@ -591,20 +640,32 @@
 
             // Обработчики для кнопок выпадающего меню
             document.getElementById('cadastralSearchButton').addEventListener('click', function() {
-                clearCadastralLists();
-                cadastralModal.style.display = "block";
+                // Закриваємо бокову панель
+                var offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('mainMenu'));
+                offcanvas.hide();
+                
+                // Після невеликої затримки показуємо модальне вікно
+                setTimeout(() => {
+                    clearCadastralLists();
+                    cadastralModal.style.display = "block";
+                }, 300); // Затримка для завершення анімації закриття бокової панелі
             });
 
             document.getElementById('exportButton').addEventListener('click', function() {
-                var data = collectMapData();
-                var selectedFile = document.getElementById('fileSelect').value;
+                var offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('mainMenu'));
+                offcanvas.hide();
                 
-                if (data.length > 0) {
-                    var filename = selectedFile.replace('.geojson', '');
-                    exportToExcel(data, filename);
-                } else {
-                    alert('Немає даних для експорту. Будь ласка, виберіть файл з даними спочатку.');
-                }
+                setTimeout(() => {
+                    var data = collectMapData();
+                    var selectedFile = document.getElementById('fileSelect').value;
+                    
+                    if (data.length > 0) {
+                        var filename = selectedFile.replace('.geojson', '');
+                        exportToExcel(data, filename);
+                    } else {
+                        alert('Немає даних для експорту. Будь ласка, виберіть файл з даними спочатку.');
+                    }
+                }, 300);
             });
 
             document.getElementById('statisticsButton').addEventListener('click', function() {
@@ -739,13 +800,13 @@
 
             // Добавляем обработчики клавиш
             document.addEventListener('keydown', function(e) {
-                if (e.key === 'Control') {
+                if (e.key === 'Control' || e.key === 'Meta') {
                     isCtrlPressed = true;
                 }
             });
 
             document.addEventListener('keyup', function(e) {
-                if (e.key === 'Control') {
+                if (e.key === 'Control' || e.key === 'Meta') {
                     isCtrlPressed = false;
                 }
             });
@@ -769,11 +830,17 @@
             editableLayers = new L.FeatureGroup();
             map.addLayer(editableLayers);
 
+            // Змінюємо налаштування L.Control.Draw
             var drawControl = new L.Control.Draw({
                 position: 'topright',
                 draw: {
                     polygon: true,
-                    polyline: false,
+                    polyline: {
+                        shapeOptions: {
+                            color: '#f357a1',
+                            weight: 3
+                        }
+                    },
                     rectangle: false,
                     circle: false,
                     marker: false,
@@ -781,10 +848,55 @@
                 },
                 edit: {
                     featureGroup: editableLayers,
-                    remove: true
+                    remove: true,
+                    edit: {
+                        selectedPathOptions: {
+                            maintainColor: true,
+                            opacity: 0.3
+                        }
+                    },
+                    poly: {
+                        allowIntersection: false
+                    }
                 }
             });
+
             map.addControl(drawControl);
+
+            // Додаємо новий обробник для вибору полігонів для редагування
+            var editHandler = null;
+
+            map.on(L.Draw.Event.EDITSTART, function (e) {
+                editableLayers.eachLayer(function (layer) {
+                    if (layer instanceof L.Polygon) {
+                        // Спочатку вимикаємо можливість редагування для всіх полігонів
+                        layer.editing.disable();
+                        
+                        // Додаємо обробник кліку для кожного полігону
+                        layer.on('click', function () {
+                            // Вимикаємо редагування для всіх інших полігонів
+                            editableLayers.eachLayer(function (l) {
+                                if (l !== layer && l.editing) {
+                                    l.editing.disable();
+                                }
+                            });
+                            
+                            // Вмикаємо редагування тільки для вибраного полігону
+                            layer.editing.enable();
+                        });
+                    }
+                });
+            });
+
+            map.on(L.Draw.Event.EDITSTOP, function (e) {
+                editableLayers.eachLayer(function (layer) {
+                    if (layer instanceof L.Polygon) {
+                        layer.editing.disable();
+                        // Видаляємо обробник кліку
+                        layer.off('click');
+                    }
+                });
+            });
 
             // Добавляем кнопку экспорта
             L.Control.ExportGeoJSON = L.Control.extend({
@@ -815,6 +927,35 @@
 
             map.addControl(new L.Control.ExportGeoJSON({ position: 'topright' }));
 
+            // Додайте після ініціалізації drawControl
+            L.Control.LoadPolygons = L.Control.extend({
+                onAdd: function(map) {
+                    var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                    var button = L.DomUtil.create('a', '', container);
+                    button.innerHTML = '<i class="bi bi-folder2-open"></i>';
+                    button.title = 'Завантажити полігони';
+                    button.href = '#';
+                    button.style.width = '30px';
+                    button.style.height = '30px';
+                    button.style.lineHeight = '30px';
+                    button.style.textAlign = 'center';
+                    button.style.backgroundColor = 'white';
+                    button.style.display = 'flex';
+                    button.style.alignItems = 'center';
+                    button.style.justifyContent = 'center';
+
+                    L.DomEvent.on(button, 'click', function(e) {
+                        L.DomEvent.stopPropagation(e);
+                        L.DomEvent.preventDefault(e);
+                        showLoadModal();
+                    });
+
+                    return container;
+                }
+            });
+
+            map.addControl(new L.Control.LoadPolygons({ position: 'topright' }));
+
             // Обработчики для измерения площади
             map.on(L.Draw.Event.CREATED, function(e) {
                 var layer = e.layer;
@@ -834,36 +975,359 @@
                     }
                 });
             });
+
+            // Додаємо кнопки для розрізання та об'єднання
+            var cutButton = new L.Control.EasyButton({
+                position: 'topright',
+                states: [{
+                    stateName: 'cut-inactive',
+                    icon: '<span class="bi bi-scissors" style="font-size: 18px"></span>',
+                    title: 'Розрізати полігон',
+                    onClick: function(control) {
+                        control.state('cut-active');
+                        startCutMode();
+                    }
+                }, {
+                    stateName: 'cut-active',
+                    icon: '<span class="bi bi-scissors" style="color: #f00; font-size: 18px"></span>',
+                    title: 'Скасувати розрізання',
+                    onClick: function(control) {
+                        control.state('cut-inactive');
+                        cancelCutMode();
+                    }
+                }]
+            }).addTo(map);
+
+            var mergeButton = new L.Control.EasyButton({
+                position: 'topright',
+                states: [{
+                    stateName: 'merge',
+                    icon: '<span class="bi bi-unity" style="font-size: 18px"></span>',
+                    title: 'Об\'єднати полігони',
+                    onClick: function() {
+                        mergeSelectedPolygons();
+                    }
+                }]
+            }).addTo(map);
+
+            let cutLine = null;
+            let polygonToCut = null;
+            let isInCutMode = false;
+            let cutPoints = [];
+
+            function startCutMode() {
+    isInCutMode = true;
+    map.dragging.disable();
+    map.doubleClickZoom.disable();
+    
+    // Змінюємо курсор для показу, що режим активний
+    map._container.style.cursor = 'crosshair';
+    
+    // Показуємо підказку користувачу
+    alert('Виберіть полігон для розрізання');
+    
+    editableLayers.eachLayer(function(layer) {
+        if (layer instanceof L.Polygon) {
+            // Додаємо підсвічування при наведенні
+            layer.on('mouseover', function() {
+                if (!polygonToCut) {
+                    this.setStyle({
+                        color: '#ff0000',
+                        weight: 3
+                    });
+                }
+            });
+            
+            layer.on('mouseout', function() {
+                if (!polygonToCut) {
+                    this.setStyle({
+                        color: '#3388ff',
+                        weight: 2
+                    });
+                }
+            });
+            
+            layer.on('click', selectPolygonToCut);
+        }
+    });
+}
+
+function selectPolygonToCut(e) {
+    if (!isInCutMode) return;
+    
+    L.DomEvent.stopPropagation(e);
+    
+    if (polygonToCut) {
+        // Якщо полігон вже вибрано, ігноруємо повторний вибір
+        return;
+    }
+    
+    polygonToCut = e.target;
+    
+    // Підсвічуємо вибраний полігон
+    polygonToCut.setStyle({
+        color: '#ff0000',
+        weight: 3,
+        fillOpacity: 0.3
+    });
+    
+    // Показуємо підказку для наступного кроку
+    alert('Тепер клацніть по карті в двох місцях, щоб створити лінію розрізу');
+    
+    // Додаємо обробник для малювання лінії
+    map.on('click', onDrawCutLine);
+}
+
+function onDrawCutLine(e) {
+    if (!polygonToCut) return;
+    
+    cutPoints.push(e.latlng);
+    
+    if (cutLine) {
+        map.removeLayer(cutLine);
+    }
+    
+    // Показуємо лінію розрізу
+    cutLine = L.polyline(cutPoints, {
+        color: '#ff0000',
+        weight: 3,
+        dashArray: '5, 10'
+    }).addTo(map);
+    
+    if (cutPoints.length >= 2) {
+        if (performCut()) {
+            cancelCutMode();
+            cutButton.state('cut-inactive');
+        } else {
+            // Якщо розрізання не вдалося, очищаємо точки але залишаємося в режимі розрізання
+            cutPoints = [];
+            if (cutLine) {
+                map.removeLayer(cutLine);
+                cutLine = null;
+            }
+        }
+    }
+}
+
+function cancelCutMode() {
+    isInCutMode = false;
+    map.dragging.enable();
+    map.doubleClickZoom.enable();
+    
+    // Повертаємо стандартний курсор
+    map._container.style.cursor = '';
+    
+    if (cutLine) {
+        map.removeLayer(cutLine);
+        cutLine = null;
+    }
+    
+    // Очищаємо точки розрізу
+    cutPoints = [];
+    
+    // Знімаємо підсвічування з полігону
+    if (polygonToCut) {
+        polygonToCut.setStyle({
+            color: '#3388ff',
+            weight: 2,
+            fillOpacity: 0.2
+        });
+        polygonToCut = null;
+    }
+    
+    // Видаляємо всі обробники подій
+    editableLayers.eachLayer(function(layer) {
+        if (layer instanceof L.Polygon) {
+            layer.off('mouseover');
+            layer.off('mouseout');
+            layer.off('click', selectPolygonToCut);
+        }
+    });
+    
+    map.off('click', onDrawCutLine);
+}
+
+            function performCut() {
+    try {
+        if (!polygonToCut || cutPoints.length < 2) {
+            throw new Error('Не вибрано полігон або недостатньо точок для розрізання');
+        }
+
+        const polygonGeoJSON = polygonToCut.toGeoJSON();
+        
+        // Створюємо лінію з точок кліку
+        const line = turf.lineString(cutPoints.map(latlng => [latlng.lng, latlng.lat]));
+        
+        // Знаходимо перетин лінії з полігоном
+        const intersection = turf.lineIntersect(line, polygonGeoJSON);
+        
+        if (intersection.features.length < 2) {
+            throw new Error('Лінія розрізу повинна перетинати полігон у двох точках');
+        }
+        
+        // Створюємо лінію розрізу через точки перетину
+        const cutLine = turf.lineString([
+            intersection.features[0].geometry.coordinates,
+            intersection.features[1].geometry.coordinates
+        ]);
+        
+        // Створюємо буфер навколо лінії розрізу
+        const bufferedLine = turf.buffer(cutLine, 0.0001);
+        
+        // Розрізаємо полігон
+        const clipped = turf.difference(polygonGeoJSON, bufferedLine);
+        
+        if (!clipped) {
+            throw new Error('Помилка при розрізанні. Спробуйте інший кут розрізу.');
+        }
+        
+        // Якщо отримали MultiPolygon, розділяємо його на окремі полігони
+        if (clipped.geometry.type === 'MultiPolygon') {
+            // Видаляємо оригінальний полігон
+            editableLayers.removeLayer(polygonToCut);
+            
+            // Додаємо нові полігони
+            clipped.geometry.coordinates.forEach(coords => {
+                const newPolygon = turf.polygon(coords);
+                
+                // Перевіряємо чи площа нового полігону не занадто мала
+                const area = turf.area(newPolygon) / 10000; // конвертуємо в га
+                if (area > 0.001) { // ігноруємо дуже малі частини
+                    addPolygonToMap(newPolygon, polygonToCut.feature.properties);
+                }
+            });
+            
+            return true;
+        } else if (clipped.geometry.type === 'Polygon') {
+            // Видаляємо оригінальний полігон
+            editableLayers.removeLayer(polygonToCut);
+            
+            // Додаємо новий полігон
+            addPolygonToMap(clipped, polygonToCut.feature.properties);
+            
+            return true;
+        }
+        
+        throw new Error('Невдалий результат розрізання');
+    } catch (error) {
+        alert('Помилка при розрізанні полігону: ' + error.message);
+        return false;
+    }
+}
+
+// Додайте допоміжну функцію для додавання полігону на карту:
+function addPolygonToMap(geoJSON, originalProperties) {
+    const area = turf.area(geoJSON) / 10000; // конвертуємо в га
+    geoJSON.properties = {
+        ...originalProperties,
+        "Площа розрахована": area.toFixed(4)
+    };
+    
+    L.geoJSON(geoJSON, {
+        style: {
+            color: '#3388ff',
+            weight: 2,
+            fillOpacity: 0.2
+        }
+    }).eachLayer(layer => {
+        layer.feature = {
+            type: 'Feature',
+            properties: geoJSON.properties,
+            geometry: geoJSON.geometry
+        };
+        const popupContent = 'Площа: ' + area.toFixed(4) + ' га';
+        layer.bindPopup(popupContent);
+        editableLayers.addLayer(layer);
+    });
+}
+
+            function mergeSelectedPolygons() {
+                if (selectedFeatures.size < 2) {
+                    alert('Виберіть принаймні 2 полігони для об\'єднання');
+                    return;
+                }
+
+                try {
+                    let polygons = [];
+                    selectedFeatures.forEach(featureId => {
+                        editableLayers.eachLayer(layer => {
+                            if (L.stamp(layer) === featureId) {
+                                polygons.push(layer);
+                            }
+                        });
+                    });
+
+                    // Конвертуємо полігони в формат turf.js
+                    const features = polygons.map(p => p.toGeoJSON());
+                    
+                    // Об'єднуємо полігони
+                    let union = features[0];
+                    for (let i = 1; i < features.length; i++) {
+                        union = turf.union(union, features[i]);
+                    }
+                    
+                    // Видаляємо старі полігони
+                    polygons.forEach(p => editableLayers.removeLayer(p));
+                    
+                    // Рахуємо площу нового полігону
+                    const area = turf.area(union) / 10000; // конвертуємо в га
+                    union.properties = {
+                        "Площа розрахована": area.toFixed(4)
+                    };
+                    
+                    // Додаємо новий полігон
+                    L.geoJSON(union, {
+                        style: {
+                            color: '#3388ff',
+                            weight: 2,
+                            fillOpacity: 0.2
+                        }
+                    }).eachLayer(layer => {
+                        layer.feature = union;
+                        const popupContent = 'Площа: ' + area.toFixed(4) + ' га';
+                        layer.bindPopup(popupContent);
+                        editableLayers.addLayer(layer);
+                    });
+                    
+                    clearSelection();
+                } catch (error) {
+                    alert('Помилка при об\'єднанні полігонів: ' + error.message);
+                }
+            }
         }
 
         // Функция переключения выделения
-        function toggleFeatureSelection(layer) {
-            const featureId = L.stamp(layer);
-            
-            if (selectedFeatures.has(featureId)) {
-                // Снимаем выделение
-                selectedFeatures.delete(featureId);
-                layer.setStyle({
-                    className: '',
-                    fillOpacity: 0.4,
-                    weight: 0.5
-                });
-            } else {
-                // Добавляем выделение
-                if (!isCtrlPressed) {
-                    clearSelection();
-                }
-                selectedFeatures.add(featureId);
-                layer.setStyle({
-                    className: 'selected-polygon',
-                    fillOpacity: 0.6,
-                    weight: 2,
-                    color: '#FFFF00' // Добавляем цвет для мультівиділення
-                });
-            }
-            
-            updateSelectionInfo();
+        function toggleFeatureSelection(layer, e) {
+    if (e) { // Перевіряємо чи існує e
+        L.DomEvent.stopPropagation(e);
+    }
+    
+    const featureId = L.stamp(layer);
+    
+    if (selectedFeatures.has(featureId)) {
+        // Знімаємо виділення
+        selectedFeatures.delete(featureId);
+        layer.setStyle({
+            fillOpacity: 0.4,
+            weight: 0.5,
+            color: getColor(layer.feature.properties["Орендар"])
+        });
+    } else {
+        // Додаємо виділення
+        if (!isCtrlPressed) {
+            // Якщо Ctrl не натиснуто - очищаємо попередні виділення
+            clearSelection();
         }
+        selectedFeatures.add(featureId);
+        layer.setStyle({
+            fillOpacity: 0.6,
+            weight: 2,
+            color: '#FFFF00'
+        });
+    }
+    
+    updateSelectionInfo();
+}
 
         // Функция обновления информации о выделении
         function updateSelectionInfo() {
@@ -1203,51 +1667,50 @@
         }
 
         function onEachFeature(feature, layer) {
-            if (feature.properties) {
-                createPopupContent(feature, layer);
-                processAreaAndTenant(feature, layer);
-                
-                // Добавляем обработчик клика для выделения
-                layer.on('click', function(e) {
-                    if (!e.originalEvent.target.closest('.leaflet-popup')) {
-                        L.DomEvent.stopPropagation(e);
-                        toggleFeatureSelection(layer);
-                    }
-                });
+    if (feature.properties) {
+        createPopupContent(feature, layer);
+        processAreaAndTenant(feature, layer);
+        
+        // Добавляем обработчик клика для выделения
+        layer.on('click', function(e) {
+            if (!e.originalEvent.target.closest('.leaflet-popup')) {
+                toggleFeatureSelection(layer, e); // Додаємо e як другий параметр
             }
-        }
+        });
+    }
+}
 
         function createPopupContent(feature, layer) {
-            let popupContent = '<div class="popup-content"><table>';
-            const orderedKeys = [
-                "Кадастровий номер",
-                "Площа розрахована",
-                "Власник",
-                "Дата реєстрації",
-                "Орендар",
-                "Дата реєстрації оренди",
-                "Дата завершення",
-                "Вид обмеження"
-            ];
+    let popupContent = '<div class="popup-content"><table>';
+    const orderedKeys = [
+        "Кадастровий номер",
+        "Площа розрахована",
+        "Власник", 
+        "Дата реєстрації",
+        "Орендар",
+        "Дата реєстрації оренди",
+        "Дата завершення",
+        "Вид обмеження"
+    ];
 
-            orderedKeys.forEach(key => {
-                if (feature.properties.hasOwnProperty(key)) {
-                    const value = feature.properties[key] || '';
-                    popupContent += `<tr><td class="property-name">${key}:</td><td class="property-value">${value}</td></tr>`;
-                }
-            });
-
-            popupContent += '</table>';
-            
-            const cadastralNumber = feature.properties["Кадастровий номер"];
-            if (cadastralNumber) {
-                const publicUrl = 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber;
-                popupContent += createPopupLinks(publicUrl, feature.properties["Дата оновлення"]);
-            }
-            
-            popupContent += '</div>';
-            layer.bindPopup(popupContent, {maxWidth: 300});
+    orderedKeys.forEach(key => {
+        if (feature.properties.hasOwnProperty(key)) {
+            const value = feature.properties[key] || '';
+            popupContent += `<tr><td class="property-name">${key}:</td><td class="property-value">${value}</td></tr>`;
         }
+    });
+
+    popupContent += '</table>';
+    
+    const cadastralNumber = feature.properties["Кадастровий номер"];
+    if (cadastralNumber) {
+        const publicUrl = 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber;
+        popupContent += createPopupLinks(publicUrl, feature.properties["Дата оновлення"]);
+    }
+    
+    popupContent += '</div>';
+    layer.bindPopup(popupContent, {maxWidth: 300});
+}
 
         function processAreaAndTenant(feature, layer) {
     const tenant = feature.properties["Орендар"];
@@ -1802,73 +2265,75 @@
 
         // Добавляем функцию searchCadastralNumbers
         function searchCadastralNumbers() {
-            var ownCadastralText = document.getElementById("ownCadastralList").value;
-            var othersCadastralText = document.getElementById("othersCadastralList").value;
-            
-            var ownNumbers = ownCadastralText.split('\n')
-                .map(num => num.trim())
-                .filter(num => num.length > 0);
-            
-            var othersNumbers = othersCadastralText.split('\n')
-                .map(num => num.trim())
-                .filter(num => num.length > 0);
+    var ownCadastralText = document.getElementById("ownCadastralList").value;
+    var othersCadastralText = document.getElementById("othersCadastralList").value;
+    
+    if (!ownCadastralText && !othersCadastralText) {
+        alert('Будь ласка, введіть хоча б один кадастровий номер');
+        return;
+    }
+    
+    var ownNumbers = ownCadastralText.split('\n')
+        .map(num => num.trim())
+        .filter(num => num.length > 0);
+    
+    var othersNumbers = othersCadastralText.split('\n')
+        .map(num => num.trim())
+        .filter(num => num.length > 0);
 
-            ownMarkersLayer.clearLayers();
-            othersMarkersLayer.clearLayers();
-            
-            var foundFeatures = new Map();
-            var activeLayer = null;
-            
-            for (var key in overlays) {
-                if (overlays.hasOwnProperty(key) && key !== "Поля обробітку") {
-                    activeLayer = overlays[key];
+    // Очищаємо попередні маркери
+    ownMarkersLayer.clearLayers();
+    othersMarkersLayer.clearLayers();
+    
+    var foundFeatures = new Map();
+    
+    Object.values(overlays).forEach(layerGroup => {
+        if (layerGroup && typeof layerGroup.eachLayer === 'function') {
+            layerGroup.eachLayer(layer => {
+                if (layer.feature && layer.feature.properties) {
+                    var kadNum = layer.feature.properties['Кадастровий номер'];
                     
-                    activeLayer.eachLayer(function(layer) {
-                        if (layer.feature && layer.feature.properties) {
-                            var kadNum = layer.feature.properties['Кадастровий номер'];
+                    if (kadNum && !foundFeatures.has(kadNum)) {
+                        var isOwn = ownNumbers.includes(kadNum);
+                        var isOther = othersNumbers.includes(kadNum);
+                        
+                        if (isOwn || isOther) {
+                            foundFeatures.set(kadNum, layer);
+                            var center = layer.getBounds().getCenter();
+                            var marker = createMarker(center, kadNum, isOwn);
                             
-                            if (kadNum && !foundFeatures.has(kadNum)) {
-                                var isOwn = ownNumbers.includes(kadNum);
-                                var isOther = othersNumbers.includes(kadNum);
-                                
-                                if (isOwn || isOther) {
-                                    foundFeatures.set(kadNum, layer);
-                                    var center = layer.getBounds().getCenter();
-                                    var marker = createMarker(center, kadNum, isOwn);
-                                    
-                                    marker.bindPopup(`
-                                        <div style="font-size: 14px; font-weight: bold;">
-                                            ${kadNum}
-                                            <br>
-                                            <span style="color: ${isOwn ? '#28a745' : '#dc3545'}">
-                                                ${isOwn ? 'Своя ділянка' : 'Чужа ділянка'}
-                                            </span>
-                                        </div>
-                                    `, {
-                                        offset: [0, -20]
-                                    });
-                                    
-                                    marker.addTo(isOwn ? ownMarkersLayer : othersMarkersLayer);
-                                }
-                            }
+                            marker.bindPopup(`
+                                <div style="font-size: 14px; font-weight: bold;">
+                                    ${kadNum}
+                                    <br>
+                                    <span style="color: ${isOwn ? '#28a745' : '#dc3545'}">
+                                        ${isOwn ? 'Своя ділянка' : 'Чужа ділянка'}
+                                    </span>
+                                </div>
+                            `, {
+                                offset: [0, -20]
+                            });
+                            
+                            marker.addTo(isOwn ? ownMarkersLayer : othersMarkersLayer);
                         }
-                    });
+                    }
                 }
-            }
-
-            if (foundFeatures.size > 0) {
-                var group = L.featureGroup([ownMarkersLayer, othersMarkersLayer]);
-                map.fitBounds(group.getBounds(), {
-                    padding: [50, 50]
-                });
-                
-                alert(`Знайдено ${foundFeatures.size} ділянок`);
-                cadastralModal.style.display = "none";
-                clearCadastralLists();
-            } else {
-                alert('Ділянок не знайдено');
-            }
+            });
         }
+    });
+
+    if (foundFeatures.size > 0) {
+        var group = L.featureGroup([ownMarkersLayer, othersMarkersLayer]);
+        map.fitBounds(group.getBounds(), {
+            padding: [50, 50]
+        });
+        
+        alert(`Знайдено ${foundFeatures.size} ділянок`);
+        cadastralModal.style.display = "none";
+    } else {
+        alert('Ділянок не знайдено');
+    }
+}
 
         function calculatePolygonArea(layer) {
             var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
@@ -2047,6 +2512,131 @@
             const freshnessUrl = `freshness.html${id ? `?id=${id}` : ''}`;
             window.location.href = freshnessUrl;
         });
+
+        // Додайте нові функції для завантаження файлів
+        function showLoadModal() {
+            var modal = document.getElementById('loadModal');
+            var span = modal.getElementsByClassName("close")[0];
+            var confirmBtn = document.getElementById('confirmLoad');
+            var fileInput = document.getElementById('fileInput');
+
+            modal.style.display = "block";
+
+            span.onclick = function() {
+                modal.style.display = "none";
+                fileInput.value = '';
+            }
+
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                    fileInput.value = '';
+                }
+            }
+
+            confirmBtn.onclick = function() {
+                var file = fileInput.files[0];
+                var clearExisting = document.getElementById('clearExisting').checked;
+                
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        loadPolygonsFromFile(e.target.result, file.name, clearExisting);
+                    };
+                    reader.readAsText(file);
+                }
+                
+                modal.style.display = "none";
+                fileInput.value = '';
+            }
+        }
+
+        function loadPolygonsFromFile(content, filename, clearExisting) {
+    try {
+        var data;
+        
+        if (filename.toLowerCase().endsWith('.kml')) {
+            var parser = new DOMParser();
+            var kml = parser.parseFromString(content, 'text/xml');
+            data = toGeoJSON.kml(kml);
+        } else {
+            data = JSON.parse(content);
+        }
+
+        if (clearExisting) {
+            editableLayers.clearLayers();
+        }
+
+        let addedPolygons = 0;
+
+        if (data.features && Array.isArray(data.features)) {
+            data.features.forEach(function(feature, index) {
+                if (feature.geometry && 
+                    (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
+                    
+                    try {
+                        let polygonCoordinates = [];
+                        if (feature.geometry.type === 'Polygon') {
+                            polygonCoordinates = [feature.geometry.coordinates[0]];
+                        } else if (feature.geometry.type === 'MultiPolygon') {
+                            polygonCoordinates = feature.geometry.coordinates[0];
+                        }
+
+                        polygonCoordinates.forEach((coordinates) => {
+                            let latLngs = coordinates.map(coord => {
+                                let lat, lng;
+                                [lng, lat] = coord;
+                                return [lat, lng];
+                            }).filter(coord => coord !== null);
+
+                            if (latLngs.length >= 3) {
+                                var polygon = L.polygon(latLngs, {
+                                    color: '#3388ff',
+                                    weight: 2,
+                                    fillOpacity: 0.2
+                                });
+
+                                if (feature.properties) {
+                                    polygon.feature = {
+                                        type: 'Feature',
+                                        properties: feature.properties
+                                    };
+                                }
+
+                                var area = calculatePolygonArea(polygon);
+                                var popupContent = 'Площа: ' + area + ' га';
+                                if (feature.properties && feature.properties.note) {
+                                    popupContent += '<br>Примітка: ' + feature.properties.note;
+                                }
+                                polygon.bindPopup(popupContent);
+
+                                editableLayers.addLayer(polygon);
+                                addedPolygons++;
+                            }
+                        });
+                    } catch (e) {
+                        // Ігноруємо помилки окремих полігонів
+                    }
+                }
+            });
+
+            if (addedPolygons > 0) {
+                map.fitBounds(editableLayers.getBounds(), {
+                    padding: [50, 50]
+                });
+                alert(`Успішно завантажено ${addedPolygons} полігонів`);
+            } else {
+                alert('Не вдалося завантажити жодного полігону');
+            }
+        } else {
+            alert('Файл має невірний формат');
+        }
+    } catch (error) {
+        alert('Помилка завантаження файлу. Перевірте формат файлу.');
+    }
+}
+
+// ...existing code...
 
     </script>
 </body>
