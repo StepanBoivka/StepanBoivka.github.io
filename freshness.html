@@ -54,7 +54,7 @@
 <body>
     <nav class="navbar navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="index.html">
+            <a class="navbar-brand" href="#" onclick="goBack(); return false;">
                 <i class="bi bi-arrow-left me-2"></i>Повернутися на карту
             </a>
             <div class="view-switcher">
@@ -280,6 +280,22 @@
                 });
             });
         });
+
+        // Добавляем функцию для возврата
+        function goBack() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            const selectedFile = urlParams.get('file');
+            
+            let returnUrl = 'index.html';
+            if (id) returnUrl += `?id=${id}`;
+            if (selectedFile) {
+                returnUrl += id ? '&' : '?';
+                returnUrl += `return_file=${encodeURIComponent(selectedFile)}`;
+            }
+            
+            window.location.href = returnUrl;
+        }
     </script>
 </body>
 </html>

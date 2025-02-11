@@ -446,7 +446,7 @@
                 <div class="d-grid gap-2">
                     <button class="btn btn-outline-light text-start" id="cadastralSearchButton">
                         <i class="bi bi-search me-2"></i>
-                        Пошук за кадастровими номерами
+                        Пошук за списком номерів
                     </button>
                     <button class="btn btn-outline-light text-start" id="statisticsButton">
                         <i class="bi bi-pie-chart-fill me-2"></i>
@@ -644,6 +644,40 @@
             //     .addEventListener('click', function() {
             //         searchNavbarCombined();
             //     });
+
+            // Добавляем восстановление выбора рады
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnFile = urlParams.get('return_file');
+            
+            if (returnFile) {
+                // Дожидаемся загрузки списка файлов и выбираем нужный
+                const checkSelect = setInterval(() => {
+                    const select = document.getElementById('fileSelect');
+                    const option = Array.from(select.options).find(opt => opt.value === returnFile);
+                    
+                    if (option) {
+                        clearInterval(checkSelect);
+                        select.value = returnFile;
+                        select.dispatchEvent(new Event('change'));
+                    }
+                }, 100);
+            }
+
+            // Добавляем сохранение выбора для перехода на freshness
+            document.getElementById('freshnessButton').addEventListener('click', function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const id = urlParams.get('id');
+                const selectedFile = document.getElementById('fileSelect').value;
+                
+                let freshnessUrl = `freshness.html`;
+                if (id) freshnessUrl += `?id=${id}`;
+                if (selectedFile && selectedFile !== 'Виберіть раду') {
+                    freshnessUrl += id ? '&' : '?';
+                    freshnessUrl += `file=${encodeURIComponent(selectedFile)}`;
+                }
+                
+                window.location.href = freshnessUrl;
+            });
         });
 
         function initializeMap() {
