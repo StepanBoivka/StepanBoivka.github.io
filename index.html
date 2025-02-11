@@ -413,6 +413,50 @@
     padding: 15px;
     background: #fff;
 }
+.tools-menu {
+    background-color: white;
+}
+
+.tools-container {
+    position: absolute;
+    right: 35px;
+    top: 0;
+    background-color: white;
+    padding: 5px;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    z-index: 1000;
+    width: auto;
+    white-space: nowrap;
+}
+
+.tools-group-title {
+    font-weight: bold;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.tools-group {
+    margin-bottom: 10px;
+}
+
+.tool-button {
+    display: block;
+    margin: 5px 0;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    background-color: white;
+    color: #666;
+    border-radius: 4px;
+}
+
+.tool-title {
+    margin-left: 5px;
+    font-size: 14px;
+    vertical-align: middle;
+}
     </style>
 </head>
 <body>
@@ -742,273 +786,277 @@
         });
 
         function initializeMap() {
-            // Создаем карту
-            map = L.map('map', {
-                zoomControl: false
-            }).setView([48.3794, 31.1656], 6);
+    // Создаем карту
+    map = L.map('map', {
+        zoomControl: false
+    }).setView([48.3794, 31.1656], 6);
 
-            // Создаем и добавляем базовые слои
-            const googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-                maxZoom: 20,
-                attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>'
-            }).addTo(map);
+    // Создаем базовые слои
+    const googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+    }).addTo(map);
 
-            const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            });
+    const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    });
 
-            const rasterLayer = L.tileLayer(dataPath + 'tiles/sat/{z}/{x}/{y}.png', {
-                maxZoom: 20,
-                attribution: 'Актуальні растри'
-            });
+    const rasterLayer = L.tileLayer(dataPath + 'tiles/sat/{z}/{x}/{y}.png', {
+        maxZoom: 20,
+        attribution: 'Актуальні растри'
+    });
 
-            // Инициализируем базовые слои
-            baseMaps = {
-                "Google Maps": googleLayer,
-                "OpenStreetMap": openStreetMapLayer,
-                "Актуальні растри": rasterLayer
-            };
+    const cadastreLayer = L.tileLayer('https://cdn.kadastr.live/tiles/raster/styles/parcels/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://kadastr.live">Kadastr.live</a>'
+    });
 
-            // Добавляем контроль масштабирования
-            L.control.zoom({
-                position: 'bottomright'
-            }).addTo(map);
+    // Ініціалізуємо базові шари як оверлеї
+    baseMaps = {
+        "Google Maps": googleLayer,
+        "OpenStreetMap": openStreetMapLayer,
+        "Актуальні растри": rasterLayer,
+        "Кадастрова карта": cadastreLayer
+    };
 
-            // Добавляем контроль локации
-            L.control.locate({
-                position: 'bottomright',
-                strings: {
-                    title: "Показати моє місцезнаходження"
+    // Змінюємо ініціалізацію контролю шарів
+    layersControl = L.control.layers(null, baseMaps, {
+        collapsed: true
+    }).addTo(map);
+
+    // Добавляем контроль масштабирования
+    L.control.zoom({
+        position: 'bottomright'
+    }).addTo(map);
+
+    // Добавляем контроль локации
+    L.control.locate({
+        position: 'bottomright',
+        strings: {
+            title: "Показати моє місцезнаходження"
+        },
+        locateOptions: {
+            enableHighAccuracy: true,
+            maxZoom: 20,
+            timeout: 10000,
+            maximumAge: 0,
+            watch: true
+        }
+    }).addTo(map);
+
+    // Инициализируем слой для свободных участков
+    freeLayer = L.layerGroup();
+
+    // Добавляем обработчики клавиш
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Control' || e.key === 'Meta') {
+            isCtrlPressed = true;
+        }
+    });
+
+    document.addEventListener('keyup', function(e) {
+        if (e.key === 'Control' || e.key === 'Meta') {
+            isCtrlPressed = false;
+        }
+    });
+
+    // Обработчик клика по карте
+    map.on('click', function(e) {
+        if (!isCtrlPressed && !e.originalEvent.target.closest('.leaflet-control-layers')) {
+            clearSelection();
+        }
+    });
+
+    // Загружаем список файлов и поля
+    loadFileList();
+    addFieldLayer();
+
+    // Инициализируем слои для маркеров после создания карты
+    ownMarkersLayer = L.layerGroup().addTo(map);
+    othersMarkersLayer = L.layerGroup().addTo(map);
+
+    // Инициализация инструментов измерения
+    editableLayers = new L.FeatureGroup();
+    map.addLayer(editableLayers);
+
+    // Змінюємо налаштування L.Control.Draw
+    var drawControl = new L.Control.Draw({
+        position: 'topright',
+        draw: {
+            polyline: false,
+            polygon: {
+                allowIntersection: false,
+                showArea: true,
+                drawError: {
+                    color: '#e1e100',
+                    timeout: 1000
                 },
-                locateOptions: {
-                    enableHighAccuracy: true,
-                    maxZoom: 20,
-                    timeout: 10000,
-                    maximumAge: 0,
-                    watch: true
+                shapeOptions: {
+                    color: '#3388ff',
+                    weight: 2
                 }
-            }).addTo(map);
-
-            // Инициализируем слой для свободных участков
-            freeLayer = L.layerGroup();
-
-            // Добавляем контроль слоев
-            layersControl = L.control.layers(baseMaps, overlays, {
-                collapsed: true
-            }).addTo(map);
-
-            // Добавляем обработчики клавиш
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Control' || e.key === 'Meta') {
-                    isCtrlPressed = true;
+            },
+            circle: false,
+            rectangle: false,
+            marker: false,
+            circlemarker: false
+        },
+        edit: {
+            featureGroup: editableLayers,
+            remove: true,
+            edit: {
+                selectedPathOptions: {
+                    maintainColor: true,
+                    opacity: 0.3
                 }
-            });
+            }
+        }
+    });
 
-            document.addEventListener('keyup', function(e) {
-                if (e.key === 'Control' || e.key === 'Meta') {
-                    isCtrlPressed = false;
-                }
-            });
+    map.addControl(drawControl);
 
-            // Обработчик клика по карте
-            map.on('click', function(e) {
-                if (!isCtrlPressed && !e.originalEvent.target.closest('.leaflet-control-layers')) {
-                    clearSelection();
-                }
-            });
+    // Додаємо новий обробник для вибору полігонів для редагування
+    var editHandler = null;
 
-            // Загружаем список файлов и поля
-            loadFileList();
-            addFieldLayer();
-
-            // Инициализируем слои для маркеров после создания карты
-            ownMarkersLayer = L.layerGroup().addTo(map);
-            othersMarkersLayer = L.layerGroup().addTo(map);
-
-            // Инициализация инструментов измерения
-            editableLayers = new L.FeatureGroup();
-            map.addLayer(editableLayers);
-
-            // Змінюємо налаштування L.Control.Draw
-            var drawControl = new L.Control.Draw({
-                position: 'topright',
-                draw: {
-                    polygon: true,
-                    polyline: {
-                        shapeOptions: {
-                            color: '#f357a1',
-                            weight: 3
+    map.on(L.Draw.Event.EDITSTART, function (e) {
+        editableLayers.eachLayer(function (layer) {
+            if (layer instanceof L.Polygon) {
+                // Спочатку вимикаємо можливість редагування для всіх полігонів
+                layer.editing.disable();
+                
+                // Додаємо обробник кліку для кожного полігону
+                layer.on('click', function () {
+                    // Вимикаємо редагування для всіх інших полігонів
+                    editableLayers.eachLayer(function (l) {
+                        if (l !== layer && l.editing) {
+                            l.editing.disable();
                         }
-                    },
-                    rectangle: false,
-                    circle: false,
-                    marker: false,
-                    circlemarker: false
-                },
-                edit: {
-                    featureGroup: editableLayers,
-                    remove: true,
-                    edit: {
-                        selectedPathOptions: {
-                            maintainColor: true,
-                            opacity: 0.3
-                        }
-                    },
-                    poly: {
-                        allowIntersection: false
-                    }
-                }
-            });
-
-            map.addControl(drawControl);
-
-            // Додаємо новий обробник для вибору полігонів для редагування
-            var editHandler = null;
-
-            map.on(L.Draw.Event.EDITSTART, function (e) {
-                editableLayers.eachLayer(function (layer) {
-                    if (layer instanceof L.Polygon) {
-                        // Спочатку вимикаємо можливість редагування для всіх полігонів
-                        layer.editing.disable();
-                        
-                        // Додаємо обробник кліку для кожного полігону
-                        layer.on('click', function () {
-                            // Вимикаємо редагування для всіх інших полігонів
-                            editableLayers.eachLayer(function (l) {
-                                if (l !== layer && l.editing) {
-                                    l.editing.disable();
-                                }
-                            });
-                            
-                            // Вмикаємо редагування тільки для вибраного полігону
-                            layer.editing.enable();
-                        });
-                    }
-                });
-            });
-
-            map.on(L.Draw.Event.EDITSTOP, function (e) {
-                editableLayers.eachLayer(function (layer) {
-                    if (layer instanceof L.Polygon) {
-                        layer.editing.disable();
-                        // Видаляємо обробник кліку
-                        layer.off('click');
-                    }
-                });
-            });
-
-            // Добавляем кнопку экспорта
-            L.Control.ExportGeoJSON = L.Control.extend({
-                onAdd: function(map) {
-                    var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                    var button = L.DomUtil.create('a', '', container);
-                    button.innerHTML = '<i class="bi bi-file-earmark-arrow-down"></i>';
-                    button.title = 'Експортувати в GeoJSON/KML';
-                    button.href = '#';
-                    button.style.width = '30px';
-                    button.style.height = '30px';
-                    button.style.lineHeight = '30px';
-                    button.style.textAlign = 'center';
-                    button.style.backgroundColor = 'white';
-                    button.style.display = 'flex';
-                    button.style.alignItems = 'center';
-                    button.style.justifyContent = 'center';
-
-                    L.DomEvent.on(button, 'click', function(e) {
-                        L.DomEvent.stopPropagation(e);
-                        L.DomEvent.preventDefault(e);
-                        exportToGeoJSON();
                     });
-
-                    return container;
-                }
-            });
-
-            map.addControl(new L.Control.ExportGeoJSON({ position: 'topright' }));
-
-            // Додайте після ініціалізації drawControl
-            L.Control.LoadPolygons = L.Control.extend({
-                onAdd: function(map) {
-                    var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                    var button = L.DomUtil.create('a', '', container);
-                    button.innerHTML = '<i class="bi bi-folder2-open"></i>';
-                    button.title = 'Завантажити полігони';
-                    button.href = '#';
-                    button.style.width = '30px';
-                    button.style.height = '30px';
-                    button.style.lineHeight = '30px';
-                    button.style.textAlign = 'center';
-                    button.style.backgroundColor = 'white';
-                    button.style.display = 'flex';
-                    button.style.alignItems = 'center';
-                    button.style.justifyContent = 'center';
-
-                    L.DomEvent.on(button, 'click', function(e) {
-                        L.DomEvent.stopPropagation(e);
-                        L.DomEvent.preventDefault(e);
-                        showLoadModal();
-                    });
-
-                    return container;
-                }
-            });
-
-            map.addControl(new L.Control.LoadPolygons({ position: 'topright' }));
-
-            // Обработчики для измерения площади
-            map.on(L.Draw.Event.CREATED, function(e) {
-                var layer = e.layer;
-                if (e.layerType === 'polygon') {
-                    var areaInHectares = calculatePolygonArea(layer);
-                    layer.bindPopup('Площа: ' + areaInHectares + ' га').openPopup();
-                }
-                editableLayers.addLayer(layer);
-            });
-
-            map.on(L.Draw.Event.EDITED, function(e) {
-                var layers = e.layers;
-                layers.eachLayer(function(layer) {
-                    if (layer instanceof L.Polygon) {
-                        updateAreaPopup(layer);
-                        layer.openPopup();
-                    }
+                    
+                    // Вмикаємо редагування тільки для вибраного полігону
+                    layer.editing.enable();
                 });
-            });
+            }
+        });
+    });
 
-            // Додаємо кнопки для розрізання та об'єднання
-            var cutButton = new L.Control.EasyButton({
-                position: 'topright',
-                states: [{
-                    stateName: 'cut-inactive',
-                    icon: '<span class="bi bi-scissors" style="font-size: 18px"></span>',
-                    title: 'Розрізати полігон',
-                    onClick: function(control) {
-                        control.state('cut-active');
+    map.on(L.Draw.Event.EDITSTOP, function (e) {
+        editableLayers.eachLayer(function (layer) {
+            if (layer instanceof L.Polygon) {
+                layer.editing.disable();
+                // Видаляємо обробник кліку
+                layer.off('click');
+            }
+        });
+    });
+
+    // Додаємо випадаюче меню з інструментами
+var toolsButton = L.Control.extend({
+    options: {
+        position: 'topright'
+    },
+
+    onAdd: function (map) {
+        var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control tools-menu');
+        
+        // Головна кнопка
+        var mainButton = L.DomUtil.create('a', 'tools-main-button', container);
+        mainButton.href = '#';
+        mainButton.title = 'Інструменти редагування';
+        mainButton.innerHTML = '<i class="bi bi-tools"></i>';
+        
+        // Контейнер для кнопок інструментів
+        var toolsContainer = L.DomUtil.create('div', 'tools-container', container);
+        toolsContainer.style.display = 'none';
+
+        // Групуємо інструменти за категоріями
+        const toolGroups = [
+            {
+                title: 'Малювання',
+                tools: [
+                    { icon: 'bi-pencil-square', title: 'Малювати полігон', action: function() { 
+                        new L.Draw.Polygon(map).enable();
+                    }},
+                    { icon: 'bi-arrows-move', title: 'Редагувати полігони', action: function() {
+                        new L.EditToolbar.Edit(map, {featureGroup: editableLayers}).enable();
+                    }},
+                    { icon: 'bi-trash', title: 'Видалити полігон', action: function() {
+                        new L.EditToolbar.Delete(map, {featureGroup: editableLayers}).enable();
+                    }}
+                ]
+            },
+            {
+                title: 'Операції',
+                tools: [
+                    { icon: 'bi-scissors', title: 'Розрізати полігон', action: function() {
                         startCutMode();
-                    }
-                }, {
-                    stateName: 'cut-active',
-                    icon: '<span class="bi bi-scissors" style="color: #f00; font-size: 18px"></span>',
-                    title: 'Скасувати розрізання',
-                    onClick: function(control) {
-                        control.state('cut-inactive');
-                        cancelCutMode();
-                    }
-                }]
-            }).addTo(map);
-
-            var mergeButton = new L.Control.EasyButton({
-                position: 'topright',
-                states: [{
-                    stateName: 'merge',
-                    icon: '<span class="bi bi-unity" style="font-size: 18px"></span>',
-                    title: 'Об\'єднати полігони',
-                    onClick: function() {
+                    }},
+                    { icon: 'bi-unity', title: 'Об\'єднати полігони', action: function() {
                         mergeSelectedPolygons();
-                    }
-                }]
-            }).addTo(map);
+                    }}
+                ]
+            },
+            {
+                title: 'Файли',
+                tools: [
+                    { icon: 'bi-file-earmark-arrow-down', title: 'Експорт в GeoJSON/KML', action: function() {
+                        exportToGeoJSON();
+                    }},
+                    { icon: 'bi-folder2-open', title: 'Імпорт з GeoJSON/KML', action: function() {
+                        showLoadModal();
+                    }}
+                ]
+            }
+        ];
+
+        // Створюємо групи інструментів
+        toolGroups.forEach(group => {
+            if (group.title) {
+                const groupTitle = L.DomUtil.create('div', 'tools-group-title', toolsContainer);
+                groupTitle.textContent = group.title;
+            }
+            
+            const groupContainer = L.DomUtil.create('div', 'tools-group', toolsContainer);
+            
+            group.tools.forEach(tool => {
+                const button = L.DomUtil.create('a', 'tool-button', groupContainer);
+                button.href = '#';
+                button.title = tool.title;
+                button.innerHTML = `<i class="bi ${tool.icon}"></i>`;
+                
+                L.DomEvent.on(button, 'click', function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    L.DomEvent.preventDefault(e);
+                    toolsContainer.style.display = 'none';
+                    tool.action();
+                });
+            });
+        });
+
+        // Обробник кліку на головну кнопку
+L.DomEvent.on(mainButton, 'click', function(e) {
+    L.DomEvent.stopPropagation(e);
+    L.DomEvent.preventDefault(e);
+    toolsContainer.style.display = toolsContainer.style.display === 'none' ? 'block' : 'none';
+});
+
+// Закриваємо меню при кліку поза ним
+L.DomEvent.on(document, 'click', function() {
+    toolsContainer.style.display = 'none';
+});
+
+// Запобігаємо закриттю при кліку на меню
+L.DomEvent.on(container, 'click', function(e) {
+    L.DomEvent.stopPropagation(e);
+});
+
+return container;
+    }
+});
+
+// Додаємо меню на карту
+map.addControl(new toolsButton());
 
             let cutLine = null;
             let polygonToCut = null;
@@ -1770,15 +1818,20 @@ function addPolygonToMap(geoJSON, originalProperties) {
         }
 
         function updateLayersControl() {
-            if (layersControl) {
-                map.removeControl(layersControl);
-            }
-            layersControl = L.control.layers(baseMaps, overlays, {
-                collapsed: true
-            }).addTo(map);
-            addTenantLayers();
-            addFreeLayer();
-        }
+    if (layersControl) {
+        map.removeControl(layersControl);
+    }
+    
+    // Створюємо об'єкт всіх шарів
+    const allLayers = {...baseMaps, ...overlays};
+    
+    layersControl = L.control.layers(null, allLayers, {
+        collapsed: true
+    }).addTo(map);
+    
+    addTenantLayers();
+    addFreeLayer();
+}
 
         function addTenantLayers() {
             var tenantLayers = {};
