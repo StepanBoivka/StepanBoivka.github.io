@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Актуальність даних</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .freshness-good { color: #28a745 !important; }
+        .freshness-warning { color: #ffc107 !important; }
+        .freshness-bad { color: #dc3545 !important; }
+        
+        .council-card {
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+        .council-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .stats-box {
+            font-size: 0.9rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            background-color: rgba(0,0,0,0.03);
+        }
+        .progress {
+            height: 25px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        .progress-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2em;
+        }
+        .view-switcher {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+        }
+        .table-view .progress {
+            width: 400px;
+        }
+        @media (max-width: 768px) {
+            .table-view .progress {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-arrow-left me-2"></i>Повернутися на карту
+            </a>
+            <div class="view-switcher">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-light active" data-view="cards">
+                        <i class="bi bi-grid"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-light" data-view="table">
+                        <i class="bi bi-table"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <h1 class="mb-4">Актуальність даних по радах</h1>
+        
+        <!-- Контейнер для карток -->
+        <div id="cardsView" class="row">
+            <!-- Картки будуть тут -->
+        </div>
+
+        <!-- Контейнер для таблиці -->
+        <div id="tableView" class="table-view" style="display: none">
+            <table class="table">
+                <thead>
+                    <tr></tr>
+                        <th>Рада</th>
+                        <th>Статус</th>
+                        <th>Ділянок</th>
+                        <th>Актуальність даних</th>
+                        <th>Останнє оновлення</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Рядки таблиці будуть тут -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            const dataPath = id ? `data/${id}/` : 'data/';
+
+            loadAndAnalyzeData(dataPath);
+        });
+
+        async function loadAndAnalyzeData(dataPath) {
+            try {
+                const response = await fetch(dataPath + 'file_list.json');
+                const data = await response.json();
+                const grid = document.getElementById('cardsView');
+                
+                for (const file of data.files) {
+                    const councilData = await analyzeCouncilData(dataPath + file);
+                    const card = createCouncilCard(file.replace('.geojson', ''), councilData);
+                    grid.appendChild(card);
+                }
+            } catch (error) {
+                console.error('Помилка завантаження даних:', error);
+                alert('Помилка завантаження списку файлів');
+            }
+        }
+
+        async function analyzeCouncilData(filePath) {
+            const response = await fetch(filePath);
+            const data = await response.json();
+            const now = new Date();
+            
+            let stats = {
+                totalRecords: data.features.length,
+                fresh: 0,
+                medium: 0,
+                old: 0,
+                noDate: 0,
+                latestUpdate: null,
+                oldestUpdate: null
+            };
+
+            data.features.forEach(feature => {
+                const date = feature.properties?.["Дата оновлення"];
+                if (!date) {
+                    stats.noDate++;
+                    return;
+                }
+
+                const [day, month, year] = date.split('.').map(Number);
+                const updateDate = new Date(year, month - 1, day);
+                const monthsOld = (now - updateDate) / (1000 * 60 * 60 * 24 * 30);
+
+                if (!stats.latestUpdate || updateDate > stats.latestUpdate) {
+                    stats.latestUpdate = updateDate;
+                }
+                if (!stats.oldestUpdate || updateDate < stats.oldestUpdate) {
+                    stats.oldestUpdate = updateDate;
+                }
+
+                if (monthsOld < 1) stats.fresh++;
+                else if (monthsOld < 2) stats.medium++;
+                else stats.old++;
+            });
+
+            return stats;
+        }
+
+        function createCouncilCard(name, stats) {
+            const div = document.createElement('div');
+            div.className = 'col-12';
+            
+            const freshPercent = Math.round((stats.fresh / stats.totalRecords) * 100);
+            const mediumPercent = Math.round((stats.medium / stats.totalRecords) * 100);
+            const oldPercent = Math.round((stats.old / stats.totalRecords) * 100);
+            const noDatePercent = Math.round((stats.noDate / stats.totalRecords) * 100);
+
+            let statusClass, statusText;
+            if (freshPercent >= 70) {
+                statusClass = 'freshness-good';
+                statusText = 'Актуально';
+            } else if (freshPercent + mediumPercent >= 70) {
+                statusClass = 'freshness-warning';
+                statusText = 'Частково актуально';
+            } else {
+                statusClass = 'freshness-bad';
+                statusText = 'Застаріло';
+            }
+
+            const latestDate = stats.latestUpdate ? stats.latestUpdate.toLocaleDateString('uk-UA') : 'немає даних';
+            const oldestDate = stats.oldestUpdate ? stats.oldestUpdate.toLocaleDateString('uk-UA') : 'немає даних';
+
+            // Додаємо дані в обидва представлення
+            addTableRow(name, statusClass, statusText, stats, freshPercent, mediumPercent, oldPercent, noDatePercent, latestDate);
+
+            div.innerHTML = `
+                <div class="card council-card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <h5 class="card-title d-flex align-items-center mb-0">
+                                    <i class="bi bi-building me-2 ${statusClass}"></i>
+                                    ${name}
+                                </h5>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="text-muted">Статус: <span class="${statusClass}">${statusText}</span></div>
+                                <div class="small">Ділянок: ${stats.totalRecords}</div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" style="width: ${freshPercent}%" title="До 1 місяця: ${freshPercent}%">
+                                        ${freshPercent}%
+                                    </div>
+                                    <div class="progress-bar bg-warning" style="width: ${mediumPercent}%" title="1-2 місяці: ${mediumPercent}%">
+                                        ${mediumPercent}%
+                                    </div>
+                                    <div class="progress-bar bg-danger" style="width: ${oldPercent}%" title="Понад 2 місяці: ${oldPercent}%">
+                                        ${oldPercent}%
+                                    </div>
+                                    <div class="progress-bar bg-secondary" style="width: ${noDatePercent}%" title="Без дати: ${noDatePercent}%">
+                                        ${noDatePercent}%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="small">Оновлено: ${latestDate}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return div;
+        }
+
+        function addTableRow(name, statusClass, statusText, stats, freshPercent, mediumPercent, oldPercent, noDatePercent, latestDate) {
+            const tbody = document.getElementById('tableBody');
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>
+                    <i class="bi bi-building me-2 ${statusClass}"></i>
+                    ${name}
+                </td>
+                <td><span class="${statusClass}">${statusText}</span></td>
+                <td>${stats.totalRecords}</td>
+                <td>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" style="width: ${freshPercent}%" title="До 1 місяця: ${freshPercent}%">
+                            ${freshPercent}%
+                        </div>
+                        <div class="progress-bar bg-warning" style="width: ${mediumPercent}%" title="1-2 місяці: ${mediumPercent}%">
+                            ${mediumPercent}%
+                        </div>
+                        <div class="progress-bar bg-danger" style="width: ${oldPercent}%" title="Понад 2 місяці: ${oldPercent}%">
+                            ${oldPercent}%
+                        </div>
+                        <div class="progress-bar bg-secondary" style="width: ${noDatePercent}%" title="Без дати: ${noDatePercent}%">
+                            ${noDatePercent}%
+                        </div>
+                    </div>
+                </td>
+                <td>${latestDate}</td>
+            `;
+            
+            tbody.appendChild(row);
+        }
+
+        // Додаємо перемикач видів
+        document.addEventListener('DOMContentLoaded', function() {
+            const viewButtons = document.querySelectorAll('[data-view]');
+            viewButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const view = this.dataset.view;
+                    document.getElementById('cardsView').style.display = view === 'cards' ? 'flex' : 'none';
+                    document.getElementById('tableView').style.display = view === 'table' ? 'block' : 'none';
+                    
+                    // Оновлюємо активну кнопку
+                    viewButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

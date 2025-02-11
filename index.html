@@ -352,81 +352,128 @@
         white-space: nowrap;
         z-index: 6;
     }
+    /* Додати нові стилі */
+.offcanvas {
+    --bs-offcanvas-width: 300px;
+}
+
+@media (max-width: 576px) {
+    .offcanvas {
+        --bs-offcanvas-width: 260px;
+    }
+}
+
+.offcanvas-title {
+    font-size: 1.1rem;
+}
+
+.form-label {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+/* Оновлені стилі для селектів */
+.offcanvas .form-select {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Стиль для кнопки відкриття меню */
+.navbar .btn-outline-light:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+/* Покращення читабельності тексту в темній темі */
+.offcanvas.bg-dark {
+    --bs-bg-opacity: 0.95;
+}
+
+.offcanvas .form-select option {
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+}
     </style>
 </head>
 <body>
-    <!-- Навігаційна панель -->
+    <!-- Оставляем только один navbar -->
     <nav class="navbar navbar-dark bg-dark fixed-top py-1">
         <div class="container-fluid px-2">
-            <div class="d-flex align-items-center">
-                <!-- Селект для вибору ради -->
-                <select class="form-select form-select-sm bg-dark text-light border-secondary select-custom" id="fileSelect">
-                    <option>Виберіть раду</option>
-                </select>
+            <!-- Кнопка для відкриття бокового меню -->
+            <button class="btn btn-outline-light btn-sm" 
+                    type="button" 
+                    data-bs-toggle="offcanvas" 
+                    data-bs-target="#mainMenu"
+                    aria-controls="mainMenu"
+                    style="width: 32px; height: 32px;">
+                <i class="bi bi-list"></i>
+            </button>
 
-                <!-- Селект для вибору поля -->
-                <select class="form-select form-select-sm bg-dark text-light border-secondary select-custom-small ms-2" id="fieldSelect">
-                    <option value="">Всі поля</option>
-                </select>
-                
-                <!-- Добавляем индикатор актуальности данных -->
-                <div class="data-freshness-indicator ms-2 d-flex align-items-center">
-                    <i class="bi bi-clock-history text-light me-1"></i>
-                    <small class="text-light" id="dataFreshnessText"></small>
-                </div>
-            </div>
-
-            <!-- Замініть блок кнопок справа на цей код -->
-            <div class="d-flex align-items-center">
-                <div id="clearSelectionContainer" class="ms-2" style="display:none;">
-                    <button class="btn btn-outline-warning btn-transparent btn-sm" 
-                            onclick="clearSelection()" 
-                            style="width: 32px; height: 32px;"
-                            title="Очистити виділення">
-                        <i class="bi bi-trash3"></i>
-                    </button>
-                </div>
-                <div id="excelExportContainer" class="ms-2" style="display:none;">
-                    <button class="btn btn-outline-success btn-transparent btn-sm" 
-                            onclick="exportSelectedToExcel()"
-                            style="width: 32px; height: 32px;"
-                            title="Експортувати виділені">
-                        <i class="bi bi-file-earmark-excel"></i>
-                    </button>
-                </div>
-                <div class="dropdown ms-2">
-                    <button class="btn btn-outline-light btn-transparent btn-sm dropdown-toggle" 
-                            type="button" 
-                            id="toolsDropdown" 
-                            data-bs-toggle="dropdown" 
-                            aria-expanded="false"
-                            style="width: 32px; height: 32px;">
-                        <i class="bi bi-tools"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="toolsDropdown">
-                        <li>
-                            <button class="dropdown-item d-flex align-items-center" id="cadastralSearchButton">
-                                <i class="bi bi-search me-2"></i>
-                                Пошук за кадастровими номерами
-                            </button>
-                        </li>
-                        <li>
-                            <button class="dropdown-item d-flex align-items-center" id="exportButton">
-                                <i class="bi bi-table me-2"></i>
-                                Експорт в Excel
-                            </button>
-                        </li>
-                        <li>
-                            <button class="dropdown-item d-flex align-items-center" id="statisticsButton">
-                                <i class="bi bi-pie-chart-fill me-2"></i>
-                                Статистика
-                            </button>
-                        </li>
-                    </ul>
-                </div>
+            <!-- Індикатор актуальності даних -->
+            <div class="data-freshness-indicator d-flex align-items-center ms-2">
+                <i class="bi bi-clock-history text-light me-1"></i>
+                <small class="text-light" id="dataFreshnessText"></small>
             </div>
         </div>
     </nav>
+
+    <!-- Бокове меню -->
+    <div class="offcanvas offcanvas-start bg-dark text-light" tabindex="-1" id="mainMenu">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">Головне меню</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <!-- Секція вибору області перегляду -->
+            <div class="mb-4">
+                <h6 class="border-bottom border-secondary pb-2 mb-3">Вибір області перегляду</h6>
+                <div class="mb-3">
+                    <label for="fileSelect" class="form-label">Рада</label>
+                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="fileSelect">
+                        <option>Виберіть раду</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="fieldSelect" class="form-label">Поле обробітку</label>
+                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="fieldSelect">
+                        <option value="">Всі поля</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Секція інструментів -->
+            <div class="mb-4">
+                <h6 class="border-bottom border-secondary pb-2 mb-3">Інструменти</h6>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-light text-start" id="cadastralSearchButton">
+                        <i class="bi bi-search me-2"></i>
+                        Пошук за кадастровими номерами
+                    </button>
+                    <button class="btn btn-outline-light text-start" id="statisticsButton">
+                        <i class="bi bi-pie-chart-fill me-2"></i>
+                        Статистика
+                    </button>
+                    <button class="btn btn-outline-light text-start" id="exportButton">
+                        <i class="bi bi-table me-2"></i>
+                        Експорт в Excel
+                    </button>
+                    <button class="btn btn-outline-light text-start" id="freshnessButton">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Актуальність даних
+                    </button>
+                    <div id="selectionTools" style="display: none;">
+                        <button class="btn btn-outline-warning text-start w-100 mb-2" onclick="clearSelection()">
+                            <i class="bi bi-trash3 me-2"></i>
+                            Очистити виділення
+                        </button>
+                        <button class="btn btn-outline-success text-start w-100" onclick="exportSelectedToExcel()">
+                            <i class="bi bi-file-earmark-excel me-2"></i>
+                            Експортувати виділені
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Карта -->
     <div id="map"></div>
@@ -587,6 +634,16 @@
 
             // Обработчик поиска кадастровых номеров
             document.getElementById('searchCadastral').addEventListener('click', searchCadastralNumbers);
+
+            // Удаляем обработчики для навбар поиска
+            // document.getElementById('navbarCadastralSearchButton').addEventListener('click', function() {
+            //     searchNavbarCadastralNumber();
+            // });
+
+            // document.getElementById('navbarCombinedSearchButton')
+            //     .addEventListener('click', function() {
+            //         searchNavbarCombined();
+            //     });
         });
 
         function initializeMap() {
@@ -802,7 +859,7 @@
     const uniqueCount = uniqueFeatures.size;
 
     const infoElement = document.getElementById('selectionInfo');
-    const clearBtnContainer = document.getElementById('clearSelectionContainer');
+    const selectionTools = document.getElementById('selectionTools');
 
     if (uniqueCount > 0) {
         if (!infoElement) {
@@ -813,7 +870,7 @@
                 div.style.background = 'white';
                 div.style.color = 'black';
                 div.style.padding = '6px';
-                div.style.border = '2px солід #666';
+                div.style.border = '2px solid #666';
                 div.style.borderRadius = '4px';
                 return div;
             };
@@ -822,12 +879,17 @@
         document.getElementById('selectionInfo').innerHTML =
             `Виділено ділянок: ${uniqueCount}<br>` +
             `Загальна площа: ${totalArea.toFixed(4)} га`;
-        clearBtnContainer.style.display = 'inline-block';
-        document.getElementById('excelExportContainer').style.display = 'inline-block';
+        
+        if (selectionTools) {
+            selectionTools.style.display = 'block';
+        }
     } else {
-        if (infoElement) infoElement.remove();
-        clearBtnContainer.style.display = 'none';
-        document.getElementById('excelExportContainer').style.display = 'none';
+        if (infoElement) {
+            infoElement.remove();
+        }
+        if (selectionTools) {
+            selectionTools.style.display = 'none';
+        }
     }
 }
 
@@ -990,29 +1052,33 @@
         }
 
         function clearSelection() {
-            selectedFeatures.forEach(featureId => {
-                const layers = Object.values(overlays);
-                layers.forEach(layerGroup => {
-                    layerGroup.eachLayer(layer => {
-                        if (L.stamp(layer) === featureId && layer.feature) {
-                            layer.setStyle({
-                                className: '',
-                                fillOpacity: 0.4,
-                                weight: 0.5,
-                                color: getColor(layer.feature.properties["Орендар"])
-                            });
-                        }
+    selectedFeatures.forEach(featureId => {
+        const layers = Object.values(overlays);
+        layers.forEach(layerGroup => {
+            layerGroup.eachLayer(layer => {
+                if (L.stamp(layer) === featureId && layer.feature) {
+                    layer.setStyle({
+                        className: '',
+                        fillOpacity: 0.4,
+                        weight: 0.5,
+                        color: getColor(layer.feature.properties["Орендар"])
                     });
-                });
+                }
             });
-            selectedFeatures.clear();
-            const infoElement = document.getElementById('selectionInfo');
-            if (infoElement) {
-                infoElement.remove();
-            }
-            document.getElementById('clearSelectionContainer').style.display = 'none';
-            document.getElementById('excelExportContainer').style.display = 'none';
-        }
+        });
+    });
+    selectedFeatures.clear();
+    
+    const infoElement = document.getElementById('selectionInfo');
+    const selectionTools = document.getElementById('selectionTools');
+    
+    if (infoElement) {
+        infoElement.remove();
+    }
+    if (selectionTools) {
+        selectionTools.style.display = 'none';
+    }
+}
 
         // Инициализируем обработчик выбора файла
         document.getElementById('fileSelect').addEventListener('change', function() {
@@ -1054,19 +1120,28 @@
                 
                 originalGeoJsonData = data;
                 
-                var geoJsonLayer = L.geoJSON(data, {
+                // Фильтруем данные, оставляя только записи с type="original" или без type
+                const filteredData = {
+                    type: "FeatureCollection",
+                    features: data.features.filter(feature => 
+                        !feature.properties.type || // Если type не указан
+                        feature.properties.type === "original" // Или равен "original"
+                    )
+                };
+                
+                var geoJsonLayer = L.geoJSON(filteredData, {
                     style: styleFeature,
                     onEachFeature: onEachFeature
                 });
 
-                updateFieldSelect(data);
+                updateFieldSelect(data); // Используем оригинальные данные для списка полей
 
                 overlays[layerName] = geoJsonLayer;
                 geoJsonLayer.addTo(map);
                 map.fitBounds(geoJsonLayer.getBounds());
                 updateLayersControl();
                 addSearchControl(geoJsonLayer);
-                updateDataFreshnessIndicator(data);
+                updateDataFreshnessIndicator(filteredData);
 
                 return true;
             } catch (error) {
@@ -1212,44 +1287,54 @@
             var tenantLayers = {};
             var selectedField = document.getElementById('fieldSelect').value;
             
+            // Спочатку очищаємо попередні дані
+            tenantAreas = {};
+            
             Object.values(overlays).forEach(layerGroup => {
-                layerGroup.eachLayer(layer => {
-                    var tenant;
-                    var area;
-                    
-                    if (selectedField) {
-                        if (layer.feature?.properties?.type === "split") {
-                            tenant = layer.feature.properties["Орендар частини"] || layer.feature.properties["Орендар"];
-                            area = parseFloat(layer.feature.properties["Площа частини"]);
+                if (layerGroup && typeof layerGroup.eachLayer === 'function') {
+                    layerGroup.eachLayer(layer => {
+                        if (!layer.feature || !layer.feature.properties) return;
+                        
+                        var tenant;
+                        var area;
+                        
+                        if (selectedField) {
+                            if (layer.feature.properties.type === "split") {
+                                tenant = layer.feature.properties["Орендар частини"] || 
+                                        layer.feature.properties["Орендар"];
+                                area = parseFloat(layer.feature.properties["Площа частини"]);
+                            }
+                        } else {
+                            if (layer.feature.properties.type === "original" || !layer.feature.properties.type) {
+                                tenant = layer.feature.properties["Орендар"];
+                                area = parseFloat(layer.feature.properties["Площа розрахована"]);
+                            }
                         }
-                    } else {
-                        if (layer.feature?.properties?.type === "original") {
-                            tenant = layer.feature.properties["Орендар"];
-                            area = parseFloat(layer.feature.properties["Площа розрахована"]);
+                        
+                        if (tenant && !isNaN(area)) {
+                            if (!tenantLayers[tenant]) {
+                                tenantLayers[tenant] = L.layerGroup();
+                                tenantAreas[tenant] = 0;
+                            }
+                            tenantAreas[tenant] += area;
+                            tenantLayers[tenant].addLayer(layer);
                         }
-                    }
-                    
-                    if (tenant) {
-                        if (!tenantLayers[tenant]) {
-                            tenantLayers[tenant] = L.layerGroup();
-                        }
-                        tenantLayers[tenant].addLayer(layer);
-                    }
-                });
+                    });
+                }
             });
 
-            var tenantList = Object.keys(tenantLayers).map(tenant => ({
-                tenant: tenant,
-                layer: tenantLayers[tenant],
-                area: tenantAreas[tenant]?.toFixed(2) || 0
-            }));
+            // Сортуємо орендарів за площею
+            var sortedTenants = Object.entries(tenantAreas)
+                .sort(([,a], [,b]) => b - a)
+                .map(([tenant]) => tenant);
 
-            tenantList.sort((a, b) => b.area - a.area);
-
-            tenantList.forEach(item => {
-                overlays[item.tenant] = item.layer;
-                var colorBox = `<span class="color-box" style="background-color:${getColor(item.tenant)}"></span>`;
-                layersControl.addOverlay(item.layer, colorBox + `<span class="layer-name">${item.tenant} (${item.area} га)</span>`);
+            // Додаємо шари в потрібному порядку
+            sortedTenants.forEach(tenant => {
+                overlays[tenant] = tenantLayers[tenant];
+                var colorBox = `<span class="color-box" style="background-color:${getColor(tenant)}"></span>`;
+                layersControl.addOverlay(tenantLayers[tenant], 
+                    colorBox + `<span class="layer-name">${tenant} (${tenantAreas[tenant].toFixed(2)} га)</span>`);
+                tenantLayers[tenant].addTo(map);
             });
         }
 
@@ -1651,7 +1736,7 @@
                             width: 20px;
                             height: 20px;
                             border-radius: 50%;
-                            border: 3px solid white;
+                            border: 3px солід white;
                             box-shadow: 0 0 4px rgba(0,0,0,0.5);
                             animation: pulse 2s infinite;
                         "></div>
@@ -1899,15 +1984,7 @@
                 clearOverlays();
                 tenantAreas = {};
                 freeArea = 0;
-                
-                var filteredData = {
-                    type: "FeatureCollection",
-                    features: originalGeoJsonData.features
-                };
-                
-                if (selectedField) {
-                    filteredData.features = filteredData.features.filter(feature => 
-                        feature.properties && 
+                                var filteredData = {                    type: "FeatureCollection",                    features: originalGeoJsonData.features                };                                if (selectedField) {                    filteredData.features = filteredData.features.filter(feature =>                         feature.properties && 
                         feature.properties['Назва поля'] === selectedField
                     );
                 }
@@ -1929,6 +2006,14 @@
                 updateDataFreshnessIndicator(filteredData);
             }
         });
+
+        document.getElementById('freshnessButton').addEventListener('click', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            const freshnessUrl = `freshness.html${id ? `?id=${id}` : ''}`;
+            window.location.href = freshnessUrl;
+        });
+
     </script>
 </body>
 </html>
