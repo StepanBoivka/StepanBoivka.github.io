@@ -2299,7 +2299,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
 
         // Добавляем функцию exportToExcel
         function exportToExcel(data, filename) {
-            const rows = [["Кадастровий номер", "Площа розрахована", "Власник", "Орендар"]];
+            const rows = [["Кадастровий номер", "Площа розрахована", "Власник", "Орендар","Дата реєстрації оренди"]];
             
             data.forEach(item => {
                 rows.push([
