@@ -141,9 +141,10 @@
                 noDate: 0,
                 latestUpdate: null,
                 oldestUpdate: null,
-                dailyUpdates: {} // Новий об'єкт для підрахунку оновлень по днях
+                dailyUpdates: {}
             };
 
+            // Збираємо дані оновлень
             data.features.forEach(feature => {
                 const date = feature.properties?.["Дата оновлення"];
                 if (!date) {
@@ -155,7 +156,6 @@
                 const updateDate = new Date(year, month - 1, day);
                 const monthsOld = (now - updateDate) / (1000 * 60 * 60 * 24 * 30);
 
-                // Підрахунок оновлень по днях
                 const dateKey = updateDate.toISOString().split('T')[0];
                 stats.dailyUpdates[dateKey] = (stats.dailyUpdates[dateKey] || 0) + 1;
 
@@ -170,6 +170,18 @@
                 else if (monthsOld < 2) stats.medium++;
                 else stats.old++;
             });
+
+            // Додаємо всі дні між найстарішою і найновішою датою
+            if (stats.oldestUpdate && stats.latestUpdate) {
+                const currentDate = new Date(stats.oldestUpdate);
+                while (currentDate <= stats.latestUpdate) {
+                    const dateKey = currentDate.toISOString().split('T')[0];
+                    if (!stats.dailyUpdates[dateKey]) {
+                        stats.dailyUpdates[dateKey] = 0;
+                    }
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+            }
 
             return stats;
         }
@@ -257,8 +269,12 @@
                         datasets: [{
                             label: 'Кількість оновлень',
                             data: updates,
-                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: updates.map(value => 
+                                value === 0 ? 'rgba(200,200,200,0.2)' : 'rgba(54, 162, 235, 0.5)'
+                            ),
+                            borderColor: updates.map(value => 
+                                value === 0 ? 'rgba(200,200,200,0.5)' : 'rgba(54, 162, 235, 1)'
+                            ),
                             borderWidth: 1
                         }]
                     },
@@ -276,6 +292,14 @@
                         plugins: {
                             legend: {
                                 display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const value = context.raw;
+                                        return value === 0 ? 'Немає оновлень' : `Оновлено: ${value} ділянок`;
+                                    }
+                                }
                             }
                         }
                     }
