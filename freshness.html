@@ -6,6 +6,7 @@
     <title>Актуальність даних</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .freshness-good { color: #28a745 !important; }
         .freshness-warning { color: #ffc107 !important; }
@@ -48,6 +49,10 @@
             .table-view .progress {
                 width: 200px;
             }
+        }
+        .daily-updates-chart {
+            height: 150px;
+            margin-top: 1rem;
         }
     </style>
 </head>
@@ -135,7 +140,8 @@
                 old: 0,
                 noDate: 0,
                 latestUpdate: null,
-                oldestUpdate: null
+                oldestUpdate: null,
+                dailyUpdates: {} // Новий об'єкт для підрахунку оновлень по днях
             };
 
             data.features.forEach(feature => {
@@ -148,6 +154,10 @@
                 const [day, month, year] = date.split('.').map(Number);
                 const updateDate = new Date(year, month - 1, day);
                 const monthsOld = (now - updateDate) / (1000 * 60 * 60 * 24 * 30);
+
+                // Підрахунок оновлень по днях
+                const dateKey = updateDate.toISOString().split('T')[0];
+                stats.dailyUpdates[dateKey] = (stats.dailyUpdates[dateKey] || 0) + 1;
 
                 if (!stats.latestUpdate || updateDate > stats.latestUpdate) {
                     stats.latestUpdate = updateDate;
@@ -197,7 +207,7 @@
                         <div class="row align-items-center">
                             <div class="col-md-3">
                                 <h5 class="card-title d-flex align-items-center mb-0">
-                                    <i class="bi bi-building me-2 ${statusClass}"></i>
+                                    <i class="bi bi-geo-alt-fill me-2 ${statusClass}"></i>
                                     ${name}
                                 </h5>
                             </div>
@@ -225,9 +235,52 @@
                                 <div class="small">Оновлено: ${latestDate}</div>
                             </div>
                         </div>
+                        <div class="daily-updates-chart">
+                            <canvas id="chart-${name}"></canvas>
+                        </div>
                     </div>
                 </div>
             `;
+
+            // Додаємо створення графіка після рендерингу картки
+            setTimeout(() => {
+                const dates = Object.keys(stats.dailyUpdates).sort();
+                const updates = dates.map(date => stats.dailyUpdates[date]);
+                
+                new Chart(document.getElementById(`chart-${name}`), {
+                    type: 'bar',
+                    data: {
+                        labels: dates.map(date => {
+                            const [y, m, d] = date.split('-');
+                            return `${d}.${m}`;
+                        }),
+                        datasets: [{
+                            label: 'Кількість оновлень',
+                            data: updates,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }, 100);
 
             return div;
         }
@@ -238,7 +291,7 @@
             
             row.innerHTML = `
                 <td>
-                    <i class="bi bi-building me-2 ${statusClass}"></i>
+                    <i class="bi bi-geo-alt-fill me-2 ${statusClass}"></i>
                     ${name}
                 </td>
                 <td><span class="${statusClass}">${statusText}</span></td>
