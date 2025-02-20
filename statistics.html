@@ -2,93 +2,42 @@
 <html lang="uk">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Статистика земельних ділянок</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         .stats-card {
             background: white;
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+            margin-bottom: 1rem;
         }
         .stats-value {
-            font-size: 20px;
+            font-size: 1.25rem;
             font-weight: bold;
-            margin-top: 6px;
+            margin-top: 0.375rem;
         }
         .stats-label {
-            color: #666;
-            font-size: 12px;
+            color: #6c757d;
+            font-size: 0.875rem;
         }
         .data-table {
             width: 100%;
-            font-size: 12px;
         }
-        .data-table th {
-            background-color: #f3f4f6;
-            padding: 4px 8px;
-            font-weight: 600;
-            text-align: left;
-            border-bottom: 2px solid #e5e7eb;
-        }
-        .data-table td {
-            padding: 3px 8px;
-            border-bottom: 1px solid #e5e7eb;
-            position: relative;
-        }
-        .data-table tr:hover {
-            background-color: #f9fafb;
-        }
-        .table-title {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 6px;
-            color: #374151;
-        }
-        .table-subtitle {
-            font-size: 11px;
-            color: #6b7280;
-            margin-bottom: 6px;
-        }
-        .percentage-bar {
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            background-color: #FFA500;
-            opacity: 0.3;
-            z-index: 0;
-        }
-        .percentage-text {
-            position: relative;
-            z-index: 1;
-        }
-        .year-expired {
-            color: #EF4444;
-            font-weight: 500;
-        }
-        .year-current {
-            color: #F59E0B;
-            font-weight: 500;
-        }
-        .year-future {
-            color: #10B981;
-            font-weight: 500;
-        }
+        .year-expired { color: var(--bs-danger); }
+        .year-current { color: var(--bs-warning); }
+        .year-future { color: var(--bs-success); }
+        
         .matrix-table {
             border-collapse: collapse;
+            width: 100%;
         }
         .matrix-table th:not(.sticky-col),
         .matrix-table td:not(.sticky-col) {
-            width: auto;
-            min-width: 50px;
-            max-width: none;
-            padding: 4px 8px;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
+            padding: 0.5rem;
             text-align: right;
         }
         .matrix-table .sticky-col {
@@ -96,37 +45,28 @@
             left: 0;
             background-color: white;
             z-index: 10;
-            border-right: 2px solid #e5e7eb;
+            border-right: 2px solid #dee2e6;
             min-width: 200px;
-            text-align: left;
         }
         .matrix-table thead th.sticky-col {
-            background-color: #f3f4f6;
-        }
-        .matrix-table .highlight {
-            background-color: #f3f4f6;
+            background-color: #f8f9fa;
         }
         .matrix-total-row {
             font-weight: 600;
-            background-color: #f8fafc;
+            background-color: #f8f9fa;
         }
-        .matrix-total-row td {
-            border-top: 2px solid #e5e7eb;
+        .percentage-bar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            background-color: var(--bs-primary);
+            opacity: 0.1;
+            z-index: 0;
         }
-        .icon-column {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .icon-column svg {
-            width: 16px;
-            height: 16px;
-        }
-        .icon-active {
-            color: #10B981;
-        }
-        .icon-inactive {
-            color: #EF4444;
+        .percentage-text {
+            position: relative;
+            z-index: 1;
         }
 
         @media print {
@@ -134,110 +74,71 @@
                 size: A4 landscape;
                 margin: 0.3cm;
             }
-
-            body {
-                margin: 0;
-                padding: 0;
+            .btn-print {
+                display: none !important;
             }
-
             .page-break {
                 page-break-before: always;
-                break-before: page;
-            }
-
-            .matrix-table {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-
-            .matrix-table thead {
-                display: table-header-group !important;
-            }
-
-            .matrix-table tbody {
-                display: table-row-group !important;
-            }
-
-            .matrix-table tr {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-
-            .matrix-container {
-                page-break-before: always;
-            }
-
-            .matrix-wrapper {
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-
-            .data-table tr {
-                page-break-inside: avoid;
-            }
-
-            button {
-                display: none !important;
             }
         }
     </style>
 </head>
-<body class="bg-gray-50">
-    <div class="container mx-auto px-4 py-6">
-        <!-- Заголовок -->
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-xl font-bold text-gray-800">Статистика по раді: <span id="councilName">Не вибрано</span></h1>
-            <button onclick="generatePDF()" class="bg-white hover:bg-gray-100 text-gray-800 font-bold p-2 rounded text-sm flex items-center gap-2 border border-gray-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <path d="M14 2v6h6"></path>
-                    <path d="M16 13H8"></path>
-                    <path d="M16 17H8"></path>
-                    <path d="M10 9H8"></path>
-                </svg>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#" onclick="goBack(); return false;">
+                <i class="bi bi-arrow-left me-2"></i>Повернутися на карту
+            </a>
+            <button class="btn btn-outline-light btn-print" onclick="generatePDF()">
+                <i class="bi bi-file-pdf me-2"></i>Зберегти PDF
             </button>
         </div>
+    </nav>
+
+    <div class="container py-4">
+        <h1 class="mb-4">Статистика по раді: <span id="councilName">Не вибрано</span></h1>
 
         <!-- Загальна статистика -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <!-- Група 1: Загальні показники -->
-            <div class="stats-card">
-                <div class="flex flex-col gap-3">
-                    <div>
-                        <div class="stats-label">Загальна площа</div>
-                        <div class="stats-value text-blue-600" id="totalArea">0 га</div>
-                    </div>
-                    <div class="border-t border-gray-200 pt-2">
-                        <div class="stats-label">Кількість ділянок</div>
-                        <div class="stats-value text-blue-600" id="totalParcels">0</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Група 2: Вільні ділянки -->
-            <div class="stats-card">
-                <div class="flex flex-col gap-3">
-                    <div>
-                        <div class="stats-label">Площа вільних від оренди</div>
-                        <div class="stats-value text-orange-500" id="freeArea">0 га</div>
-                    </div>
-                    <div class="border-t border-gray-200 pt-2">
-                        <div class="stats-label">Кількість вільних ділянок</div>
-                        <div class="stats-value text-orange-500" id="freeParcels">0</div>
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="stats-card h-100">
+                    <div class="d-flex flex-column gap-3">
+                        <div>
+                            <div class="stats-label">Загальна площа</div>
+                            <div class="stats-value text-primary" id="totalArea">0 га</div>
+                        </div>
+                        <div class="border-top pt-2">
+                            <div class="stats-label">Кількість ділянок</div>
+                            <div class="stats-value text-primary" id="totalParcels">0</div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Група 3: Кількісні показники -->
-            <div class="stats-card">
-                <div class="flex flex-col gap-3">
-                    <div>
-                        <div class="stats-label">Кількість орендарів</div>
-                        <div class="stats-value text-purple-600" id="tenantsCount">0</div>
+            <div class="col-md-4">
+                <div class="stats-card h-100">
+                    <div class="d-flex flex-column gap-3">
+                        <div>
+                            <div class="stats-label">Площа вільних від оренди</div>
+                            <div class="stats-value text-warning" id="freeArea">0 га</div>
+                        </div>
+                        <div class="border-top pt-2">
+                            <div class="stats-label">Кількість вільних ділянок</div>
+                            <div class="stats-value text-warning" id="freeParcels">0</div>
+                        </div>
                     </div>
-                    <div class="border-t border-gray-200 pt-2">
-                        <div class="stats-label">Кількість власників</div>
-                        <div class="stats-value text-purple-600" id="ownersCount">0</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card h-100">
+                    <div class="d-flex flex-column gap-3">
+                        <div>
+                            <div class="stats-label">Кількість орендарів</div>
+                            <div class="stats-value text-secondary" id="tenantsCount">0</div>
+                        </div>
+                        <div class="border-top pt-2">
+                            <div class="stats-label">Кількість власників</div>
+                            <div class="stats-value text-secondary" id="ownersCount">0</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -246,16 +147,16 @@
         <!-- Статистика реєстрації -->
         <div class="stats-card mb-4">
             <h3 class="table-title">Статистика реєстрації договорів по роках</h3>
-            <div class="overflow-x-auto">
-                <table class="data-table">
+            <div class="table-responsive">
+                <table class="table table-bordered data-table">
                     <thead>
                         <tr>
-                            <th class="text-left">Рік</th>
-                            <th class="text-right">Всього договорів</th>
-                            <th class="text-right">Загальна площа (га)</th>
-                            <th class="text-right">Активні договори / Площа (га)</th>
-                            <th class="text-right">Неактивні договори / Площа (га)</th>
-                            <th class="text-right" style="width: 30%;">Розподіл</th>
+                            <th class="text-start">Рік</th>
+                            <th class="text-end">Всього договорів</th>
+                            <th class="text-end">Загальна площа (га)</th>
+                            <th class="text-end">Активні договори / Площа (га)</th>
+                            <th class="text-end">Неактивні договори / Площа (га)</th>
+                            <th class="text-end" style="width: 30%;">Розподіл</th>
                         </tr>
                     </thead>
                     <tbody id="registrationTableBody"></tbody>
@@ -266,15 +167,15 @@
         <!-- Таблиця орендарів -->
         <div class="stats-card mb-4 page-break">
             <h3 class="table-title">Інформація по орендарях</h3>
-            <div class="overflow-x-auto">
-                <table class="data-table">
+            <div class="table-responsive">
+                <table class="table table-bordered data-table">
                     <thead>
                         <tr>
-                            <th class="text-left">Орендар</th>
-                            <th class="text-right">Кількість ділянок</th>
-                            <th class="text-right">Загальна площа (га)</th>
-                            <th class="text-right">% від загальної площі</th>
-                            <th class="text-right">Середня площа ділянки (га)</th>
+                            <th class="text-start">Орендар</th>
+                            <th class="text-end">Кількість ділянок</th>
+                            <th class="text-end">Загальна площа (га)</th>
+                            <th class="text-end">% від загальної площі</th>
+                            <th class="text-end">Середня площа ділянки (га)</th>
                         </tr>
                     </thead>
                     <tbody id="detailsTableBody"></tbody>
@@ -284,16 +185,26 @@
 
         <!-- Таблиця власників -->
         <div class="stats-card mb-4 page-break">
-            <h3 class="table-title">Інформація по власниках</h3>
-            <div class="table-subtitle">Відображаються власники, що мають більше 5 ділянок</div>
-            <div class="overflow-x-auto">
-                <table class="data-table">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="table-title mb-0">Інформація по власниках</h3>
+                <div class="d-flex align-items-center">
+                    <span class="me-2">Показати власників з кількістю ділянок більше:</span>
+                    <div class="input-group" style="width: 150px;">
+                        <input type="number" class="form-control form-control-sm" id="minParcelsFilter" value="5" min="1">
+                        <button class="btn btn-outline-primary btn-sm" onclick="updateOwnersTable()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered data-table">
                     <thead>
                         <tr>
-                            <th class="text-left">Власник</th>
-                            <th class="text-right">Кількість ділянок</th>
-                            <th class="text-right">Загальна площа (га)</th>
-                            <th class="text-right">Середня площа ділянки (га)</th>
+                            <th class="text-start">Власник</th>
+                            <th class="text-end">Кількість ділянок</th>
+                            <th class="text-end">Загальна площа (га)</th>
+                            <th class="text-end">Середня площа ділянки (га)</th>
                         </tr>
                     </thead>
                     <tbody id="ownersTableBody"></tbody>
@@ -305,11 +216,11 @@
         <div class="stats-card matrix-container page-break">
             <h3 class="table-title">Завершення договорів оренди</h3>
             <div class="matrix-wrapper">
-                <div class="overflow-x-auto">
-                    <table class="data-table matrix-table">
+                <div class="table-responsive">
+                    <table class="table table-bordered data-table matrix-table">
                         <thead>
                             <tr>
-                                <th class="text-left sticky-col">Орендар</th>
+                                <th class="text-start sticky-col">Орендар</th>
                             </tr>
                         </thead>
                         <tbody id="matrixTableBody"></tbody>
@@ -539,7 +450,10 @@
         }
 
         // Функції оновлення UI залишаються без змін
+        let globalStats = null; // Додаємо глобальну змінну для зберігання статистики
+
         function updateUI(stats) {
+            globalStats = stats; // Зберігаємо статистику глобально
             document.getElementById('totalArea').textContent = `${stats.totalArea.toFixed(2)} га`;
             document.getElementById('totalParcels').textContent = stats.totalParcels;
             document.getElementById('freeParcels').textContent = stats.freeParcels;
@@ -549,11 +463,10 @@
 
             updateRegistrationTable(stats.registrationYears);
             updateDetailsTable(stats.tenants, 'detailsTableBody', stats.totalArea);
-            updateDetailsTable(stats.owners, 'ownersTableBody');
+            updateOwnersTable(); // Змінюємо на нову функцію
             updateMatrixTable(stats.expiryYears, stats.tenants);
         }
 
-        // Всі інші функції оновлення таблиць залишаються без змін
         function updateRegistrationTable(registrationYears) {
     const tbody = document.getElementById('registrationTableBody');
     tbody.innerHTML = '';
@@ -591,11 +504,11 @@
 
         row.innerHTML = `
             <td class="${yearClass}">${year}</td>
-            <td class="text-right">${yearData.total}</td>
-            <td class="text-right">${yearData.totalArea.toFixed(2)}</td>
-            <td class="text-right">${yearData.active} / ${yearData.activeArea.toFixed(2)}</td>
-            <td class="text-right">${yearData.inactive} / ${yearData.inactiveArea.toFixed(2)}</td>
-            <td class="text-right relative">
+            <td class="text-end">${yearData.total}</td>
+            <td class="text-end">${yearData.totalArea.toFixed(2)}</td>
+            <td class="text-end">${yearData.active} / ${yearData.activeArea.toFixed(2)}</td>
+            <td class="text-end">${yearData.inactive} / ${yearData.inactiveArea.toFixed(2)}</td>
+            <td class="text-end position-relative">
                 <div style="display: flex; height: 100%; width: 100%; position: absolute; left: 0; top: 0;">
                     ${yearData.active > 0 ? `
                         <div style="width: ${activePercentage}%; background-color: #10B981; opacity: 0.3;"></div>
@@ -620,11 +533,11 @@
     totalRow.className = 'matrix-total-row';
     totalRow.innerHTML = `
         <td>Всього</td>
-        <td class="text-right">${totalRegistered}</td>
-        <td class="text-right">${totalArea.toFixed(2)}</td>
-        <td class="text-right">${totalActive} / ${totalActiveArea.toFixed(2)}</td>
-        <td class="text-right">${totalInactive} / ${totalInactiveArea.toFixed(2)}</td>
-        <td class="text-right relative">
+        <td class="text-end">${totalRegistered}</td>
+        <td class="text-end">${totalArea.toFixed(2)}</td>
+        <td class="text-end">${totalActive} / ${totalActiveArea.toFixed(2)}</td>
+        <td class="text-end">${totalInactive} / ${totalInactiveArea.toFixed(2)}</td>
+        <td class="text-end position-relative">
             <div style="display: flex; height: 100%; width: 100%; position: absolute; left: 0; top: 0;">
                 ${totalActive > 0 ? `
                     <div style="width: ${totalActivePercentage}%; background-color: #10B981; opacity: 0.3;"></div>
@@ -661,20 +574,20 @@ function updateDetailsTable(data, tableId, totalArea = 0) {
             if (tableId === 'detailsTableBody') {
                 row.innerHTML = `
                     <td>${name}</td>
-                    <td class="text-right">${data.count}</td>
-                    <td class="text-right">${data.area.toFixed(2)}</td>
-                    <td class="text-right relative">
+                    <td class="text-end">${data.count}</td>
+                    <td class="text-end">${data.area.toFixed(2)}</td>
+                    <td class="text-end position-relative">
                         <div class="percentage-bar" style="width: ${percentage}%"></div>
                         <span class="percentage-text">${percentage}%</span>
                     </td>
-                    <td class="text-right">${avgArea.toFixed(2)}</td>
+                    <td class="text-end">${avgArea.toFixed(2)}</td>
                 `;
             } else {
                 row.innerHTML = `
                     <td>${name}</td>
-                    <td class="text-right">${data.count}</td>
-                    <td class="text-right">${data.area.toFixed(2)}</td>
-                    <td class="text-right">${avgArea.toFixed(2)}</td>
+                    <td class="text-end">${data.count}</td>
+                    <td class="text-end">${data.area.toFixed(2)}</td>
+                    <td class="text-end">${avgArea.toFixed(2)}</td>
                 `;
             }
             tbody.appendChild(row);
@@ -686,7 +599,7 @@ function updateMatrixTable(expiryYears, tenants) {
     const currentYear = new Date().getFullYear();
     
     const thead = document.querySelector('.matrix-table thead tr');
-    thead.innerHTML = '<th class="text-left sticky-col">Орендар</th>';
+    thead.innerHTML = '<th class="text-start sticky-col">Орендар</th>';
     years.forEach(year => {
         let yearClass = 'year-future';
         if (parseInt(year) < currentYear) {
@@ -694,7 +607,7 @@ function updateMatrixTable(expiryYears, tenants) {
         } else if (parseInt(year) === currentYear) {
             yearClass = 'year-current';
         }
-        thead.innerHTML += `<th class="text-right ${yearClass}">${year}</th>`;
+        thead.innerHTML += `<th class="text-end ${yearClass}">${year}</th>`;
     });
 
     const tbody = document.getElementById('matrixTableBody');
@@ -709,14 +622,14 @@ function updateMatrixTable(expiryYears, tenants) {
         .sort((a, b) => b[1].area - a[1].area)
         .forEach(([tenant, tenantData]) => {
             const row = document.createElement('tr');
-            row.innerHTML = `<td class="text-left sticky-col font-medium">${tenant}</td>`;
+            row.innerHTML = `<td class="text-start sticky-col fw-medium">${tenant}</td>`;
             
             years.forEach(year => {
                 const areaForYear = expiryYears[year]?.tenants?.[tenant]?.area || 0;
                 yearTotals[year] += areaForYear;
                 
                 const cell = document.createElement('td');
-                cell.className = 'text-right';
+                cell.className = 'text-end';
                 
                 if (areaForYear > 0) {
                     cell.innerHTML = areaForYear.toFixed(1);
@@ -734,12 +647,12 @@ function updateMatrixTable(expiryYears, tenants) {
 
     const totalRow = document.createElement('tr');
     totalRow.className = 'matrix-total-row';
-    totalRow.innerHTML = `<td class="text-left sticky-col border-t-2">Всього</td>`;
+    totalRow.innerHTML = `<td class="text-start sticky-col border-top">Всього</td>`;
     
     years.forEach(year => {
         const total = yearTotals[year];
         totalRow.innerHTML += `
-            <td class="text-right border-t-2${total > 0 ? ' bg-orange-50' : ''}">${
+            <td class="text-end border-top${total > 0 ? ' bg-warning' : ''}">${
                 total > 0 ? total.toFixed(1) : '-'
             }</td>
         `;
@@ -748,8 +661,47 @@ function updateMatrixTable(expiryYears, tenants) {
     tbody.appendChild(totalRow);
 }
 
+        function updateOwnersTable() {
+            if (!globalStats) return;
+            
+            const minParcels = parseInt(document.getElementById('minParcelsFilter').value) || 5;
+            const tbody = document.getElementById('ownersTableBody');
+            tbody.innerHTML = '';
+
+            Object.entries(globalStats.owners)
+                .filter(([_, data]) => data.count >= minParcels)
+                .sort((a, b) => b[1].area - a[1].area)
+                .forEach(([name, data]) => {
+                    const row = document.createElement('tr');
+                    const avgArea = data.area / data.count;
+                    
+                    row.innerHTML = `
+                        <td>${name}</td>
+                        <td class="text-end">${data.count}</td>
+                        <td class="text-end">${data.area.toFixed(2)}</td>
+                        <td class="text-end">${avgArea.toFixed(2)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+        }
+
         // Завантажуємо дані при завантаженні сторінки
         document.addEventListener('DOMContentLoaded', loadAndProcessData);
+
+        function goBack() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            const selectedFile = urlParams.get('file');
+            
+            let returnUrl = 'index.html';
+            if (id) returnUrl += `?id=${id}`;
+            if (selectedFile) {
+                returnUrl += id ? '&' : '?';
+                returnUrl += `return_file=${encodeURIComponent(selectedFile)}`;
+            }
+            
+            window.location.href = returnUrl;
+        }
     </script>
 </body>
 </html>
