@@ -532,11 +532,11 @@
                         Актуальність даних
                     </button>
                     <div id="selectionTools" style="display: none;">
-                        <button class="btn btn-outline-warning text-start w-100 mb-2" onclick="clearSelection()">
+                        <button class="btn btn-outline-warning text-start w-100 mb-2" data-action="clear-selection">
                             <i class="bi bi-trash3 me-2"></i>
                             Очистити виділення
                         </button>
-                        <button class="btn btn-outline-success text-start w-100" onclick="exportSelectedToExcel()">
+                        <button class="btn btn-outline-success text-start w-100" data-action="export-selected">
                             <i class="bi bi-file-earmark-excel me-2"></i>
                             Експортувати виділені
                         </button>
@@ -674,6 +674,19 @@
         const dataPath = id ? `data/${id}/` : 'data/';
         // Ждем полной загрузки страницы и всех скриптов
         document.addEventListener('DOMContentLoaded', function() {
+            // Додати обробники клавіш тут, на верхньому рівні
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Control') {
+                    isCtrlPressed = true;
+                }
+            });
+            
+            document.addEventListener('keyup', function(e) {
+                if (e.key === 'Control') {
+                    isCtrlPressed = false;
+                }
+            });
+
             initializeMap();
             // Инициализация модального окна и обработчиков событий
             cadastralModal = document.getElementById("cadastralModal");
@@ -804,7 +817,7 @@
                                     var isOther = othersNumbers.includes(kadNum);
                                     if (isOwn || isOther) {
                                         foundFeatures.set(kadNum, layer);
-                                        var center = layer.getBounds().getCenter();
+                                        var center = getPolygonCenter(layer);
                                         var marker = createMarker(center, kadNum, isOwn);
                                         marker.bindPopup(`
                                             <div style="font-size: 14px; font-weight: bold;">
@@ -827,10 +840,15 @@
                 });
 
                 if (foundFeatures.size > 0) {
-                    var group = L.featureGroup([ownMarkersLayer, othersMarkersLayer]);
-                    map.fitBounds(group.getBounds(), {
-                        padding: [50, 50]
-                    });
+                    // Создаем массив всех найденных полигонов
+                    const foundLayers = Array.from(foundFeatures.values());
+                    const bounds = getBoundsFromLayers(foundLayers);
+                    
+                    if (bounds) {
+                        map.fitBounds(bounds, {
+                            padding: [50, 50]
+                        });
+                    }
                     
                     alert(`Знайдено ${foundFeatures.size} ділянок`);
                     cadastralModal.style.display = "none";
@@ -1616,7 +1634,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
             layerGroup.eachLayer(layer => {
                 if (L.stamp(layer) === featureId && layer.feature) {
                     layer.setStyle({
-                        className: '',
                         fillOpacity: 0.4,
                         weight: 0.5,
                         color: getColor(layer.feature.properties["Орендар"])
@@ -1638,7 +1655,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
         selectionTools.style.display = 'none';
     }
 }
-   
+
         // Инициализируем обработчик выбора файла
         document.getElementById('fileSelect').addEventListener('change', function() {
             var selectedFile = this.value;
@@ -1648,7 +1665,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 loadingOption.text = 'Завантаження...';
                 this.add(loadingOption, 0);
                 this.value = 'Завантаження...';
-
                 addGeoJsonLayer(dataPath + selectedFile, selectedFile)
                     .then(() => {
                         this.remove(0);
@@ -1675,7 +1691,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                
                 originalGeoJsonData = data;
                 // Фильтруем данные, оставляя только записи с type="original" или без type
                 const filteredData = {
@@ -1685,7 +1700,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                         feature.properties.type === "original" // Или равен "original"
                     )
                 };
-
                 var geoJsonLayer = L.geoJSON(filteredData, {
                     style: styleFeature,
                     onEachFeature: onEachFeature
@@ -1694,9 +1708,9 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 updateFieldSelect(data); // Используем оригинальные данные для списка полей
                 updateExpiryYearSelect(data); // Додаємо виклик нової функції                
 
+                map.fitBounds(geoJsonLayer.getBounds());
                 overlays[layerName] = geoJsonLayer;
                 geoJsonLayer.addTo(map);
-                map.fitBounds(geoJsonLayer.getBounds());
                 updateLayersControl();
                 addSearchControl(geoJsonLayer);
                 updateDataFreshnessIndicator(filteredData);
@@ -1729,8 +1743,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
     if (feature.properties) {
         createPopupContent(feature, layer);
         processAreaAndTenant(feature, layer);
-        
-        // Добавляем обработчик клика для выделения
+        // Добавляем обработчик клика для выделения/ Додаємо e як другий параметр
         layer.on('click', function(e) {
             if (!e.originalEvent.target.closest('.leaflet-popup')) {
                 toggleFeatureSelection(layer, e); // Додаємо e як другий параметр
@@ -1744,25 +1757,26 @@ function addPolygonToMap(geoJSON, originalProperties) {
     const orderedKeys = [
         "Кадастровий номер",
         "Площа розрахована",
-        "Власник", 
-        "Дата реєстрації",
+        "Власник",
         "Орендар",
         "Дата реєстрації оренди",
         "Дата завершення",
-        "Вид обмеження" 
+        "Вид обмеження"
     ];
-
+    
     orderedKeys.forEach(key => {
         if (feature.properties.hasOwnProperty(key)) {
             const value = feature.properties[key] || '';
             popupContent += `<tr><td class="property-name">${key}:</td><td class="property-value">${value}</td></tr>`;
         }
     });
-
+    
     popupContent += '</table>';
     
+    // Получаем кадастровый номер один раз
     const cadastralNumber = feature.properties["Кадастровий номер"];
     if (cadastralNumber) {
+        // И используем его здесь
         const publicUrl = 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber;
         popupContent += createPopupLinks(publicUrl, feature.properties["Дата оновлення"]);
     }
@@ -1775,9 +1789,8 @@ function addPolygonToMap(geoJSON, originalProperties) {
     const tenant = feature.properties["Орендар"];
     const selectedField = document.getElementById('fieldSelect').value;
     let area = 0;
-    let shouldCount = false;
-
     // Визначаємо чи потрібно рахувати цю ділянку
+    let shouldCount = false;
     if (selectedField) {
         // Якщо вибрано конкретне поле, рахуємо тільки частини (split)
         if (feature.properties["type"] === "split") {
@@ -1791,7 +1804,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
             shouldCount = true;
         }
     }
-
     // Додаємо площу тільки якщо потрібно рахувати цю ділянку
     if (shouldCount && !isNaN(area)) {
         if (!tenant) {
@@ -1813,8 +1825,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
         ];
         let colorIndex = 0;
 
-        // ...existing code...
-
         function clearOverlays() {
             for (var layerName in overlays) {
                 if (overlays.hasOwnProperty(layerName) && layerName !== "Поля обробітку") {
@@ -1832,14 +1842,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
     if (layersControl) {
         map.removeControl(layersControl);
     }
-    
-    // Створюємо об'єкт всіх шарів
     const allLayers = {...baseMaps, ...overlays};
-    
     layersControl = L.control.layers(null, allLayers, {
         collapsed: true
     }).addTo(map);
-
     addTenantLayers();
     addFreeLayer();
 }
@@ -1850,7 +1856,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
             
             // Спочатку очищаємо попередні дані
             tenantAreas = {};
-            
             Object.values(overlays).forEach(layerGroup => {
                 if (layerGroup && typeof layerGroup.eachLayer === 'function') {
                     layerGroup.eachLayer(layer => {
@@ -1858,7 +1863,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                         
                         var tenant;
                         var area;
-
                         if (selectedField) {
                             if (layer.feature.properties.type === "split") {
                                 tenant = layer.feature.properties["Орендар частини"] || 
@@ -1871,7 +1875,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                                 area = parseFloat(layer.feature.properties["Площа розрахована"]);
                             }
                         }
-                        
                         if (tenant && !isNaN(area)) {
                             if (!tenantLayers[tenant]) {
                                 tenantLayers[tenant] = L.layerGroup();
@@ -1910,14 +1913,12 @@ function addPolygonToMap(geoJSON, originalProperties) {
         function updateFieldSelect(data) {
             var fieldSelect = document.getElementById('fieldSelect');
             fieldSelect.innerHTML = '<option value="">Всі поля</option>';
-            
             var uniqueFields = new Set();
             data.features.forEach(feature => {
                 if (feature.properties?.['Назва поля']) {
                     uniqueFields.add(feature.properties['Назва поля']);
                 }
             });
-            
             Array.from(uniqueFields).sort().forEach(fieldName => {
                 var option = document.createElement('option');
                 option.value = fieldName;
@@ -1931,31 +1932,25 @@ function addPolygonToMap(geoJSON, originalProperties) {
             content += `<a href="${publicUrl}" target="_blank" title="інформація з сервісів ДЗК">`;
             content += '<i class="bi bi-info-circle"></i></a>';
             content += '<div class="text-end">';
-            
             if (updateDate) {
-                content += updateDate;
                 const [day, month, year] = updateDate.split('.').map(Number);
                 const updateDateTime = new Date(year, month - 1, day);
                 const twoMonthsAgo = new Date();
                 twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-                
+                content += updateDate;
                 if (updateDateTime < twoMonthsAgo) {
                     content += ' <i class="bi bi-exclamation-triangle-fill text-warning" ' +
                               'title="Інформація може бути застарілою"></i>';
                 }
             }
-            
             content += '</div></div>';
             return content;
         }
-
-        // ...rest of your existing code...
 
         function addSearchControl(layer) {
             if (searchControl) {
                 map.removeControl(searchControl);
             }
-            
             searchControl = new L.Control.Search({
                 layer: layer,
                 propertyName: '_searchField',
@@ -1973,10 +1968,9 @@ function addPolygonToMap(geoJSON, originalProperties) {
                             var props = jsons[i].layer.feature?.properties || {};
                             var kadastrovyNomer = props['Кадастровий номер'] || '';
                             var vlasnyk = props['Власник'] || '';
-                            
                             if (reg.test(kadastrovyNomer) || reg.test(vlasnyk)) {
                                 ret[i] = jsons[i];
-                            }
+                            }   
                         } catch (error) {
                             console.error('Помилка при обробці об\'єкта:', error, jsons[i]);
                         }       
@@ -2000,7 +1994,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     } else {
                         map.setView(latlng, 15);
                     }
-                },
+                }
             }).addTo(map);
 
             // Обновляем поисковое поле для каждого объекта
@@ -2016,39 +2010,30 @@ function addPolygonToMap(geoJSON, originalProperties) {
         function updateDataFreshnessIndicator(data) {
             const indicator = document.getElementById('dataFreshnessText');
             const icon = document.querySelector('.data-freshness-indicator i');
-            
-            const totalRecords = data.features.length;
-            
             const datesInfo = data.features.reduce((acc, f) => {
                 const date = f.properties?.["Дата оновлення"];
                 if (!date) {
                     acc.noDate++;
                     return acc;
                 }
-                
                 const [day, month, year] = date.split('.').map(Number);
                 const dateObj = new Date(year, month - 1, day);
                 acc.dates.push(dateObj);
                 return acc;
             }, { dates: [], noDate: 0 });
-
+            const totalRecords = data.features.length;
             const { dates, noDate } = datesInfo;
-            
             if (dates.length === 0 && noDate === totalRecords) {
-                indicator.textContent = 'Немає дат оновлення';
-                icon.className = 'bi bi-clock-history freshness-бад me-1';
                 document.querySelector('.data-freshness-indicator').classList.add('freshness-бад');
                 icon.title = `Записів без дати оновлення: ${noDate}`;
                 return;
             }
-
             if (dates.length === 0 && noDate === 0) {
                 indicator.textContent = 'Немає даних';
                 icon.className = 'bi bi-clock-history text-light me-1';
                 document.querySelector('.data-freshness-indicator').classList.remove('freshness-бад');
                 return;
             }
-
             const now = new Date();
             const stats = dates.reduce((acc, date) => {
                 const monthsOld = (now - date) / (1000 * 60 * 60 * 24 * 30);
@@ -2057,12 +2042,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 else acc.old++;
                 return acc;
             }, { fresh: 0, medium: 0, old: 0 });
-            
             const freshPercent = Math.round((stats.fresh / totalRecords) * 100);
             const mediumPercent = Math.round((stats.medium / totalRecords) * 100);
             const oldPercent = Math.round((stats.old / totalRecords) * 100);
             const noDatePercent = Math.round((noDate / totalRecords) * 100);
-
             let text, className;
             if (freshPercent >= 70) {
                 text = `Актуально ${freshPercent}%`;
@@ -2075,16 +2058,13 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 className = 'freshness-бад';
                 document.querySelector('.data-freshness-indicator').classList.add('freshness-бад');
             }
-
             if (className !== 'freshness-бад') {
                 document.querySelector('.data-freshness-indicator').classList.remove('freshness-бад');
             }
-
             const tooltip = `Актуально (до 1 міс): ${freshPercent}%\n` +
                            `До 2 міс: ${mediumPercent}%\n` +
                            `Застаріло: ${oldPercent}%\n` +
                            `Без дати оновлення: ${noDatePercent}%`;
-            
             indicator.textContent = text;
             indicator.title = tooltip;
             icon.className = `bi bi-clock-history me-1 ${className}`;
@@ -2107,20 +2087,15 @@ function addPolygonToMap(geoJSON, originalProperties) {
 
         function exportSelectedToExcel() {
     const rows = [
-        ["Кадастровий номер","Площа","Власник","Орендар"]
+        ["Кадастровий номер", "Площа", "Власник", "Орендар"]
     ];
-
-    // Використовуємо Map для зберігання унікальних ділянок
     const uniqueFeatures = new Map();
-
     selectedFeatures.forEach(featureId => {
         Object.values(overlays).forEach(layerGroup => {
             layerGroup.eachLayer(layer => {
                 if (L.stamp(layer) === featureId && layer.feature) {
                     const props = layer.feature.properties;
                     const kadNum = props["Кадастровий номер"];
-                    
-                    // Перевіряємо чи не додали вже цей кадастровий номер
                     if (kadNum && !uniqueFeatures.has(kadNum)) {
                         uniqueFeatures.set(kadNum, [
                             kadNum,
@@ -2133,15 +2108,11 @@ function addPolygonToMap(geoJSON, originalProperties) {
             });
         });
     });
-
-    // Додаємо унікальні записи до масиву
     uniqueFeatures.forEach(row => rows.push(row));
-
     if (rows.length < 2) {
         alert("Немає даних для експорту");
         return;
     }
-
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, ws, "Selected");
@@ -2166,7 +2137,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 exportToExcel(data, filename);
             } else {
                 alert('Немає даних для експорту. Будь ласка, виберіть файл з даними спочатку.');
-            } 
+            }
         });
 
         document.getElementById('statisticsButton').addEventListener('click', function() {
@@ -2186,7 +2157,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
             cadastralModal.style.display = "none";
             clearCadastralLists();
         }
-
         window.onclick = function(event) {
             if (event.target == cadastralModal) {
                 cadastralModal.style.display = "none";
@@ -2203,7 +2173,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
         function collectMapData() {
             var data = [];
             var selectedFile = document.getElementById('fileSelect').value;
-            
             if (overlays[selectedFile]) {
                 overlays[selectedFile].eachLayer(layer => {
                     if (layer.feature && layer.feature.properties) {
@@ -2218,7 +2187,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
         document.getElementById('searchCadastral').addEventListener('click', function() {
             var ownCadastralText = document.getElementById("ownCadastralList").value;
             var othersCadastralText = document.getElementById("othersCadastralList").value;
-            
+            if (!ownCadastralText && !othersCadastralText) {
+                alert('Будь ласка, введіть хоча б один кадастровий номер');
+                return;
+            }
             var ownNumbers = ownCadastralText.split('\n')
                 .map(num => num.trim())
                 .filter(num => num.length > 0);
@@ -2226,17 +2198,14 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 .map(num => num.trim())
                 .filter(num => num.length > 0);
 
+            // Очищаємо попередні маркери
             ownMarkersLayer.clearLayers();
             othersMarkersLayer.clearLayers();
-
-            var foundFeatures = new Map();
-            var activeLayer = null;
             
-            for (var key in overlays) {
-                if (overlays.hasOwnProperty(key) && key !== "Поля обробітку") {
-                    activeLayer = overlays[key];
-                    
-                    activeLayer.eachLayer(function(layer) {
+            var foundFeatures = new Map();
+            Object.values(overlays).forEach(layerGroup => {
+                if (layerGroup && typeof layerGroup.eachLayer === 'function') {
+                    layerGroup.eachLayer(layer => {
                         if (layer.feature && layer.feature.properties) {
                             var kadNum = layer.feature.properties['Кадастровий номер'];
                             if (kadNum && !foundFeatures.has(kadNum)) {
@@ -2244,7 +2213,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                                 var isOther = othersNumbers.includes(kadNum);
                                 if (isOwn || isOther) {
                                     foundFeatures.set(kadNum, layer);
-                                    var center = layer.getBounds().getCenter();
+                                    var center = getPolygonCenter(layer);
                                     var marker = createMarker(center, kadNum, isOwn);
                                     marker.bindPopup(`
                                         <div style="font-size: 14px; font-weight: bold;">
@@ -2260,17 +2229,22 @@ function addPolygonToMap(geoJSON, originalProperties) {
                                     
                                     marker.addTo(isOwn ? ownMarkersLayer : othersMarkersLayer);
                                 }
-                            }
+                            }         
                         }
                     });
-                }                       
-            }
+                }                     
+            });
 
             if (foundFeatures.size > 0) {
-                var group = L.featureGroup([ownMarkersLayer, othersMarkersLayer]);
-                map.fitBounds(group.getBounds(), {
-                    padding: [50, 50]
-                });
+                // Создаем массив всех найденных полигонов
+                const foundLayers = Array.from(foundFeatures.values());
+                const bounds = getBoundsFromLayers(foundLayers);
+                
+                if (bounds) {
+                    map.fitBounds(bounds, {
+                        padding: [50, 50]
+                    });
+                }
                 
                 alert(`Знайдено ${foundFeatures.size} ділянок`);
                 cadastralModal.style.display = "none";
@@ -2305,7 +2279,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
         // Добавляем функцию exportToExcel
         function exportToExcel(data, filename) {
             const rows = [["Кадастровий номер", "Площа розрахована", "Власник", "Орендар","Дата реєстрації оренди"]];
-            
             data.forEach(item => {
                 rows.push([
                     item["Кадастровий номер"] || "",
@@ -2315,7 +2288,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     item["Дата реєстрації оренди"] || ""
                 ]);
             });
-
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(rows);
             XLSX.utils.book_append_sheet(wb, ws, "Ділянки");
@@ -2324,72 +2296,73 @@ function addPolygonToMap(geoJSON, originalProperties) {
 
         // Добавляем функцию searchCadastralNumbers
         function searchCadastralNumbers() {
-    var ownCadastralText = document.getElementById("ownCadastralList").value;
-    var othersCadastralText = document.getElementById("othersCadastralList").value;
-    
-    if (!ownCadastralText && !othersCadastralText) {
-        alert('Будь ласка, введіть хоча б один кадастровий номер');
-        return;
-    }
+            var ownCadastralText = document.getElementById("ownCadastralList").value;
+            var othersCadastralText = document.getElementById("othersCadastralList").value;
+            
+            if (!ownCadastralText && !othersCadastralText) {
+                alert('Будь ласка, введіть хоча б один кадастровий номер');
+                return;
+            }
 
-    var ownNumbers = ownCadastralText.split('\n')
-        .map(num => num.trim())
-        .filter(num => num.length > 0);
-    var othersNumbers = othersCadastralText.split('\n')
-        .map(num => num.trim())
-        .filter(num => num.length > 0);
+            var ownNumbers = ownCadastralText.split('\n')
+                .map(num => num.trim())
+                .filter(num => num.length > 0);
+            var othersNumbers = othersCadastralText.split('\n')
+                .map(num => num.trim())
+                .filter(num => num.length > 0);
 
-    // Очищаємо попередні маркери
-    ownMarkersLayer.clearLayers();
-    othersMarkersLayer.clearLayers();
-    
-    var foundFeatures = new Map();
-    
-    Object.values(overlays).forEach(layerGroup => {
-        if (layerGroup && typeof layerGroup.eachLayer === 'function') {
-            layerGroup.eachLayer(layer => {
-                if (layer.feature && layer.feature.properties) {
-                    var kadNum = layer.feature.properties['Кадастровий номер'];
-                    
-                    if (kadNum && !foundFeatures.has(kadNum)) {
-                        var isOwn = ownNumbers.includes(kadNum);
-                        var isOther = othersNumbers.includes(kadNum);
-                        if (isOwn || isOther) {
-                            foundFeatures.set(kadNum, layer);
-                            var center = layer.getBounds().getCenter();
-                            var marker = createMarker(center, kadNum, isOwn);
-                            marker.bindPopup(`
-                                <div style="font-size: 14px; font-weight: bold;">
-                                    ${kadNum}
-                                    <br>
-                                    <span style="color: ${isOwn ? '#28a745' : '#dc3545'}">
-                                        ${isOwn ? 'Своя ділянка' : 'Чужа ділянка'}
-                                    </span>
-                                </div>
-                            `, {
-                                offset: [0, -20]
-                            });
+            // Очищаємо попередні маркери
+            ownMarkersLayer.clearLayers();
+            othersMarkersLayer.clearLayers();
+            
+            var foundFeatures = new Map();
+            
+            Object.values(overlays).forEach(layerGroup => {
+                if (layerGroup && typeof layerGroup.eachLayer === 'function') {
+                    layerGroup.eachLayer(layer => {
+                        if (layer.feature && layer.feature.properties) {
+                            var kadNum = layer.feature.properties['Кадастровий номер'];
                             
-                            marker.addTo(isOwn ? ownMarkersLayer : othersMarkersLayer);
+                            if (kadNum && !foundFeatures.has(kadNum)) {
+                                var isOwn = ownNumbers.includes(kadNum);
+                                var isOther = othersNumbers.includes(kadNum);
+                                if (isOwn || isOther) {
+                                    foundFeatures.set(kadNum, layer);
+                                    var center = getPolygonCenter(layer);
+                                    var marker = createMarker(center, kadNum, isOwn);
+                                    marker.bindPopup(`
+                                        <div style="font-size: 14px; font-weight: bold;">
+                                            ${kadNum}
+                                            <br>
+                                            <span style="color: ${isOwn ? '#28a745' : '#dc3545'}">
+                                                ${isOwn ? 'Своя ділянка' : 'Чужа ділянка'}
+                                            </span>
+                                        </div>
+                                    `, {
+                                        offset: [0, -20]
+                                    });
+                                    
+                                    marker.addTo(isOwn ? ownMarkersLayer : othersMarkersLayer);
+                                }
+                            }
                         }
-                    }
-                }
+                    });
+                }                     
             });
-        }                     
-    });
 
-    if (foundFeatures.size > 0) {
-        var group = L.featureGroup([ownMarkersLayer, othersMarkersLayer]);
-        map.fitBounds(group.getBounds(), {
-            padding: [50, 50]
-        });
-        
-        alert(`Знайдено ${foundFeatures.size} ділянок`);
-        cadastralModal.style.display = "none";
-    } else {
-        alert('Ділянок не знайдено');
-    }     
-}
+            if (foundFeatures.size > 0) {
+                var group = L.featureGroup([ownMarkersLayer, othersMarkersLayer]);
+                map.fitBounds(group.getBounds(), {
+                    padding: [50, 50]
+                });
+                
+                alert(`Знайдено ${foundFeatures.size} ділянок`);
+                cadastralModal.style.display = "none";
+                clearCadastralLists();
+            } else {
+                alert('Ділянок не знайдено');
+            }     
+        }
 
         function calculatePolygonArea(layer) {
             var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
@@ -2411,7 +2384,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
 
             var defaultFilename = 'polygons_' + new Date().toISOString().slice(0,10);
             filenameInput.value = defaultFilename;
-
             polygonsList.innerHTML = '';
             var index = 1;
             editableLayers.eachLayer(function(layer) {
@@ -2434,52 +2406,42 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     index++;
                 }
             });
-
             modal.style.display = "block";
-
             span.onclick = function() {
                 modal.style.display = "none";
                 filenameInput.value = '';
             }
-
             window.onclick = function(event) {
                 if (event.target == modal) {
                     modal.style.display = "none";
                     filenameInput.value = '';
                 }
             }
-
             confirmBtn.onclick = function() {
                 var geojson = editableLayers.toGeoJSON();
                 var notesMap = {};
-
                 document.querySelectorAll('.polygon-note').forEach(function(textarea) {
                     notesMap[textarea.dataset.layerId] = textarea.value;
                 });
-
                 geojson.features.forEach(function(feature, index) {
                     if (!feature.properties) {
                         feature.properties = {};
                     }
-
                     var layer = editableLayers.getLayers()[index];
                     var layerId = L.stamp(layer);
-                    
-                    feature.properties.note = notesMap[layerId] || '';
-                    
                     if (feature.geometry && feature.geometry.type === 'Polygon') {
-                        var latLngs = [];
+                        feature.properties.note = notesMap[layerId] || '';
                         feature.geometry.coordinates[0].forEach(function(coord) {
-                            latLngs.push(L.latLng(coord[1], coord[0]));
+                            let lat, lng;
+                            [lng, lat] = coord;
+                            return [lat, lng];
                         });
-                        var area = L.GeometryUtil.geodesicArea(latLngs);
+                        var area = L.GeometryUtil.geodesicArea(feature.geometry.coordinates[0].map(coord => L.latLng(coord[1], coord[0])));
                         feature.properties.area = (area / 10000).toFixed(4);
                     }
                 });
-
                 var filename = filenameInput.value || defaultFilename;
                 var format = formatSelect.value;
-
                 if (format === 'kml') {
                     if (!filename.endsWith('.kml')) filename += '.kml';
                     var kml = convertToKML(geojson);
@@ -2488,14 +2450,12 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     if (!filename.endsWith('.geojson')) filename += '.geojson';
                     var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(geojson));
                 }
-
                 var downloadAnchorNode = document.createElement('a');
                 downloadAnchorNode.setAttribute("href", dataStr);
                 downloadAnchorNode.setAttribute("download", filename);
                 document.body.appendChild(downloadAnchorNode);
                 downloadAnchorNode.click();
                 downloadAnchorNode.remove();
-
                 modal.style.display = "none";
                 filenameInput.value = '';
             }
@@ -2503,7 +2463,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
 
         function convertToKML(geojson) {
             var kml = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n';
-
             geojson.features.forEach(function(feature, index) {
                 kml += '  <Placemark>\n';
                 kml += '    <name>Полігон ' + (index + 1) + '</name>\n';
@@ -2511,10 +2470,8 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 kml += 'Площа: ' + (feature.properties.area || '0') + ' га<br>';
                 kml += 'Примітка: ' + (feature.properties.note || '');
                 kml += ']]></description>\n';
-                
                 kml += '    <Style><LineStyle><color>ff000000</color><width>2</width></LineStyle>';
                 kml += '<PolyStyle><color>4d0000ff</color></PolyStyle></Style>\n';
-                
                 if (feature.geometry && feature.geometry.type === 'Polygon') {
                     kml += '    <Polygon><outerBoundaryIs><LinearRing><coordinates>\n';
                     feature.geometry.coordinates[0].forEach(function(coord) {
@@ -2524,57 +2481,9 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 }
                 kml += '  </Placemark>\n';
             });
-
             kml += '</Document>\n</kml>';
             return kml;
         }
-
-        // После document.addEventListener('DOMContentLoaded',...) добавить:
-        document.getElementById('fieldSelect').addEventListener('change', function() {
-            var selectedField = this.value;
-            var selectedFile = document.getElementById('fileSelect').value;
-            
-            if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
-                clearOverlays();
-                tenantAreas = {};
-                freeArea = 0;
-
-                var filteredData = {
-                    type: "FeatureCollection",
-                    features: originalGeoJsonData.features
-                };
-
-                if (selectedField) {
-                    filteredData.features = filteredData.features.filter(feature => 
-                        feature.properties && 
-                        feature.properties['Назва поля'] === selectedField
-                    );
-                }
-                
-                var geoJsonLayer = L.geoJSON(filteredData, {
-                    style: styleFeature,
-                    onEachFeature: onEachFeature
-                });
-
-                overlays[selectedFile] = geoJsonLayer;
-                geoJsonLayer.addTo(map);
-                
-                if (geoJsonLayer.getBounds().isValid()) {
-                    map.fitBounds(geoJsonLayer.getBounds());
-                }
-
-                updateLayersControl();
-                addSearchControl(geoJsonLayer);
-                updateDataFreshnessIndicator(filteredData);
-            }
-        });
-
-        document.getElementById('freshnessButton').addEventListener('click', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const id = urlParams.get('id');
-            const freshnessUrl = `freshness.html${id ? `?id=${id}` : ''}`;
-            window.location.href = freshnessUrl;
-        });
 
         // Додайте нові функції для завантаження файлів
         function showLoadModal() {
@@ -2582,25 +2491,19 @@ function addPolygonToMap(geoJSON, originalProperties) {
             var span = modal.getElementsByClassName("close")[0];
             var confirmBtn = document.getElementById('confirmLoad');
             var fileInput = document.getElementById('fileInput');
-
-            modal.style.display = "block";
-
             span.onclick = function() {
-                modal.style.display = "none";
+                modal.style.display = "block";
                 fileInput.value = '';
             }
-
             window.onclick = function(event) {
                 if (event.target == modal) {
                     modal.style.display = "none";
                     fileInput.value = '';
                 }
             }
-
             confirmBtn.onclick = function() {
                 var file = fileInput.files[0];
                 var clearExisting = document.getElementById('clearExisting').checked;
-                
                 if (file) {
                     var reader = new FileReader();
                     reader.onload = function(e) {
@@ -2608,222 +2511,256 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     };
                     reader.readAsText(file);
                 }
-
                 modal.style.display = "none";
                 fileInput.value = '';
             }
         }
 
         function loadPolygonsFromFile(content, filename, clearExisting) {       
-    try {
-        var data;
-        
-        if (filename.toLowerCase().endsWith('.kml')) {
-            var parser = new DOMParser();
-            var kml = parser.parseFromString(content, 'text/xml');
-            data = toGeoJSON.kml(kml);
-        } else {
-            data = JSON.parse(content);
-        }
-
-        if (clearExisting) {
-            editableLayers.clearLayers();
-        }
-
-        let addedPolygons = 0;
-
-        if (data.features && Array.isArray(data.features)) {
-            data.features.forEach(function(feature, index) {
-                if (feature.geometry && 
-                    (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
-
-                    try {
-                        let polygonCoordinates = [];
-                        if (feature.geometry.type === 'Polygon') {
-                            polygonCoordinates = [feature.geometry.coordinates[0]];
-                        } else if (feature.geometry.type === 'MultiPolygon') {
-                            polygonCoordinates = feature.geometry.coordinates[0];
-                        }
-
-                        polygonCoordinates.forEach((coordinates) => {
-                            let latLngs = coordinates.map(coord => {
-                                let lat, lng;
-                                [lng, lat] = coord;
-                                return [lat, lng];
-                            }).filter(coord => coord !== null);
-
-                            if (latLngs.length >= 3) {
-                                var polygon = L.polygon(latLngs, {
-                                    color: '#3388ff',
-                                    weight: 2,
-                                    fillOpacity: 0.2
+            var data;
+            try {
+                if (filename.toLowerCase().endsWith('.kml')) {
+                    var parser = new DOMParser();
+                    var kml = parser.parseFromString(content, 'text/xml');
+                    data = toGeoJSON.kml(kml);
+                } else {
+                    data = JSON.parse(content);
+                }
+                if (clearExisting) {
+                    editableLayers.clearLayers();
+                }
+                if (data.features && Array.isArray(data.features)) {
+                    let addedPolygons = 0;
+                    data.features.forEach(function(feature, index) {
+                        if (feature.geometry && 
+                            (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
+                            try {
+                                let polygonCoordinates = [];
+                                if (feature.geometry.type === 'Polygon') {
+                                    polygonCoordinates = [feature.geometry.coordinates[0]];
+                                } else if (feature.geometry.type === 'MultiPolygon') {
+                                    polygonCoordinates = feature.geometry.coordinates[0];
+                                }
+                                polygonCoordinates.forEach((coordinates) => {
+                                    let latLngs = coordinates.map(coord => {
+                                        let lat, lng;
+                                        [lng, lat] = coord;
+                                        return [lat, lng];
+                                    }).filter(coord => coord !== null);
+                                    if (latLngs.length >= 3) {
+                                        var polygon = L.polygon(latLngs, {
+                                            color: '#3388ff',
+                                            weight: 2,
+                                            fillOpacity: 0.2
+                                        });
+                                        if (feature.properties) {
+                                            polygon.feature = {
+                                                type: 'Feature',
+                                                properties: feature.properties
+                                            };
+                                        }
+                                        var area = calculatePolygonArea(polygon);
+                                        var popupContent = 'Площа: ' + area + ' га';
+                                        if (feature.properties && feature.properties.note) {
+                                            popupContent += '<br>Примітка: ' + feature.properties.note;
+                                        }
+                                        polygon.bindPopup(popupContent);
+                                        editableLayers.addLayer(polygon);
+                                        addedPolygons++;
+                                    }
                                 });
-
-                                if (feature.properties) {
-                                    polygon.feature = {
-                                        type: 'Feature',
-                                        properties: feature.properties
-                                    };
-                                }
-
-                                var area = calculatePolygonArea(polygon);
-                                var popupContent = 'Площа: ' + area + ' га';
-                                if (feature.properties && feature.properties.note) {
-                                    popupContent += '<br>Примітка: ' + feature.properties.note;
-                                }
-                                polygon.bindPopup(popupContent);
-                                editableLayers.addLayer(polygon);
-                                addedPolygons++;
+                            } catch (e) {
+                                // Ігноруємо помилки окремих полігонів
                             }
+                        }
+                    });
+                    if (addedPolygons > 0) {
+                        map.fitBounds(editableLayers.getBounds(), {
+                            padding: [50, 50]
                         });
-                    } catch (e) {
-                        // Ігноруємо помилки окремих полігонів
+                        alert(`Успішно завантажено ${addedPolygons} полігонів`);
+                    } else {
+                        alert('Не вдалося завантажити жодного полігону');
+                    }
+                } else {
+                    alert('Файл має невірний формат');
+                }
+            } catch (error) {
+                alert('Помилка завантаження файлу. Перевірте формат файлу.');
+            }
+        }
+
+        function updateExpiryYearSelect(data) {
+            var expiryYearSelect = document.getElementById('expiryYearSelect');
+            expiryYearSelect.innerHTML = '<option value="">Всі роки</option>';
+            expiryYearSelect.innerHTML += '<option value="no_date">Без дати</option>'; // Добавляем опцию "Без дати"
+            var uniqueYears = new Set();
+            data.features.forEach(feature => {
+                if (feature.properties?.['Дата завершення']) {
+                    const dateStr = feature.properties['Дата завершення'];
+                    const year = dateStr.split('.')[2];
+                    if (year) {
+                        uniqueYears.add(year);
                     }
                 }
             });
+            Array.from(uniqueYears).sort().forEach(year => {
+                var option = document.createElement('option');
+                option.value = year;
+                option.textContent = year + ' рік';
+                expiryYearSelect.appendChild(option);
+            });
+        }
 
-            if (addedPolygons > 0) {
-                map.fitBounds(editableLayers.getBounds(), {
-                    padding: [50, 50]
+        // Модифицируем функцию фильтрации для корректной обработки записей без даты
+        function filterByExpiryYear(feature, selectedYear) {
+            if (selectedYear === '') return true; // Показать все записи
+            if (selectedYear === 'no_date') {
+                // Показать только записи без даты
+                return !feature.properties?.['Дата завершення'];
+            }
+            if (feature.properties?.['Дата завершення']) {
+                const dateStr = feature.properties['Дата завершення'];
+                const year = dateStr.split('.')[2];
+                return year === selectedYear;
+            }
+            return false;
+        }
+
+        // Обновляем обработчик изменения в списке годов
+        document.getElementById('expiryYearSelect').addEventListener('change', function() {
+            var selectedField = document.getElementById('fieldSelect').value;
+            var selectedFile = document.getElementById('fileSelect').value;
+            var selectedYear = this.value;
+            if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
+                clearOverlays();
+                tenantAreas = {};
+                freeArea = 0;
+                var filteredData = {
+                    type: "FeatureCollection",
+                    features: originalGeoJsonData.features.filter(feature => {
+                        const fieldMatch = !selectedField || 
+                            (feature.properties && feature.properties['Назва поля'] === selectedField);
+                        return fieldMatch && filterByExpiryYear(feature, selectedYear);
+                    })
+                };
+                var geoJsonLayer = L.geoJSON(filteredData, {
+                    style: styleFeature,
+                    onEachFeature: onEachFeature
                 });
-                alert(`Успішно завантажено ${addedPolygons} полігонів`);
-            } else {
-                alert('Не вдалося завантажити жодного полігону');
-            }
-        } else {
-            alert('Файл має невірний формат');
-        }
-    } catch (error) {
-        alert('Помилка завантаження файлу. Перевірте формат файлу.');
-    }
-}
-
-function updateExpiryYearSelect(data) {
-    var expiryYearSelect = document.getElementById('expiryYearSelect');
-    expiryYearSelect.innerHTML = '<option value="">Всі роки</option>';
-    expiryYearSelect.innerHTML += '<option value="no_date">Без дати</option>'; // Добавляем опцию "Без дати"
-
-    var uniqueYears = new Set();
-    data.features.forEach(feature => {
-        if (feature.properties?.['Дата завершення']) {
-            const dateStr = feature.properties['Дата завершення'];
-            const year = dateStr.split('.')[2];
-            if (year) {
-                uniqueYears.add(year);
-            }
-        }
-    });
-
-    Array.from(uniqueYears).sort().forEach(year => {
-        var option = document.createElement('option');
-        option.value = year;
-        option.textContent = year + ' рік';
-        expiryYearSelect.appendChild(option);
-    });
-}
-
-// Модифицируем функцию фильтрации для корректной обработки записей без даты
-function filterByExpiryYear(feature, selectedYear) {
-    if (selectedYear === '') return true; // Показать все записи
-    if (selectedYear === 'no_date') {
-        // Показать только записи без даты
-        return !feature.properties?.['Дата завершення'];
-    }
-    // Показать записи с выбранным годом
-    if (feature.properties?.['Дата завершення']) {
-        const dateStr = feature.properties['Дата завершення'];
-        const year = dateStr.split('.')[2];
-        return year === selectedYear;
-    }
-    return false;
-}
-
-// Обновляем обработчик изменения в списке годов
-document.getElementById('expiryYearSelect').addEventListener('change', function() {
-    var selectedField = document.getElementById('fieldSelect').value;
-    var selectedFile = document.getElementById('fileSelect').value;
-    var selectedYear = this.value;
-    
-    if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
-        clearOverlays();
-        tenantAreas = {};
-        freeArea = 0;
-
-        var filteredData = {
-            type: "FeatureCollection",
-            features: originalGeoJsonData.features.filter(feature => {
-                const fieldMatch = !selectedField || 
-                    (feature.properties && feature.properties['Назва поля'] === selectedField);
-                return fieldMatch && filterByExpiryYear(feature, selectedYear);
-            })
-        };
-
-        var geoJsonLayer = L.geoJSON(filteredData, {
-            style: styleFeature,
-            onEachFeature: onEachFeature
-        });
-
-        overlays[selectedFile] = geoJsonLayer;
-        geoJsonLayer.addTo(map);
-        
-        if (geoJsonLayer.getBounds().isValid()) {
-            map.fitBounds(geoJsonLayer.getBounds());
-        }
-
-        updateLayersControl();
-        addSearchControl(geoJsonLayer);
-        updateDataFreshnessIndicator(filteredData);
-    }
-});
-
-// Модифікуємо існуючий обробник зміни fieldSelect, щоб він враховував обидва фільтри
-document.getElementById('fieldSelect').addEventListener('change', function() {
-    var selectedField = this.value;
-    var selectedFile = document.getElementById('fileSelect').value;
-    var selectedYear = document.getElementById('expiryYearSelect').value;
-    
-    if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
-        clearOverlays();
-        tenantAreas = {};
-        freeArea = 0;
-
-        var filteredData = {
-            type: "FeatureCollection",
-            features: originalGeoJsonData.features.filter(feature => {
-                const fieldMatch = !selectedField || 
-                    (feature.properties && feature.properties['Назва поля'] === selectedField);
-                let yearMatch = true;
-                if (selectedYear && feature.properties?.['Дата завершення']) {
-                    const dateStr = feature.properties['Дата завершення'];
-                    const year = dateStr.split('.')[2];
-                    yearMatch = year === selectedYear;
+                overlays[selectedFile] = geoJsonLayer;
+                geoJsonLayer.addTo(map);
+                if (geoJsonLayer.getBounds().isValid()) {
+                    map.fitBounds(geoJsonLayer.getBounds());
                 }
-                return fieldMatch && yearMatch;
-            })
-        };
-
-        var geoJsonLayer = L.geoJSON(filteredData, {
-            style: styleFeature,
-            onEachFeature: onEachFeature
+                updateLayersControl();
+                addSearchControl(geoJsonLayer);
+                updateDataFreshnessIndicator(filteredData);
+            }
         });
 
-        overlays[selectedFile] = geoJsonLayer;
-        geoJsonLayer.addTo(map);
-        
-        if (geoJsonLayer.getBounds().isValid()) {
-            map.fitBounds(geoJsonLayer.getBounds());
-        }
+        // Модифікуємо існуючий обробник зміни fieldSelect, щоб він враховував обидва фільтри
+        document.getElementById('fieldSelect').addEventListener('change', function() {
+            var selectedField = this.value;
+            var selectedFile = document.getElementById('fileSelect').value;
+            var selectedYear = document.getElementById('expiryYearSelect').value;
+            if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
+                clearOverlays();
+                tenantAreas = {};
+                freeArea = 0;
+                var filteredData = {
+                    type: "FeatureCollection",
+                    features: originalGeoJsonData.features.filter(feature => {
+                        const fieldMatch = !selectedField || 
+                            (feature.properties && feature.properties['Назва поля'] === selectedField);
+                        let yearMatch = true;
+                        if (selectedYear && feature.properties?.['Дата завершення']) {
+                            const dateStr = feature.properties['Дата завершення'];
+                            const year = dateStr.split('.')[2];
+                            yearMatch = year === selectedYear;
+                        }
+                        return fieldMatch && yearMatch;
+                    })
+                };
+                var geoJsonLayer = L.geoJSON(filteredData, {
+                    style: styleFeature,
+                    onEachFeature: onEachFeature
+                });
+                overlays[selectedFile] = geoJsonLayer;
+                geoJsonLayer.addTo(map);
+                if (geoJsonLayer.getBounds().isValid()) {
+                    map.fitBounds(geoJsonLayer.getBounds());
+                }
+                updateLayersControl();
+                addSearchControl(geoJsonLayer);
+                updateDataFreshnessIndicator(filteredData);
+            }
+        });
 
-        updateLayersControl();
-        addSearchControl(geoJsonLayer);
-        updateDataFreshnessIndicator(filteredData);
+        // Додаємо обробники для кнопок виділення
+        document.querySelector('[data-action="clear-selection"]')?.addEventListener('click', clearSelection);
+        document.querySelector('[data-action="export-selected"]')?.addEventListener('click', exportSelectedToExcel);
+    }; // Закрывающая скобка для обработчика DOMContentLoaded
+
+    // Глобальные функции - добавить в начало скрипта, сразу после определения глобальных переменных
+    function clearCadastralLists() {
+        document.getElementById("ownCadastralList").value = '';
+        document.getElementById("othersCadastralList").value = '';
     }
-});
-    // Обработчик для expiryYearSelect остается без изменений
-    document.getElementById('expiryYearSelect').addEventListener('change', function() {
-        // ...existing code...
-    });
-}; // Добавляем закрывающую скобку для DOMContentLoaded
-    </script>
+
+    function createMarker(center, kadNum, isOwn) {
+        var color = isOwn ? '#28a745' : '#dc3545';
+        return L.marker(center, {
+            icon: L.divIcon({
+                className: 'custom-div-icon',
+                html: `
+                    <div style="
+                        background-color: ${color};
+                        width: 20px;
+                        height: 20px;
+                        border-radius: 50%;
+                        border: 3px solid white;
+                        box-shadow: 0 0 4px rgba(0,0,0,0.5);
+                        animation: pulse 2s infinite;
+                    "></div>
+                `,
+                iconSize: [10, 10],
+                iconAnchor: [5, 5]
+            })
+        });
+    }
+
+    // Функция для получения центра полигона
+    function getPolygonCenter(layer) {
+        if (layer.getBounds) {
+            return layer.getBounds().getCenter();
+        }
+        // Если getBounds не доступен, вычисляем центр по координатам
+        const latLngs = layer.getLatLngs()[0];
+        const sumLat = latLngs.reduce((sum, point) => sum + point.lat, 0);
+        const sumLng = latLngs.reduce((sum, point) => sum + point.lng, 0);
+        return L.latLng(sumLat / latLngs.length, sumLng / latLngs.length);
+    }
+
+    // В функции searchCadastralNumbers заменить layer.getBounds().getCenter() на:
+    // var center = getPolygonCenter(layer);
+
+    // ...rest of your existing code...
+
+    function getBoundsFromLayers(layers) {
+        let bounds = null;
+        layers.forEach(layer => {
+            if (layer.getBounds) {
+                const layerBounds = layer.getBounds();
+                if (bounds === null) {
+                    bounds = layerBounds;
+                } else {
+                    bounds.extend(layerBounds);
+                }
+            }
+        });
+        return bounds;
+    }
+</script>
 </body>
 </html>
