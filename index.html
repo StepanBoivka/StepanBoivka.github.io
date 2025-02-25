@@ -724,6 +724,22 @@
         let cadastralModal;
         let ownMarkersLayer, othersMarkersLayer;
         let editableLayers;
+
+        // Функция для сбора данных карты
+        function collectMapData() {
+            const data = [];
+            if (originalGeoJsonData && originalGeoJsonData.features) {
+                // Использовать оригинальные данные
+                originalGeoJsonData.features.forEach(feature => {
+                    if (feature.properties && 
+                        (!feature.properties.type || feature.properties.type === 'original')) {
+                        data.push(feature.properties);
+                    }
+                });
+            }
+            return data;
+        }
+
         // Получение параметров из URL
         const urlParams = new URLSearchParams(window.location.search);
         const id = urlParams.get('id');
@@ -1470,6 +1486,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
         function updateSelectionInfo() {
     // Використовуємо Map для зберігання унікальних ділянок та їх площ
     const uniqueFeatures = new Map();
+    const tenantAreas = new Map(); // Додаємо Map для площ по орендарях
     const selectedCount = selectedFeatures.size;
 
     selectedFeatures.forEach(featureId => {
@@ -1479,10 +1496,15 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     const props = layer.feature.properties;
                     const kadNum = props["Кадастровий номер"];
                     const area = parseFloat(props["Площа розрахована"]) || 0;
+                    const tenant = props["Орендар"] || "Без орендаря";
 
                     // Зберігаємо площу тільки для унікального кадастрового номера
                     if (kadNum && !uniqueFeatures.has(kadNum)) {
                         uniqueFeatures.set(kadNum, area);
+                        
+                        // Додаємо площу до відповідного орендаря
+                        const currentArea = tenantAreas.get(tenant) || 0;
+                        tenantAreas.set(tenant, currentArea + area);
                     }
                 }
             });
@@ -1511,9 +1533,33 @@ function addPolygonToMap(geoJSON, originalProperties) {
             };
             info.addTo(map);
         }
-        document.getElementById('selectionInfo').innerHTML =
-            `Виділено ділянок: ${uniqueCount}<br>` +
-            `Загальна площа: ${totalArea.toFixed(4)} га`;
+
+        // Формуємо текст з інформацією про орендарів з кольоровими індикаторами
+        let tenantsInfo = '';
+        tenantAreas.forEach((area, tenant) => {
+            const color = tenant === "Без орендаря" ? "#ffffff" : getColor(tenant);
+            tenantsInfo += `
+                <div style="display: flex; align-items: center; margin-top: 3px;">
+                    <span style="
+                        display: inline-block;
+                        width: 12px;
+                        height: 12px;
+                        margin-right: 5px;
+                        background-color: ${color};
+                        border: 1px solid #666;
+                        border-radius: 2px;
+                    "></span>
+                    <span>${tenant}: ${area.toFixed(4)} га</span>
+                </div>`;
+        });
+
+        document.getElementById('selectionInfo').innerHTML = `
+            Виділено ділянок: ${uniqueCount}<br>
+            Загальна площа: ${totalArea.toFixed(4)} га
+            <hr style="margin: 4px 0">
+            <strong>Розподіл по орендарях:</strong>
+            ${tenantsInfo}`;
+
         if (selectionTools) {
             selectionTools.style.display = 'block';
         }
@@ -2232,10 +2278,12 @@ function addPolygonToMap(geoJSON, originalProperties) {
         function collectMapData() {
             var data = [];
             var selectedFile = document.getElementById('fileSelect').value;
-            if (overlays[selectedFile]) {
-                overlays[selectedFile].eachLayer(layer => {
-                    if (layer.feature && layer.feature.properties) {
-                        data.push(layer.feature.properties);
+            if (originalGeoJsonData && originalGeoJsonData.features) {
+                // Використовуємо оригінальні дані замість overlays
+                originalGeoJsonData.features.forEach(feature => {
+                    if (feature.properties && 
+                        (!feature.properties.type || feature.properties.type === 'original')) {
+                        data.push(feature.properties);
                     }
                 });
             }
