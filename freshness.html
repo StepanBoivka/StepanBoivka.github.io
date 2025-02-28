@@ -64,10 +64,10 @@
             </a>
             <div class="view-switcher">
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-light active" data-view="cards">
+                    <button type="button" class="btn btn-outline-light" data-view="cards">
                         <i class="bi bi-grid"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-light" data-view="table">
+                    <button type="button" class="btn btn-outline-light active" data-view="table">
                         <i class="bi bi-table"></i>
                     </button>
                 </div>
@@ -76,15 +76,21 @@
     </nav>
 
     <div class="container py-4">
-        <h1 class="mb-4">Актуальність даних по радах</h1>
+        <h1 class="mb-4">
+            Актуальність даних по радах
+            <small class="text-muted fs-5 ms-3">
+                рад - <span id="totalCouncilsCounter">0</span>, 
+                ділянок - <span id="totalPlotsCounter">0</span>
+            </small>
+        </h1>
         
         <!-- Контейнер для карток -->
-        <div id="cardsView" class="row">
+        <div id="cardsView" class="row" style="display: none">
             <!-- Картки будуть тут -->
         </div>
 
         <!-- Контейнер для таблиці -->
-        <div id="tableView" class="table-view" style="display: none">
+        <div id="tableView" class="table-view">
             <table class="table">
                 <thead>
                     <tr></tr>
@@ -117,11 +123,19 @@
                 const data = await response.json();
                 const grid = document.getElementById('cardsView');
                 
+                let totalPlots = 0;
+                const totalCouncils = data.files.length;
+                
                 for (const file of data.files) {
                     const councilData = await analyzeCouncilData(dataPath + file);
                     const card = createCouncilCard(file.replace('.geojson', ''), councilData);
                     grid.appendChild(card);
+                    totalPlots += councilData.totalRecords;
                 }
+
+                // Обновляем счетчики
+                document.getElementById('totalCouncilsCounter').textContent = totalCouncils.toLocaleString('uk-UA');
+                document.getElementById('totalPlotsCounter').textContent = totalPlots.toLocaleString('uk-UA');
             } catch (error) {
                 console.error('Помилка завантаження даних:', error);
                 alert('Помилка завантаження списку файлів');
@@ -133,8 +147,11 @@
             const data = await response.json();
             const now = new Date();
             
+            // Фільтруємо тільки original записи
+            const originalFeatures = data.features.filter(feature => feature.properties?.type === 'original');
+            
             let stats = {
-                totalRecords: data.features.length,
+                totalRecords: originalFeatures.length,
                 fresh: 0,
                 medium: 0,
                 old: 0,
@@ -145,7 +162,7 @@
             };
 
             // Збираємо дані оновлень
-            data.features.forEach(feature => {
+            originalFeatures.forEach(feature => {
                 const date = feature.properties?.["Дата оновлення"];
                 if (!date) {
                     stats.noDate++;
