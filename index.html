@@ -476,6 +476,7 @@
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
 </head>
 <body>
     <!-- Оставляем тільки один navbar -->
@@ -2801,34 +2802,41 @@ function addPolygonToMap(geoJSON, originalProperties) {
 
         // Додайте нові функції для завантаження файлів
         function showLoadModal() {
-            var modal = document.getElementById('loadModal');
-            var span = modal.getElementsByClassName("close")[0];
-            var confirmBtn = document.getElementById('confirmLoad');
-            var fileInput = document.getElementById('fileInput');
-            span.onclick = function() {
-                modal.style.display = "block";
-                fileInput.value = '';
-            }
-            window.onclick = function(event) {
-                if (event.target == modal) {
-                    modal.style.display = "none";
-                    fileInput.value = '';
-                }
-            }
-            confirmBtn.onclick = function() {
-                var file = fileInput.files[0];
-                var clearExisting = document.getElementById('clearExisting').checked;
-                if (file) {
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        loadPolygonsFromFile(e.target.result, file.name, clearExisting);
-                    };
-                    reader.readAsText(file);
-                }
-                modal.style.display = "none";
-                fileInput.value = '';
-            }
+    var modal = document.getElementById('loadModal');
+    modal.style.display = "block"; // Показываем модальное окно
+    
+    var fileInput = document.getElementById('fileInput');
+    fileInput.value = ''; // Сбрасываем предыдущие выбранные файлы
+    
+    // Настраиваем обработчики для закрытия модального окна
+    var span = modal.getElementsByClassName("close")[0];
+    span.onclick = function() {
+        modal.style.display = "none"; // Закрываем окно при клике на крестик
+    }
+    
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none"; // Закрываем окно при клике вне его
         }
+    }
+    
+    // Настраиваем обработчик для кнопки загрузки
+    var confirmBtn = document.getElementById('confirmLoad');
+    confirmBtn.onclick = function() {
+        var file = fileInput.files[0];
+        var clearExisting = document.getElementById('clearExisting').checked;
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                loadPolygonsFromFile(e.target.result, file.name, clearExisting);
+            };
+            reader.readAsText(file);
+        } else {
+            alert('Виберіть файл для завантаження');
+        }
+        modal.style.display = "none";
+    }
+}
 
         function loadPolygonsFromFile(content, filename, clearExisting) {       
     var data;
@@ -4166,36 +4174,6 @@ function exportToExcel() {
 }
 
 // ...existing code...
-</script>
-
-<script>
-    map.addControl(drawControl);
-
-    // Додаємо обробник події створення полігону
-    map.on(L.Draw.Event.CREATED, function (e) {
-        var layer = e.layer;
-        
-        // Рахуємо площу в гектарах
-        var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-        var areaInHectares = (area / 10000).toFixed(4);
-        
-        // Додаємо попап з площею
-        layer.bindPopup('Площа: ' + areaInHectares + ' га');
-        
-        // Додаємо полігон до шару для редагування
-        editableLayers.addLayer(layer);
-    });
-
-    // Оновлюємо попап з площею при редагуванні
-    map.on(L.Draw.Event.EDITED, function (e) {
-        e.layers.eachLayer(function (layer) {
-            if (layer instanceof L.Polygon) {
-                var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-                var areaInHectares = (area / 10000).toFixed(4);
-                layer.setPopupContent('Площа: ' + areaInHectares + ' га');
-            }
-        });
-    });
 </script>
 
 </body>
