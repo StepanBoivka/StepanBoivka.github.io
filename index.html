@@ -478,7 +478,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 </head>
 <body>
-    <!-- Оставляем только один navbar -->
+    <!-- Оставляем тільки один navbar -->
     <nav class="navbar navbar-dark bg-dark fixed-top py-1">
         <div class="container-fluid px-2">
             <!-- Кнопка для відкриття бокового меню -->
@@ -546,8 +546,8 @@
                         Експорт в Excel
                     </button>
                     <button class="btn btn-outline-light text-start" id="freshnessButton">
-                        <i class="bi bi-clock-history me-2"></i>
-                        Актуальність даних
+                        <i class="bi bi-database me-2"></i>
+                        Мої ресурси
                     </button>
                     <button class="btn btn-outline-light text-start" id="exchangeButton">
                         <i class="bi bi-arrow-left-right me-2"></i>
@@ -727,9 +727,6 @@
 
         // Функция для сбора данных карты с видимых слоев
         function collectMapData() {
-            // Отладочное сообщение
-            console.log('Запуск collectMapData() - собираем данные с видимых слоев');
-            
             // Используем сет для предотвращения дублирования
             const uniqueProperties = new Set();
             const data = [];
@@ -741,7 +738,6 @@
                 
                 // Проверяем видим ли слой
                 if (map.hasLayer(layerGroup)) {
-                    console.log('Обрабатываем слой:', layerGroup);
                     
                     layerGroup.eachLayer(layer => {
                         if (layer.feature && layer.feature.properties) {
@@ -759,7 +755,6 @@
                                 if (!uniqueProperties.has(propId)) {
                                     uniqueProperties.add(propId);
                                     data.push(layer.feature.properties);
-                                    console.log('Добавлен объект:', propId);
                                 }
                             }
                         }
@@ -767,7 +762,6 @@
                 }
             });
             
-            console.log(`Собрано ${data.length} уникальных объектов для экспорта`);
             return data;
         }
 
@@ -1052,41 +1046,34 @@
             }
         }
     });
-
     map.addControl(drawControl);
 
-    // Додаємо новий обробник для вибору полігонів для редагування
-    var editHandler = null;
-    map.on(L.Draw.Event.EDITSTART, function (e) {
-        editableLayers.eachLayer(function (layer) {
+    // Додаємо обробник події створення полігону
+    map.on(L.Draw.Event.CREATED, function (e) {
+        var layer = e.layer;
+        
+        // Рахуємо площу в гектарах
+        var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+        var areaInHectares = (area / 10000).toFixed(4);
+        
+        // Додаємо попап з площею
+        layer.bindPopup('Площа: ' + areaInHectares + ' га');
+        
+        // Додаємо полігон до шару для редагування
+        editableLayers.addLayer(layer);
+    });
+
+    // Оновлюємо попап з площею при редагуванні
+    map.on(L.Draw.Event.EDITED, function (e) {
+        e.layers.eachLayer(function (layer) {
             if (layer instanceof L.Polygon) {
-                // Спочатку вимикаємо можливість редагування для всіх полігонів
-                layer.editing.disable();
-                // Додаємо обробник кліку для кожного полігону
-                layer.on('click', function () {
-                    // Вимикаємо редагування для всіх інших полігонів
-                    editableLayers.eachLayer(function (l) {
-                        if (l !== layer && l.editing) {
-                            l.editing.disable();
-                        }
-                    });
-                    // Вмикаємо редагування тільки для вибраного полігону
-                    layer.editing.enable();
-                });
+                var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                var areaInHectares = (area / 10000).toFixed(4);
+                layer.setPopupContent('Площа: ' + areaInHectares + ' га');
             }
         });
     });
 
-    map.on(L.Draw.Event.EDITSTOP, function (e) {
-        editableLayers.eachLayer(function (layer) {
-            if (layer instanceof L.Polygon) {
-                layer.editing.disable();
-                // Видаляємо обробник кліку
-                layer.off('click');
-            }
-        });
-    });
-                    
     // Додаємо випадаюче меню з інструментами
 var toolsButton = L.Control.extend({
     options: {
@@ -1500,7 +1487,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
 
         // Функция обновления информации о выделении
         function updateSelectionInfo() {
-            console.log("Начало выполнения updateSelectionInfo");
             
             // Множество для отслеживания уже обработанных комбинаций
             const processedParts = new Set();
@@ -1521,7 +1507,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                         
                         const props = layer.feature.properties;
                         if (props.type !== 'split') {
-                            console.log("Пропускаем не split-часть:", props);
                             return;
                         }
                         
@@ -1532,7 +1517,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                         const status = props["Статус"] || "Не вказано";
                         
                         // Уникальный идентификатор комбинации
-                        const partId = kadNum + '_' + tenant + '_' + status;
+                        const partId = `${kadNum}_${tenant}_${status}`;
                         
                         if (processedParts.has(partId) || !kadNum || isNaN(partArea) || partArea <= 0) {
                             return; // Пропускаем уже обработанные или некорректные данные
@@ -1576,7 +1561,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
             // Подсчитываем общую площадь частей по статусам
             const totalPartsArea = Array.from(statusAreas.values())
                 .reduce((sum, area) => sum + area, 0);
-            
+
             // Обновляем интерфейс
             updateSelectionInfoUI(uniqueFeatures, tenantAreas, statusAreas, totalSelectedArea, totalPartsArea);
         }
@@ -1639,7 +1624,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     <div style="display: flex; align-items: center; margin-top: 3px;">
                         <span style="
                             display: inline-block;
-                            width: 12px;
+                            width: 12px; 
                             height: 12px;
                             margin-right: 5px;
                             background-color: ${color};
@@ -1891,63 +1876,58 @@ function addPolygonToMap(geoJSON, originalProperties) {
         });
 
         async function addGeoJsonLayer(url, layerName) {
-            clearOverlays();
-            tenantAreas = {};
-            freeArea = 0;
-            selectedFeatures.clear(); // Очищаем выбранные объекты
-            
-            try {
-                console.log("Загрузка данных из:", url);
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                // Загружаем все исходные данные
-                const data = await response.json();
-                originalGeoJsonData = data;
-                
-                console.log("Загружено объектов:", data.features.length);
-                
-                // Фильтруем только split-части для отображения на карте
-                const splitFeatures = data.features.filter(feature => 
-                    feature.properties && feature.properties.type === "split"
-                );
-                
-                console.log("Отфильтровано split-частей:", splitFeatures.length);
-
-                // Создаем новый объект FeatureCollection только с split-частями
-                const filteredData = {
-                    type: "FeatureCollection",
-                    features: splitFeatures
-                };
-
-                // Строим слой GeoJSON из отфильтрованных данных
-                var geoJsonLayer = L.geoJSON(filteredData, {
-                    style: styleFeature,
-                    onEachFeature: onEachFeature
-                });
-
-                // Обновляем списки для фильтрации
-                updateFieldSelect(data);
-                updateExpiryYearSelect(data);
-
-                // Добавляем слой на карту
-                map.fitBounds(geoJsonLayer.getBounds());
-                overlays[layerName] = geoJsonLayer;
-                geoJsonLayer.addTo(map);
-                
-                // Обновляем интерфейс
-                updateLayersControl();
-                addSearchControl(geoJsonLayer);
-                updateDataFreshnessIndicator(filteredData);
-                
-                return true;
-            } catch (error) {
-                console.error('Error loading GeoJSON:', error);
-                throw error;
-            }
+    clearOverlays();
+    tenantAreas = {};
+    freeArea = 0;
+    selectedFeatures.clear(); // Очищаем выбранные объекты
+    
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        // Загружаем все исходные данные
+        const data = await response.json();
+        originalGeoJsonData = data;
+        
+        // Фильтруем только split-части для отображения на карте
+        const splitFeatures = data.features.filter(feature => 
+            feature.properties && feature.properties.type === "split"
+        );
+
+        // Создаем новый объект FeatureCollection только с split-частями
+        const filteredData = {
+            type: "FeatureCollection",
+            features: splitFeatures
+        };
+
+        // Строим слой GeoJSON из отфильтрованных данных
+        var geoJsonLayer = L.geoJSON(filteredData, {
+            style: styleFeature,
+            onEachFeature: onEachFeature
+        });
+
+        // Обновляем списки для фильтрации
+        updateFieldSelect(data);
+        updateExpiryYearSelect(data);
+
+        // Добавляем слой на карту
+        map.fitBounds(geoJsonLayer.getBounds());
+        overlays[layerName] = geoJsonLayer;
+        geoJsonLayer.addTo(map);
+        
+        // Обновляем интерфейс
+        updateLayersControl();
+        addSearchControl(geoJsonLayer);
+        updateDataFreshnessIndicator(filteredData);
+        
+        return true;
+    } catch (error) {
+        console.error('Error loading GeoJSON:', error);
+        throw error;
+    }
+}
 
         function styleFeature(feature) {
             // Для split используем орендаря части если есть
@@ -1973,7 +1953,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
     if (feature.properties) {
         // Проверяем тип объекта и логируем
         if (feature.properties.type !== 'split') {
-            console.log("onEachFeature: пропускаем не split-часть:", feature.properties);
             return;
         }
         
@@ -2623,8 +2602,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 rows.push(row);
             });
             
-            console.log(`Экспортирую ${data.length} строк данных`);
-            
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(rows);
             XLSX.utils.book_append_sheet(wb, ws, "Ділянки");
@@ -2854,78 +2831,74 @@ function addPolygonToMap(geoJSON, originalProperties) {
         }
 
         function loadPolygonsFromFile(content, filename, clearExisting) {       
-            var data;
-            try {
-                if (filename.toLowerCase().endsWith('.kml')) {
-                    var parser = new DOMParser();
-                    var kml = parser.parseFromString(content, 'text/xml');
-                    data = toGeoJSON.kml(kml);
-                } else {
-                    data = JSON.parse(content);
-                }
-                if (clearExisting) {
-                    editableLayers.clearLayers();
-                }
-                if (data.features && Array.isArray(data.features)) {
-                    let addedPolygons = 0;
-                    data.features.forEach(function(feature, index) {
-                        if (feature.geometry && 
-                            (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
-                            try {
-                                let polygonCoordinates = [];
-                                if (feature.geometry.type === 'Polygon') {
-                                    polygonCoordinates = [feature.geometry.coordinates[0]];
-                                } else if (feature.geometry.type === 'MultiPolygon') {
-                                    polygonCoordinates = feature.geometry.coordinates[0];
-                                }
-                                polygonCoordinates.forEach((coordinates) => {
-                                    let latLngs = coordinates.map(coord => {
-                                        let lat, lng;
-                                        [lng, lat] = coord;
-                                        return [lat, lng];
-                                    }).filter(coord => coord !== null);
-                                    if (latLngs.length >= 3) {
-                                        var polygon = L.polygon(latLngs, {
-                                            color: '#3388ff',
-                                            weight: 2,
-                                            fillOpacity: 0.2
-                                        });
-                                        if (feature.properties) {
-                                            polygon.feature = {
-                                                type: 'Feature',
-                                                properties: feature.properties
-                                            };
-                                        }
-                                        var area = calculatePolygonArea(polygon);
-                                        var popupContent = 'Площа: ' + area + ' га';
-                                        if (feature.properties && feature.properties.note) {
-                                            popupContent += '<br>Примітка: ' + feature.properties.note;
-                                        }
-                                        polygon.bindPopup(popupContent);
-                                        editableLayers.addLayer(polygon);
-                                        addedPolygons++;
-                                    }
-                                });
-                            } catch (e) {
-                                // Ігноруємо помилки окремих полігонів
-                            }
-                        }
-                    });
-                    if (addedPolygons > 0) {
-                        map.fitBounds(editableLayers.getBounds(), {
-                            padding: [50, 50]
-                        });
-                        alert(`Успішно завантажено ${addedPolygons} полігонів`);
-                    } else {
-                        alert('Не вдалося завантажити жодного полігону');
-                    }
-                } else {
-                    alert('Файл має невірний формат');
-                }
-            } catch (error) {
-                alert('Помилка завантаження файлу. Перевірте формат файлу.');
-            }
+    var data;
+    try {
+        if (filename.toLowerCase().endsWith('.kml')) {
+            var parser = new DOMParser();
+            var kml = parser.parseFromString(content, 'text/xml');
+            data = toGeoJSON.kml(kml);
+        } else {
+            data = JSON.parse(content);
         }
+
+        if (clearExisting) {
+            editableLayers.clearLayers();
+        }
+
+        if (data.features && Array.isArray(data.features)) {
+            let addedPolygons = 0;
+            data.features.forEach(function(feature) {
+                if (feature.geometry && 
+                    (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
+                    try {
+                        let polygonCoordinates = [];
+                        if (feature.geometry.type === 'Polygon') {
+                            polygonCoordinates = [feature.geometry.coordinates[0]];
+                        } else if (feature.geometry.type === 'MultiPolygon') {
+                            polygonCoordinates = feature.geometry.coordinates[0];
+                        }
+                        polygonCoordinates.forEach((coordinates) => {
+                            let latLngs = coordinates.map(coord => {
+                                return L.latLng(coord[1], coord[0]); // Конвертуємо в latLng
+                            });
+                            
+                            if (latLngs.length >= 3) {
+                                const polygon = L.polygon(latLngs, {
+                                    color: '#3388ff',
+                                    weight: 2
+                                });
+                                
+                                // Додаємо площу
+                                const area = L.GeometryUtil.geodesicArea(latLngs);
+                                const areaInHectares = (area / 10000).toFixed(4);
+                                polygon.bindPopup('Площа: ' + areaInHectares + ' га');
+                                
+                                editableLayers.addLayer(polygon);
+                                addedPolygons++;
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Помилка при обробці полігону:', e);
+                    }
+                }
+            });
+
+            if (addedPolygons > 0) {
+                map.fitBounds(editableLayers.getBounds(), {
+                    padding: [50, 50]
+                });
+                alert(`Успішно завантажено ${addedPolygons} полігонів`);
+            } else {
+                alert('Не вдалося завантажити жодного полігону');
+            }
+        } else {
+            alert('Файл має невірний формат');
+        }
+    } catch (error) {
+        console.error('Помилка завантаження файлу:', error);
+        alert('Помилка завантаження файлу. Перевірте формат файлу.');
+    }
+}
 
         function updateExpiryYearSelect(data) {
             var expiryYearSelect = document.getElementById('expiryYearSelect');
@@ -2976,7 +2949,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 freeArea = 0;
                 selectedFeatures.clear(); // Очищаем выделение при смене фильтра
                 
-                console.log("Применяем фильтр года:", selectedYear);
                 
                 // Фильтруем только split-части
                 const filteredFeatures = originalGeoJsonData.features.filter(feature => {
@@ -3006,7 +2978,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     return fieldMatch && yearMatch;
                 });
                 
-                console.log("Отфильтровано объектов:", filteredFeatures.length);
                 
                 const filteredData = {
                     type: "FeatureCollection",
@@ -3042,7 +3013,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 freeArea = 0;
                 selectedFeatures.clear(); // Очищаем выделение при смене фильтра
                 
-                console.log("Применяем фильтр поля:", selectedField);
                 
                 // Фильтруем только split-части
                 const filteredFeatures = originalGeoJsonData.features.filter(feature => {
@@ -3072,7 +3042,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     return fieldMatch && yearMatch;
                 });
                 
-                console.log("Отфильтровано объектов:", filteredFeatures.length);
                 
                 const filteredData = {
                     type: "FeatureCollection",
@@ -3185,7 +3154,6 @@ document.getElementById('generateExchange').addEventListener('click', function()
 
     if (!exchangeList || !exchangeAnalysis || !totalAreaElement || 
         !exchangeTableContainer || !fieldTablesContainer) {
-        console.error('Не найдены необходимые элементы DOM');
         alert('Виникла помилка при формуванні результатів');
         return;
     }
@@ -3639,7 +3607,6 @@ document.getElementById('exportPDF').addEventListener('click', function() {
         
         // Модифицированная функция updateSelectionInfo для отображения более детальной информации
         function updateSelectionInfo() {
-            console.log("Начало выполнения updateSelectionInfo");
             
             // Множество для отслеживания уже обработанных комбинаций
             const processedParts = new Set();
@@ -3658,7 +3625,6 @@ document.getElementById('exportPDF').addEventListener('click', function() {
                             const props = layer.feature.properties;
                             // Проверяем, что это действительно split-часть
                             if (props.type !== 'split') {
-                                console.log("Пропускаем не split-часть:", props);
                                 return;
                             }
                             
@@ -3673,18 +3639,14 @@ document.getElementById('exportPDF').addEventListener('click', function() {
                             
                             // Создаем уникальный идентификатор для каждой части участка
                             const partId = kadNum + '_' + tenant + '_' + status;
-                            
-                            console.log(`Обработка объекта: кад. номер ${kadNum}, тип ${props.type}, площадь части ${partArea}, общая площадь ${totalArea}, арендатор ${tenant}, статус ${status}`);
 
                             // Проверяем, что эта часть еще не была обработана
                             if (processedParts.has(partId)) {
-                                console.log(`Часть ${partId} уже обработана, пропускаем`);
                                 return;
                             }
                             
                             // Проверяем корректность площади
                             if (!kadNum || isNaN(partArea) || partArea <= 0) {
-                                console.log(`Некорректные данные: кад. номер ${kadNum}, площадь ${partArea}`);
                                 return;
                             }
 
@@ -3724,23 +3686,16 @@ document.getElementById('exportPDF').addEventListener('click', function() {
                             const currentStatusArea = statusAreas.get(status) || 0;
                             statusAreas.set(status, currentStatusArea + partArea);
                             
-                            console.log(`Добавлено: ${partArea} для статуса ${status}, текущий итог ${statusAreas.get(status)}`);
                         }
                     });
                 });
             });
 
             // Создаем сводки для отображения
-            console.log("Уникальных участков:", uniqueFeatures.size);
-            console.log("Арендаторы:", Array.from(tenantAreas.entries()));
-            console.log("Статусы:", Array.from(statusAreas.entries()));
             
             // Подсчитываем общую площадь как сумму общих площадей участков
             const totalSelectedArea = Array.from(uniqueFeatures.values()).reduce((sum, info) => sum + info.totalArea, 0);
             const totalPartsArea = Array.from(statusAreas.values()).reduce((sum, area) => sum + area, 0);
-            
-            console.log("Общая площадь участков:", totalSelectedArea);
-            console.log("Общая площадь частей:", totalPartsArea);
             
             // Обновляем интерфейс, если есть выбранные участки
             const infoElement = document.getElementById('selectionInfo');
@@ -3843,7 +3798,6 @@ document.getElementById('exportPDF').addEventListener('click', function() {
                 }
             }
             
-            console.log("Завершение выполнения updateSelectionInfo");
         }
         
         // ...existing code...
@@ -3929,7 +3883,6 @@ document.getElementById('exportPDF').addEventListener('click', function() {
                 });
             });
             
-            console.log(`Собрано ${data.length} объектов для экспорта`);
             return data;
         }
 
@@ -3995,8 +3948,6 @@ document.getElementById('exportPDF').addEventListener('click', function() {
                 rows.push(row);
             });
             
-            console.log(`Экспортирую ${data.length} строк данных`);
-            
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(rows);
             XLSX.utils.book_append_sheet(wb, ws, "Ділянки");
@@ -4007,7 +3958,6 @@ document.getElementById('exportPDF').addEventListener('click', function() {
 
     // Единая функция экспорта
     function exportToExcel() {
-        console.log('=== Начало экспорта ===');
         
         // Получаем имя файла
         const selectedFile = document.getElementById('fileSelect').value;
@@ -4036,7 +3986,6 @@ document.getElementById('exportPDF').addEventListener('click', function() {
             }
         });
 
-        console.log(`Собрано ${data.length} уникальных объектов для экспорта`);
         
         if (data.length === 0) {
             alert('Немає даних для експорту. Перевірте, що на карті є відображені об\'єкти.');
@@ -4070,7 +4019,7 @@ document.getElementById('exportPDF').addEventListener('click', function() {
             
             XLSX.utils.book_append_sheet(wb, ws, "Ділянки");
             XLSX.writeFile(wb, `${filename}.xlsx`);
-            console.log('=== Экспорт успешно завершен ===');
+            
             
         } catch (error) {
             console.error('Ошибка при экспорте:', error);
@@ -4112,7 +4061,7 @@ document.getElementById('exportPDF').addEventListener('click', function() {
         // ...existing code...
 
 function exportToExcel() {
-    console.log('=== Начало экспорта ===');
+    
     
     const selectedFile = document.getElementById('fileSelect').value;
     const filename = selectedFile.replace('.geojson', '') || 'експорт_даних';
@@ -4209,7 +4158,6 @@ function exportToExcel() {
         XLSX.utils.book_append_sheet(wb, ws, "Ділянки");
         XLSX.writeFile(wb, `${filename}.xlsx`);
         
-        console.log('=== Экспорт успешно завершен ===');
         
     } catch (error) {
         console.error('Ошибка при экспорте:', error);
@@ -4220,6 +4168,35 @@ function exportToExcel() {
 // ...existing code...
 </script>
 
-<!-- ...existing code... -->
+<script>
+    map.addControl(drawControl);
+
+    // Додаємо обробник події створення полігону
+    map.on(L.Draw.Event.CREATED, function (e) {
+        var layer = e.layer;
+        
+        // Рахуємо площу в гектарах
+        var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+        var areaInHectares = (area / 10000).toFixed(4);
+        
+        // Додаємо попап з площею
+        layer.bindPopup('Площа: ' + areaInHectares + ' га');
+        
+        // Додаємо полігон до шару для редагування
+        editableLayers.addLayer(layer);
+    });
+
+    // Оновлюємо попап з площею при редагуванні
+    map.on(L.Draw.Event.EDITED, function (e) {
+        e.layers.eachLayer(function (layer) {
+            if (layer instanceof L.Polygon) {
+                var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                var areaInHectares = (area / 10000).toFixed(4);
+                layer.setPopupContent('Площа: ' + areaInHectares + ' га');
+            }
+        });
+    });
+</script>
+
 </body>
 </html>
