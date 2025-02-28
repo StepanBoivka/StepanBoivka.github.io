@@ -1014,42 +1014,16 @@
     editableLayers = new L.FeatureGroup();
     map.addLayer(editableLayers);
 
-    // Змінюємо налаштування L.Control.Draw
+    // Змінюємо налаштування L.Control.Draw - УДАЛЯЕМ ДУБЛИРУЮЩИЕ ЭЛЕМЕНТЫ УПРАВЛЕНИЯ
+    // На карте не будем показывать стандартные элементы управления L.Control.Draw,
+    // так как мы используем наше собственное меню инструментов
     var drawControl = new L.Control.Draw({
         position: 'topright',
-        draw: {
-            polyline: false,
-            polygon: {
-                allowIntersection: false,
-                showArea: true,
-                drawError: {
-                    color: '#e1e100',
-                    timeout: 1000
-                },
-                shapeOptions: {
-                    color: '#3388ff',
-                    weight: 2
-                }
-            },
-            circle: false,
-            rectangle: false,
-            marker: false,
-            circlemarker: false
-        },
-        edit: {
-            featureGroup: editableLayers,
-            remove: true,
-            edit: {
-                selectedPathOptions: {
-                    maintainColor: true,
-                    opacity: 0.3
-                }
-            }
-        }
+        draw: false, // Отключаем панель инструментов рисования
+        edit: false  // Отключаем панель инструментов редактирования
     });
-    map.addControl(drawControl);
-
-    // Додаємо обробник події створення полігону
+    
+    // Добавляем обработчики событий для создания и редактирования полигонов
     map.on(L.Draw.Event.CREATED, function (e) {
         var layer = e.layer;
         
@@ -1106,17 +1080,6 @@ var toolsButton = L.Control.extend({
                     }},
                     { icon: 'bi-trash', title: 'Видалити полігон', action: function() {
                         new L.EditToolbar.Delete(map, {featureGroup: editableLayers}).enable(); 
-                    }}
-                ]
-            },
-            {
-                title: 'Операції',
-                tools: [
-                    { icon: 'bi-scissors', title: 'Розрізати полігон', action: function() {
-                        startCutMode();
-                    }},
-                    { icon: 'bi-unity', title: 'Об\'єднати полігони', action: function() {
-                        mergeSelectedPolygons();
                     }}
                 ]
             },
