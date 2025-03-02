@@ -473,6 +473,62 @@
         width: 90%;
         max-width: 800px;
     }
+    /* Оптимизированные стили для модального окна обмена */
+    #exchangeModal .modal-content {
+        width: 95%;
+        max-width: 1000px; /* Расширяем максимальную ширину */
+        max-height: 90vh; /* Ограничиваем высоту окна */
+        margin: 5vh auto; /* Уменьшаем отступ сверху */
+    }
+    
+    #exchangeTableContainer {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    #fieldTables {
+        overflow-x: auto;
+    }
+    
+    #fieldTables table {
+        font-size: 13px; /* Уменьшаем размер шрифта */
+        width: 100%;
+        white-space: nowrap;
+    }
+    
+    #fieldTables th,
+    #fieldTables td {
+        padding: 4px 8px; /* Уменьшаем отступы в ячейках */
+    }
+    
+    #fieldTables .tenant-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Адаптивные стили для различных размеров экрана */
+    @media (max-width: 992px) {
+        #exchangeModal .modal-content {
+            width: 98%;
+            margin: 1vh auto;
+            max-height: 98vh;
+        }
+        
+        #fieldTables table {
+            font-size: 11px;
+        }
+        
+        #fieldTables th,
+        #fieldTables td {
+            padding: 3px 5px;
+        }
+    }
+
+    /* Оптимизация для колонки "Фактичний орендар" */
+    .factual-tenant-cell {
+        font-size: 12px; /* Уменьшаем размер шрифта */
+        white-space: normal; /* Разрешаем перенос текста */
+        word-break: break-word; /* Переносим длинные слова */
+    }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
@@ -663,29 +719,57 @@
     <div class="modal-content">
         <span class="close">&times;</span>
         <h5>Пропозиція обміну земельними ділянками</h5>
-        <div class="mb-3">
-            <label for="exchangeList" class="form-label">Введіть кадастрові номери для обміну</label>
-            <textarea id="exchangeList" class="form-control" rows="5" 
-                     placeholder="Введіть кадастрові номери, кожен з нового рядка"></textarea>
+        
+        <div id="exchangeInputContainer">
+            <div class="mb-2">
+                <label for="selectedTenant" class="form-label">Виберіть орендаря</label>
+                <select class="form-select form-select-sm" id="selectedTenant">
+                    <option value="">-- Виберіть орендаря --</option>
+                </select>
+            </div>
+            
+            <div class="mb-2">
+                <label for="exchangeList" class="form-label">Введіть кадастрові номери для обміну</label>
+                <textarea id="exchangeList" class="form-control form-control-sm" rows="4" 
+                         placeholder="Введіть кадастрові номери, кожен з нового рядка"></textarea>
+            </div>
+            
+            <div class="mb-2">
+                <button type="button" class="btn btn-primary btn-sm" id="addTenantData">Додати</button>
+                <button type="button" class="btn btn-success btn-sm" id="generateExchange">Аналізувати обмін</button>
+            </div>
+            
+            <div class="mb-2">
+                <h6 class="border-bottom pb-2 mb-2">Вибрані орендарі для обміну:</h6>
+                <div id="tenantSelections">
+                    <!-- Здесь будут выбранные арендаторы -->
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            <button type="button" class="btn btn-primary" id="generateExchange">Сформувати</button>
-        </div>
+        
         <div id="exchangeTableContainer" style="display: none;">
-            <div id="exchangeSummary" class="mb-3">
+            <div id="exchangeSummary" class="mb-2">
                 <!-- Здесь будет краткая сводка по обмену -->
+            </div>
+            <div id="notFoundSummary" class="alert alert-warning mb-2" style="display: none;">
+                <!-- Здесь будет информация о ненайденных номерах -->
             </div>
             <div id="fieldTables" style="display: none;">
                 <!-- Сюда будут добавляться таблицы -->
             </div>
-            <div id="exchangeAnalysisContainer" class="mt-4">
+            <div id="exchangeAnalysisContainer" class="mt-3">
                 <h6>АНАЛІЗ РІВНОЦІННОСТІ ОБМІНУ:</h6>
                 <div id="exchangeAnalysis"></div>
             </div>
-            <div class="mt-3 d-flex justify-content-between align-items-center">
-                <div><strong>Загальна площа обміну: </strong><span id="totalArea">0</span> га</div>
+            <div class="mt-3 d-flex justify-content-between align-items-center flex-wrap">
+                <div class="mb-2"><strong>Загальна площа обміну: </strong><span id="totalArea">0</span> га</div>
                 <button type="button" class="btn btn-success" id="exportPDF">
                     <i class="bi bi-file-pdf me-2"></i>Експорт в PDF
+                </button>
+            </div>
+            <div class="mt-2">
+                <button type="button" class="btn btn-secondary" id="backToExchangeInput">
+                    <i class="bi bi-arrow-left me-2"></i>Повернутися до редагування
                 </button>
             </div>
         </div>
@@ -3158,6 +3242,18 @@ document.getElementById('exchangeButton').addEventListener('click', function() {
     var offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('mainMenu'));
     offcanvas.hide();
     setTimeout(() => {
+        // Очищаем предыдущие данные
+        document.getElementById('exchangeList').value = '';
+        document.getElementById('tenantSelections').innerHTML = '';
+        document.getElementById('exchangeTableContainer').style.display = 'none';
+        document.getElementById('exchangeInputContainer').style.display = 'block';
+        document.getElementById('notFoundSummary').style.display = 'none';
+        selectedTenantsData = [];
+        
+        // Заполняем выпадающий список орендарей
+        populateTenantDropdown();
+        
+        // Отображаем модальное окно
         document.getElementById('exchangeModal').style.display = "block";
     }, 300);
 });
@@ -3169,133 +3265,359 @@ document.querySelector('#exchangeModal .close').addEventListener('click', functi
 
 // Формування таблиці обміну
 document.getElementById('generateExchange').addEventListener('click', function() {
+    if (selectedTenantsData.length < 2) {
+        alert('Додайте принаймні двох орендарів для аналізу обміну');
+        return;
+    }
+    
+    analyzeExchange();
+});
+
+// Функция для заполнения выпадающего списка орендарей из данных карты
+function populateTenantDropdown() {
+    const tenantSelect = document.getElementById('selectedTenant');
+    tenantSelect.innerHTML = '<option value="">-- Виберіть орендаря --</option>';
+    
+    if (!originalGeoJsonData) return;
+    
+    // Собираем всех уникальных орендарей с карты
+    allTenants = [];
+    const tenantSet = new Set();
+    
+    originalGeoJsonData.features.forEach(feature => {
+        if (feature.properties && feature.properties.type === 'split') {
+            const tenant = feature.properties['Орендар частини'] || feature.properties['Орендар'];
+            if (tenant && !tenantSet.has(tenant)) {
+                tenantSet.add(tenant);
+                allTenants.push(tenant);
+            }
+        }
+    });
+    
+    // Сортируем орендарей по алфавиту
+    allTenants.sort();
+    
+    // Добавляем орендарей в выпадающий список
+    allTenants.forEach(tenant => {
+        const option = document.createElement('option');
+        option.value = tenant;
+        option.textContent = tenant;
+        tenantSelect.appendChild(option);
+    });
+}
+
+// Обработчик для кнопки добавления орендаря и его кадастровых номеров
+document.getElementById('addTenantData').addEventListener('click', function() {
+    const tenantSelect = document.getElementById('selectedTenant');
     const exchangeList = document.getElementById('exchangeList');
+    const tenantSelectionsContainer = document.getElementById('tenantSelections');
+    
+    const selectedTenant = tenantSelect.value;
+    const cadastralNumbers = exchangeList.value.trim();
+    
+    if (!selectedTenant) {
+        alert('Будь ласка, виберіть орендаря');
+        return;
+    }
+    
+    if (!cadastralNumbers) {
+        alert('Будь ласка, введіть кадастрові номери');
+        return;
+    }
+    
+    // Добавляем данные в массив
+    const numbersList = cadastralNumbers.split('\n')
+        .map(num => num.trim())
+        .filter(num => num.length > 0);
+    
+    // Проверяем, не был ли уже добавлен этот орендарь
+    const existingIndex = selectedTenantsData.findIndex(item => item.tenant === selectedTenant);
+    if (existingIndex !== -1) {
+        // Если орендарь уже был добавлен, спрашиваем, хочет ли пользователь заменить его данные
+        if (confirm(`Орендар "${selectedTenant}" вже додано. Замінити його кадастрові номери?`)) {
+            selectedTenantsData[existingIndex].cadastralNumbers = numbersList;
+            updateTenantSelectionsDisplay();
+        }
+    } else {
+        // Добавляем нового орендаря
+        selectedTenantsData.push({
+            tenant: selectedTenant,
+            cadastralNumbers: numbersList
+        });
+        updateTenantSelectionsDisplay();
+    }
+    
+    // Очищаем поле ввода кадастровых номеров
+    exchangeList.value = '';
+});
+
+// Функция для обновления отображения выбранных орендарей и их кадастровых номеров
+function updateTenantSelectionsDisplay() {
+    const container = document.getElementById('tenantSelections');
+    container.innerHTML = '';
+    
+    if (selectedTenantsData.length === 0) {
+        container.innerHTML = '<p class="text-muted mb-0">Немає вибраних орендарів</p>';
+        return;
+    }
+    
+    // Добавляем карточки с данными орендарей в более компактном виде
+    selectedTenantsData.forEach((data, index) => {
+        // Находим информацию о площади земельных участков для этого арендатора
+        let foundParcels = 0;
+        const totalCadastre = data.cadastralNumbers.length;
+        
+        if (originalGeoJsonData) {
+            data.cadastralNumbers.forEach(cadNum => {
+                const features = originalGeoJsonData.features.filter(feature => 
+                    feature.properties && feature.properties.type === 'split' && 
+                    feature.properties['Кадастровий номер'] === cadNum
+                );
+                
+                if (features.length > 0) {
+                    foundParcels++;
+                }
+            });
+        }
+        
+        const card = document.createElement('div');
+        card.className = 'card tenant-card';
+        
+        const cardHeader = document.createElement('div');
+        cardHeader.className = 'd-flex justify-content-between align-items-center card-header py-1 px-2';
+        
+        const tenantName = document.createElement('h6');
+        tenantName.className = 'tenant-title';
+        tenantName.textContent = data.tenant;
+        tenantName.title = data.tenant; // Для отображения полного названия при наведении
+        
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'btn btn-sm btn-outline-danger py-0 px-1';
+        deleteButton.innerHTML = '<i class="bi bi-trash"></i>';
+        deleteButton.style.fontSize = '0.8rem';
+        deleteButton.onclick = function() {
+            selectedTenantsData.splice(index, 1);
+            updateTenantSelectionsDisplay();
+        };
+        
+        cardHeader.appendChild(tenantName);
+        cardHeader.appendChild(deleteButton);
+        
+        const cardBody = document.createElement('div');
+        cardBody.className = 'card-body py-1 px-2';
+        
+        const cadastreInfo = document.createElement('p');
+        cadastreInfo.className = 'tenant-cadastre-summary';
+        
+        // Добавляем информацию о найденных/не найденных кадастровых номерах
+        let statusClass = 'text-success';
+        let statusText = 'знайдено';
+        
+        if (foundParcels < totalCadastre) {
+            statusClass = 'text-warning';
+            statusText = `знайдено ${foundParcels} з`;
+        }
+        
+        cadastreInfo.innerHTML = `
+            Кадастрові номери: <span class="${statusClass}">${statusText}</span> ${totalCadastre} шт.
+        `;
+        
+        cardBody.appendChild(cadastreInfo);
+        card.appendChild(cardHeader);
+        card.appendChild(cardBody);
+        container.appendChild(card);
+    });
+}
+
+// Обработчик для кнопки "Повернутися до редагування"
+document.getElementById('backToExchangeInput').addEventListener('click', function() {
+    document.getElementById('exchangeTableContainer').style.display = 'none';
+    document.getElementById('exchangeInputContainer').style.display = 'block';
+});
+
+// Функция анализа обмена
+function analyzeExchange() {
     const exchangeAnalysis = document.getElementById('exchangeAnalysis');
     const totalAreaElement = document.getElementById('totalArea');
     const exchangeTableContainer = document.getElementById('exchangeTableContainer');
     const fieldTablesContainer = document.getElementById('fieldTables');
-
-    if (!exchangeList || !exchangeAnalysis || !totalAreaElement || 
-        !exchangeTableContainer || !fieldTablesContainer) {
-        alert('Виникла помилка при формуванні результатів');
-        return;
-    }
-
-    const cadastralNumbers = exchangeList.value
-        .split('\n')
-        .map(num => num.trim())
-        .filter(num => num.length > 0);
-
-    if (cadastralNumbers.length === 0) {
-        alert('Введіть хоча б один кадастровий номер');
-        return;
-    }
-
+    const notFoundSummary = document.getElementById('notFoundSummary');
+    const exchangeSummary = document.getElementById('exchangeSummary');
+    
     if (!originalGeoJsonData) {
         alert('Дані не завантажені. Спочатку виберіть раду.');
         return;
     }
-
-    // Фильтруем split-записи и группируем данные по арендатору
-    const tenantGroups = new Map();
-    let totalArea = 0;
-
+    
+    // Собираем все кадастровые номера для поиска
+    const allCadastralNumbers = selectedTenantsData.flatMap(data => data.cadastralNumbers);
+    
+    // Фильтруем split-записи для анализа
     const splitFeatures = originalGeoJsonData.features.filter(feature => 
-        cadastralNumbers.includes(feature.properties['Кадастровий номер']) &&
+        feature.properties && 
+        allCadastralNumbers.includes(feature.properties['Кадастровий номер']) &&
         feature.properties.type === 'split'
     );
-
+    
+    // Проверяем найденные номера
+    const foundNumbers = new Set(splitFeatures.map(f => f.properties['Кадастровий номер']));
+    const notFoundNumbers = allCadastralNumbers.filter(num => !foundNumbers.has(num));
+    
+    // Отображаем информацию о ненайденных номерах
+    if (notFoundNumbers.length > 0) {
+        notFoundSummary.style.display = 'block';
+        notFoundSummary.innerHTML = `
+            <strong>Увага!</strong> Не знайдено ${notFoundNumbers.length} кадастрових номерів на карті: 
+            <span class="small">${notFoundNumbers.slice(0, 5).join(', ')}${notFoundNumbers.length > 5 ? '...' : ''}</span>
+        `;
+    } else {
+        notFoundSummary.style.display = 'none';
+    }
+    
+    // Выводим общую сводку по обмену
+    exchangeSummary.innerHTML = `
+        <strong>Загальна інформація:</strong> 
+        ${selectedTenantsData.length} орендарів, 
+        ${allCadastralNumbers.length} кадастрових номерів, 
+        знайдено на карті: ${foundNumbers.size} шт.
+    `;
+    
     if (splitFeatures.length === 0) {
-        alert('Не знайдено ділянок для обміну');
+        exchangeTableContainer.style.display = 'block';
+        exchangeAnalysis.innerHTML = '<div class="text-danger">Не знайдено жодної ділянки для обміну на карті</div>';
         return;
     }
-
-    splitFeatures.forEach(feature => {
-        const props = feature.properties;
-        const tenant = props['Орендар частини'] || props['Орендар'] || 'Без орендаря';
-        const cadastral = props['Кадастровий номер'];
-        const splitArea = parseFloat(props['Площа частини']) || 0;
-        const status = props['Статус'] || 'Не визначено';
+    
+    // Структура для хранения данных по орендарям и их участкам
+    const exchangeData = new Map();
+    
+    // Заполняем данными из выбранных участков
+    selectedTenantsData.forEach(selectedTenantData => {
+        const chosenTenantName = selectedTenantData.tenant;
         
-        if (!tenantGroups.has(tenant)) {
-            tenantGroups.set(tenant, {
-                parcels: new Map(),
-                totalArea: 0,
-                areaByStatus: {}
+        // Найдем участки, соответствующие кадастровым номерам этого орендаря
+        const tenantFeatures = splitFeatures.filter(feature => 
+            selectedTenantData.cadastralNumbers.includes(feature.properties['Кадастровий номер'])
+        );
+        
+        // Создаем группы данных по фактическим орендарям на карте
+        tenantFeatures.forEach(feature => {
+            const props = feature.properties;
+            const factualTenant = props['Орендар частини'] || props['Орендар'] || 'Без орендаря';
+            const cadastral = props['Кадастровий номер'];
+            const splitArea = parseFloat(props['Площа частини']) || 0;
+            const status = props['Статус'] || 'Не визначено';
+            
+            if (!exchangeData.has(chosenTenantName)) {
+                exchangeData.set(chosenTenantName, {
+                    totalArea: 0,
+                    factualTenants: new Map()
+                });
+            }
+            
+            const tenantData = exchangeData.get(chosenTenantName);
+            
+            if (!tenantData.factualTenants.has(factualTenant)) {
+                tenantData.factualTenants.set(factualTenant, {
+                    parcels: new Map(),
+                    totalArea: 0,
+                    areaByStatus: {}
+                });
+            }
+            
+            const factualTenantData = tenantData.factualTenants.get(factualTenant);
+            
+            if (!factualTenantData.parcels.has(cadastral)) {
+                factualTenantData.parcels.set(cadastral, {
+                    fullArea: parseFloat(props['Площа розрахована']) || 0,
+                    factualTenant: factualTenant, // Сохраняем фактического арендатора для каждого участка
+                    splits: [],
+                    statusAreas: {}
+                });
+            }
+            
+            const parcelData = factualTenantData.parcels.get(cadastral);
+            parcelData.splits.push({
+                area: splitArea,
+                status: status,
+                expiry: props['Дата завершення'] || '-'
             });
-        }
-
-        const tenantData = tenantGroups.get(tenant);
-        if (!tenantData.parcels.has(cadastral)) {
-            tenantData.parcels.set(cadastral, {
-                fullArea: parseFloat(props['Площа розрахована']) || 0,
-                splits: [],
-                statusAreas: {}
-            });
-        }
-
-        const parcelData = tenantData.parcels.get(cadastral);
-        parcelData.splits.push({
-            area: splitArea,
-            status: status,
-            expiry: props['Дата завершення'] || '-'
+            
+            parcelData.statusAreas[status] = (parcelData.statusAreas[status] || 0) + splitArea;
+            factualTenantData.areaByStatus[status] = (factualTenantData.areaByStatus[status] || 0) + splitArea;
+            factualTenantData.totalArea += splitArea;
+            tenantData.totalArea += splitArea;
         });
-
-        parcelData.statusAreas[status] = (parcelData.statusAreas[status] || 0) + splitArea;
-        tenantData.areaByStatus[status] = (tenantData.areaByStatus[status] || 0) + splitArea;
-        tenantData.totalArea += splitArea;
-        totalArea += splitArea;
     });
-
+    
     // Очищаем контейнеры перед заполнением
     fieldTablesContainer.innerHTML = '';
     exchangeAnalysis.innerHTML = '';
     
     // Собираем все уникальные статусы
     const allStatuses = new Set();
-    tenantGroups.forEach(tenantData => {
-        Object.keys(tenantData.areaByStatus).forEach(status => allStatuses.add(status));
+    exchangeData.forEach(tenantData => {
+        tenantData.factualTenants.forEach(factualTenantData => {
+            Object.keys(factualTenantData.areaByStatus).forEach(status => allStatuses.add(status));
+        });
     });
     const sortedStatuses = Array.from(allStatuses).sort();
-
-    // Формируем таблицы для каждого арендатора
-    const sortedTenants = Array.from(tenantGroups.keys()).sort();
-    sortedTenants.forEach(tenant => {
-        const tenantData = tenantGroups.get(tenant);
+    
+    // Подсчитываем общую площадь обмена
+    let totalArea = 0;
+    
+    // Формируем таблицы для каждой группы (выбранный орендарь + фактические орендари)
+    Array.from(exchangeData.keys()).sort().forEach(chosenTenant => {
+        const tenantData = exchangeData.get(chosenTenant);
+        totalArea += tenantData.totalArea;
+        
         const tenantGroup = document.createElement('div');
         tenantGroup.className = 'tenant-group mb-4';
         
-        // Заголовок группы
+        // Заголовок группы с выбранным орендарем
         const header = document.createElement('h5');
-        header.textContent = tenant;
+        header.textContent = `${chosenTenant} (${tenantData.totalArea.toFixed(4)} га)`;
         tenantGroup.appendChild(header);
-
-        // Создаем таблицу
+        
+        // Собираем все участки для этого выбранного орендаря
+        const allParcels = new Map();
+        tenantData.factualTenants.forEach((factualTenantData, factualTenant) => {
+            factualTenantData.parcels.forEach((parcelData, cadastral) => {
+                allParcels.set(cadastral, {
+                    ...parcelData,
+                    factualTenant: factualTenant // Добавляем фактического арендатора
+                });
+            });
+        });
+        
+        // Создаем единую таблицу для всех участков этого выбранного орендаря
         const table = document.createElement('table');
         table.className = 'table table-sm';
         
-        // Заголовки таблицы
+        // Заголовки таблицы с добавлением колонки "Фактичний орендар"
         const thead = document.createElement('thead');
         thead.innerHTML = `<tr>
             <th>Кадастровий номер</th>
+            <th>Фактичний орендар</th>
             <th>Площа розрахована</th>
             ${sortedStatuses.map(status => {
                 const statusText = status.toLowerCase();
                 const color = statusText === 'обробляється' ? '#198754' : 
-                             statusText === 'не обробляється' ? '#dc3545' : 
-                             '#000000';
+                            statusText === 'не обробляється' ? '#dc3545' : 
+                            '#000000';
                 return `<th style="color: ${color}">${status}</th>`;
             }).join('')}
             <th>Дата завершення</th>
         </tr>`;
         table.appendChild(thead);
-
+        
         // Тело таблицы
         const tbody = document.createElement('tbody');
-        tenantData.parcels.forEach((parcelData, cadastral) => {
+        allParcels.forEach((parcelData, cadastral) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${cadastral}</td>
+                <td class="factual-tenant-cell">${parcelData.factualTenant}</td>
                 <td>${parcelData.fullArea.toFixed(4)}</td>
                 ${sortedStatuses.map(status => 
                     `<td>${parcelData.statusAreas[status]?.toFixed(4) || '0.0000'}</td>`
@@ -3305,53 +3627,62 @@ document.getElementById('generateExchange').addEventListener('click', function()
             tbody.appendChild(tr);
         });
         table.appendChild(tbody);
-
-        // Итоговая строка
+        
+        // Итоговая строка для всех участков этого выбранного орендаря
         const tfoot = document.createElement('tfoot');
         const footerRow = document.createElement('tr');
+        
+        // Собираем общие площади по статусам для выбранного орендаря
+        const totalStatusAreas = {};
+        tenantData.factualTenants.forEach(factualTenantData => {
+            Object.entries(factualTenantData.areaByStatus).forEach(([status, area]) => {
+                totalStatusAreas[status] = (totalStatusAreas[status] || 0) + area;
+            });
+        });
+        
         footerRow.innerHTML = `
-            <td><strong>Всього:</strong></td>
+            <td colspan="2"><strong>Всього:</strong></td>
             <td><strong>${tenantData.totalArea.toFixed(4)}</strong></td>
             ${sortedStatuses.map(status => {
                 const statusText = status.toLowerCase();
                 const color = statusText === 'обробляється' ? '#198754' : 
-                             statusText === 'не обробляється' ? '#dc3545' : 
-                             '#000000';
-                return `<td><strong style="color: ${color}">${tenantData.areaByStatus[status]?.toFixed(4) || '0.0000'}</strong></td>`;
+                            statusText === 'не обробляється' ? '#dc3545' : 
+                            '#000000';
+                return `<td><strong style="color: ${color}">${totalStatusAreas[status]?.toFixed(4) || '0.0000'}</strong></td>`;
             }).join('')}
             <td></td>
         `;
         tfoot.appendChild(footerRow);
         table.appendChild(tfoot);
-
+        
         tenantGroup.appendChild(table);
         fieldTablesContainer.appendChild(tenantGroup);
     });
-
+    
     // Обновляем общую площадь
     totalAreaElement.textContent = totalArea.toFixed(4);
-
-    // Анализ равноценности обмена
-    if (tenantGroups.size > 1) {
-        const areas = Array.from(tenantGroups.entries());
+    
+    // Анализ равноценности обмена между выбранными орендарями
+    if (exchangeData.size > 1) {
+        const chosenTenants = Array.from(exchangeData.entries());
         const maxDiffPercent = 5;
-
-        for (let i = 0; i < areas.length; i++) {
-            for (let j = i + 1; j < areas.length; j++) {
-                const [tenant1, data1] = areas[i];
-                const [tenant2, data2] = areas[j];
+        
+        for (let i = 0; i < chosenTenants.length; i++) {
+            for (let j = i + 1; j < chosenTenants.length; j++) {
+                const [tenant1, data1] = chosenTenants[i];
+                const [tenant2, data2] = chosenTenants[j];
                 
                 const area1 = data1.totalArea;
                 const area2 = data2.totalArea;
                 const diff = Math.abs(area1 - area2);
                 const avgArea = (area1 + area2) / 2;
                 const diffPercent = (diff / avgArea) * 100;
-
+                
                 const analysisDiv = document.createElement('div');
                 const comparison = `${tenant1} ↔ ${tenant2}:<br>` +
                     `${area1.toFixed(4)} га ↔ ${area2.toFixed(4)} га<br>` +
                     `(різниця: ${diff.toFixed(4)} га, ${diffPercent.toFixed(1)}%)<br>`;
-
+                
                 if (diffPercent > maxDiffPercent) {
                     analysisDiv.className = 'text-danger';
                     analysisDiv.innerHTML = `❌ ${comparison}Обмін НЕ рівноцінний`;
@@ -3359,7 +3690,7 @@ document.getElementById('generateExchange').addEventListener('click', function()
                     analysisDiv.className = 'text-success';
                     analysisDiv.innerHTML = `✓ ${comparison}Обмін рівноцінний`;
                 }
-
+                
                 exchangeAnalysis.appendChild(analysisDiv);
             }
         }
@@ -3369,216 +3700,25 @@ document.getElementById('generateExchange').addEventListener('click', function()
         warningDiv.textContent = 'Недостатньо даних для аналізу (потрібно як мінімум два орендаря)';
         exchangeAnalysis.appendChild(warningDiv);
     }
-
-    // Показываем результаты
+    
+    // Показываем результаты и прокручиваем к началу
+    document.getElementById('exchangeInputContainer').style.display = 'none';
     fieldTablesContainer.style.display = 'block';
     exchangeTableContainer.style.display = 'block';
-});
-
-// ...existing code...
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
-<script>
-document.getElementById('exportPDF').addEventListener('click', function() {
-    const exchangeAnalysis = document.getElementById('exchangeAnalysis');
-    const totalArea = document.getElementById('totalArea').textContent;
-    const fieldTables = document.getElementById('fieldTables');
-
-    if (!exchangeAnalysis || !totalArea || !fieldTables) {
-        alert('Спочатку сформуйте дані для обміну');
-        return;
-    }
-
-    const documentDefinition = {
-        pageSize: 'A4',
-        pageOrientation: 'landscape',
-        content: [
-            {
-                text: 'ПРОПОЗИЦІЯ ОБМІНУ ЗЕМЕЛЬНИМИ ДІЛЯНКАМИ',
-                style: 'header',
-                alignment: 'center'
-            },
-            {
-                text: `Дата формування: ${new Date().toLocaleDateString('uk-UA')}`,
-                style: 'date',
-                margin: [0, 10, 0, 20]
-            }
-        ],
-        styles: {
-            header: {
-                fontSize: 16,
-                bold: true,
-                margin: [0, 0, 0, 10]
-            },
-            date: {
-                fontSize: 12,
-                margin: [0, 5, 0, 15]
-            },
-            tenantHeader: {
-                fontSize: 14,
-                bold: true,
-                margin: [0, 15, 0, 5]
-            },
-            tableHeader: {
-                bold: true,
-                fontSize: 9,
-                fillColor: '#f8f9fa'
-            },
-            tableFooter: {
-                bold: true,
-                fontSize: 9
-            }
-        },
-        // Уменьшаем отступы страницы для максимального использования пространства
-        pageMargins: [15, 20, 15, 20],
-        defaultStyle: {
-            fontSize: 9,
-            lineHeight: 1.2
+    
+    setTimeout(() => {
+        if (exchangeTableContainer) {
+            exchangeTableContainer.scrollTop = 0;
         }
-    };
-
-    // Собираем информацию по каждому участнику обмена
-    const tenantGroups = document.querySelectorAll('#fieldTables .tenant-group');
-    tenantGroups.forEach((group, index) => {
-        const tenantName = group.querySelector('h5').textContent;
-        const table = group.querySelector('table');
-        
-        if (table) {
-            // Заголовок группы
-            documentDefinition.content.push({
-                text: tenantName,
-                style: 'tenantHeader'
-            });
-
-            // Формируем таблицу
-            const headerRow = Array.from(table.querySelectorAll('thead th'))
-                .map((th, index) => {
-                    const text = th.textContent;
-                    const statusText = text.toLowerCase();
-                    return {
-                        text: text,
-                        style: 'tableHeader',
-                        color: statusText === 'обробляється' ? '#198754' : 
-                               statusText === 'не обробляється' ? '#dc3545' : 
-                               '#000000',
-                        noWrap: false
-                    };
-                });
-
-            // Подсчитываем максимальную длину текста в каждой колонке
-            const columnLengths = Array(headerRow.length).fill(0);
-            
-            // Учитываем длину заголовков
-            headerRow.forEach((header, index) => {
-                columnLengths[index] = Math.max(columnLengths[index], header.text.length);
-            });
-
-            // Учитываем длину данных в ячейках
-            Array.from(table.querySelectorAll('tbody tr')).forEach(tr => {
-                Array.from(tr.querySelectorAll('td')).forEach((td, index) => {
-                    columnLengths[index] = Math.max(columnLengths[index], td.textContent.length);
-                });
-            });
-
-            // Рассчитываем относительную ширину каждой колонки
-            const totalLength = columnLengths.reduce((sum, len) => sum + len, 0);
-            const columnWidths = columnLengths.map(len => {
-                const width = Math.max((len / totalLength) * 100, 8); // Минимум 8%
-                return `${width}%`;
-            });
-
-            // Создаем строки таблицы с обновленными настройками
-            const bodyRows = Array.from(table.querySelectorAll('tbody tr'))
-                .map(tr => Array.from(tr.querySelectorAll('td')).map((td, index) => {
-                    const headerText = table.querySelector(`thead th:nth-child(${index + 1})`).textContent.toLowerCase();
-                    return {
-                        text: td.textContent,
-                        color: headerText === 'обробляється' ? '#198754' : 
-                               headerText === 'не обробляється' ? '#dc3545' : 
-                               '#000000',
-                        noWrap: false
-                    };
-                }));
-
-            const footerRow = Array.from(table.querySelectorAll('tfoot td')).map((td, index) => {
-                const headerCell = table.querySelector(`thead th:nth-child(${index + 1})`);
-                if (headerCell) {
-                    const headerText = headerCell.textContent.toLowerCase();
-                    return {
-                        text: td.textContent,
-                        style: 'tableFooter',
-                        color: headerText === 'обробляється' ? '#198754' : 
-                               headerText === 'не обробляється' ? '#dc3545' : 
-                               '#000000',
-                        noWrap: false
-                    };
-                }
-                return {
-                    text: td.textContent,
-                    style: 'tableFooter'
-                };
-            });
-
-            documentDefinition.content.push({
-                table: {
-                    headerRows: 1,
-                    widths: columnWidths,
-                    body: [
-                        headerRow,
-                        ...bodyRows,
-                        footerRow
-                    ]
-                },
-                margin: [0, 5, 0, 15],
-                layout: {
-                    hLineWidth: function(i, node) { return 0.5; },
-                    vLineWidth: function(i, node) { return 0.5; },
-                    hLineColor: function(i, node) { return '#ddd'; },
-                    vLineColor: function(i, node) { return '#ddd'; },
-                    paddingLeft: function(i, node) { return 4; },
-                    paddingRight: function(i, node) { return 4; },
-                    paddingTop: function(i, node) { return 2; },
-                    paddingBottom: function(i, node) { return 2; },
-                    fillColor: function(i, node) {
-                        return (i === 0) ? '#f8f9fa' : null;
-                    }
-                }
-            });
-        }
-    });
-
-    // Добавляем общую площадь
-    documentDefinition.content.push({
-        text: `Загальна площа обміну: ${totalArea} га`,
-        style: 'tenantHeader',
-        margin: [0, 10, 0, 10]
-    });
-
-    // Добавляем анализ равноценности
-    documentDefinition.content.push({
-        text: 'АНАЛІЗ РІВНОЦІННОСТІ ОБМІНУ:',
-        style: 'header',
-        margin: [0, 10, 0, 10]
-    });
-
-    // Получаем результаты анализа
-    Array.from(exchangeAnalysis.children).forEach(element => {
-        const text = element.textContent;
-        const color = element.classList.contains('text-danger') ? '#dc3545' : '#28a745';
-        documentDefinition.content.push({
-            text: text,
-            color: color,
-            margin: [0, 5]
-        });
-    });
-
-    pdfMake.createPdf(documentDefinition).download(
-        `пропозиція_обміну_${new Date().toISOString().slice(0,10)}.pdf`
-    );
-});
+    }, 100);
+}
+    
+    // ...existing scripts...
 </script>
+
 <script>
+        // ...existing code...
+
         // Модифицированная функция createPopupContent для правильного отображения площадей без лишних пояснений
         function createPopupContent(feature, layer) {
             let popupContent = '<div class="popup-content"><table>';
@@ -4191,5 +4331,6 @@ function exportToExcel() {
 // ...existing code...
 </script>
 
+<script src="js/pdfExport.js"></script>
 </body>
 </html>
