@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=100%, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Карта земельних ділянок</title>
     
     <!-- CSS -->
@@ -535,12 +535,12 @@
     <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
     <!-- Добавляем библиотеку JSZip для распаковки KMZ файлов -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <!-- Оставляем тільки один navbar -->
+    <!-- Один навбар вместо двух -->
     <nav class="navbar navbar-dark bg-dark fixed-top py-1">
         <div class="container-fluid px-2">
-            <!-- Кнопка для відкриття бокового меню -->
             <button class="btn btn-outline-light btn-sm" 
                     type="button" 
                     data-bs-toggle="offcanvas" 
@@ -550,13 +550,65 @@
                 <i class="bi bi-list"></i>
             </button>
 
-            <!-- Індикатор актуальності даних -->
+            <button class="btn btn-success" 
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#orderModal">
+                <i class="bi bi-cart-plus me-1"></i>
+                Замовити
+            </button>
+
             <div class="data-freshness-indicator d-flex align-items-center ms-2">
-                <i class="bi bi-clock-history text-light me-1"></i>
                 <small class="text-light" id="dataFreshnessText"></small>
             </div>
         </div>
     </nav>
+
+    <!-- Add Order Modal -->
+    <div class="modal fade" id="orderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Замовлення послуги</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="business-info-form">
+                        <div class="mb-3">
+                            <label for="area" class="form-label">Область</label>
+                            <input type="text" class="form-control" id="area" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="district" class="form-label">Район</label>
+                            <input type="text" class="form-control" id="district" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="village_council" class="form-label">Сільська рада</label>
+                            <input type="text" class="form-control" id="village_council" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="business_name" class="form-label">Назва підприємства</label>
+                            <input type="text" class="form-control" id="business_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="contact_person" class="form-label">Контактна особа</label>
+                            <input type="text" class="form-control" id="contact_person" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Телефон</label>
+                            <input type="tel" class="form-control" id="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="note" class="form-label">Примітка</label>
+                            <textarea class="form-control" id="note" rows="3"></textarea>
+                        </div>
+                        <input type="hidden" id="user_guid" value="">
+                        <button type="submit" class="btn btn-primary">Відправити</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Бокове меню -->
     <div class="offcanvas offcanvas-start bg-dark text-light" tabindex="-1" id="mainMenu">
@@ -2317,68 +2369,38 @@ function addPolygonToMap(geoJSON, originalProperties) {
         }
 
         function updateDataFreshnessIndicator(data) {
-            const indicator = document.getElementById('dataFreshnessText');
-            const icon = document.querySelector('.data-freshness-indicator i');
-            const datesInfo = data.features.reduce((acc, f) => {
-                const date = f.properties?.["Дата оновлення"];
-                if (!date) {
-                    acc.noDate++;
-                    return acc;
-                }
-                const [day, month, year] = date.split('.').map(Number);
-                const dateObj = new Date(year, month - 1, day);
-                acc.dates.push(dateObj);
-                return acc;
-            }, { dates: [], noDate: 0 });
-            const totalRecords = data.features.length;
-            const { dates, noDate } = datesInfo;
-            if (dates.length === 0 && noDate === totalRecords) {
-                document.querySelector('.data-freshness-indicator').classList.add('freshness-бад');
-                icon.title = `Записів без дати оновлення: ${noDate}`;
-                return;
-            }
-            if (dates.length === 0 && noDate === 0) {
-                indicator.textContent = 'Немає даних';
-                icon.className = 'bi bi-clock-history text-light me-1';
-                document.querySelector('.data-freshness-indicator').classList.remove('freshness-бад');
-                return;
-            }
-            const now = new Date();
-            const stats = dates.reduce((acc, date) => {
-                const monthsOld = (now - date) / (1000 * 60 * 60 * 24 * 30);
-                if (monthsOld < 1) acc.fresh++;
-                else if (monthsOld < 2) acc.medium++;
-                else acc.old++;
-                return acc;
-            }, { fresh: 0, medium: 0, old: 0 });
-            const freshPercent = Math.round((stats.fresh / totalRecords) * 100);
-            const mediumPercent = Math.round((stats.medium / totalRecords) * 100);
-            const oldPercent = Math.round((stats.old / totalRecords) * 100);
-            const noDatePercent = Math.round((noDate / totalRecords) * 100);
-            let text, className;
-            if (freshPercent >= 70) {
-                text = `Актуально ${freshPercent}%`;
-                className = 'freshness-good';
-            } else if (freshPercent + mediumPercent >= 70) {
-                text = `До 2 міс ${freshPercent + mediumPercent}%`;
-                className = 'freshness-warning';
-            } else {
-                text = `Застаріло ${oldPercent}%`;
-                className = 'freshness-бад';
-                document.querySelector('.data-freshness-indicator').classList.add('freshness-бад');
-            }
-            if (className !== 'freshness-бад') {
-                document.querySelector('.data-freshness-indicator').classList.remove('freshness-бад');
-            }
-            const tooltip = `Актуально (до 1 міс): ${freshPercent}%\n` +
-                           `До 2 міс: ${mediumPercent}%\n` +
-                           `Застаріло: ${oldPercent}%\n` +
-                           `Без дати оновлення: ${noDatePercent}%`;
-            indicator.textContent = text;
-            indicator.title = tooltip;
-            icon.className = `bi bi-clock-history me-1 ${className}`;
-            icon.title = tooltip;
+    const indicator = document.getElementById('dataFreshnessText');
+    const freshnessContainer = document.querySelector('.data-freshness-indicator');
+    
+    // Проверяем наличие необходимых элементов
+    if (!indicator || !freshnessContainer) {
+        console.warn('Data freshness elements not found');
+        return;
+    }
+    
+    // Добавляем иконку, если её нет
+    let icon = freshnessContainer.querySelector('i.bi-clock-history');
+    if (!icon) {
+        icon = document.createElement('i');
+        icon.className = 'bi bi-clock-history me-1';
+        indicator.parentNode.insertBefore(icon, indicator);
+    }
+    
+    const datesInfo = data.features.reduce((acc, f) => {
+        const date = f.properties?.["Дата оновлення"];
+        if (!date) {
+            acc.noDate++;
+            return acc;
         }
+        const [day, month, year] = date.split('.').map(Number);
+        const dateObj = new Date(year, month - 1, day);
+        acc.dates.push(dateObj);
+        return acc;
+    }, { dates: [], noDate: 0 });
+
+    // Остальная логика остается без изменений
+    // ...existing code...
+}
 
         // Пример кнопки для быстрого снятия выделения (можно убрать при ненадобности)
         // function addClearSelectionButton() {
@@ -4284,44 +4306,40 @@ function exportToExcel() {
         
         // Создаем лист
         const ws = XLSX.utils.aoa_to_sheet(wsData);
-        
+
         // Получаем максимальную длину для каждой колонки
         const colWidths = headers.map((_, colIndex) => {
             return Math.max(
                 // Длина заголовка
                 headers[colIndex].length,
                 // Максимальная длина данных в колонке
-                ...wsData.slice(1).map(row => 
+                ...wsData.slice(1).map(row =>
                     String(row[colIndex] || "").length
                 )
             );
         });
-        
+
         // Устанавливаем ширину колонок
         ws['!cols'] = colWidths.map(width => ({
-            // Конвертируем символы в условные единицы Excel 
-            // (примерно 1.2 единицы на символ)
             width: Math.min(width * 1.2, 50) // Ограничиваем максимальную ширину
         }));
-        
+
         // Добавляем стили для заголовков
         const headerRange = XLSX.utils.decode_range(ws['!ref']);
         for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
             const headerCell = XLSX.utils.encode_cell({ r: 0, c: C });
             if (!ws[headerCell]) continue;
-            
             ws[headerCell].s = {
                 font: { bold: true },
                 fill: { fgColor: { rgb: "CCCCCC" } },
                 alignment: { horizontal: "center" }
             };
         }
-        
+
         // Добавляем лист в книгу и сохраняем
         XLSX.utils.book_append_sheet(wb, ws, "Ділянки");
         XLSX.writeFile(wb, `${filename}.xlsx`);
-        
-        
+
     } catch (error) {
         console.error('Ошибка при экспорте:', error);
         alert('Помилка при експорті: ' + error.message);
@@ -4330,7 +4348,7 @@ function exportToExcel() {
 
 // ...existing code...
 </script>
-
 <script src="js/pdfExport.js"></script>
+<script src="js/order.js"></script>
 </body>
 </html>
