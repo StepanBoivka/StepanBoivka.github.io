@@ -575,35 +575,41 @@
                 <div class="modal-body">
                     <form id="business-info-form">
                         <div class="mb-3">
-                            <label for="area" class="form-label">Область</label>
-                            <input type="text" class="form-control" id="area" required>
+                            <label for="area" class="form-label"><i class="bi bi-geo-alt-fill me-1"></i>Область</label>
+                            <select class="form-control" id="area" required>
+                                <option value="">Виберіть область</option>
+                            </select>
                         </div>
                         <div class="mb-3">
-                            <label for="district" class="form-label">Район</label>
-                            <input type="text" class="form-control" id="district" required>
+                            <label for="district" class="form-label"><i class="bi bi-geo me-1"></i>Район</label>
+                            <select class="form-control" id="district" required disabled>
+                                <option value="">Виберіть район</option>
+                            </select>
                         </div>
                         <div class="mb-3">
-                            <label for="village_council" class="form-label">Сільська рада</label>
-                            <input type="text" class="form-control" id="village_council" required>
+                            <label for="village_council" class="form-label"><i class="bi bi-house-fill me-1"></i>Сільська рада</label>
+                            <select class="form-control" id="village_council" required disabled>
+                                <option value="">Виберіть сільську раду</option>
+                            </select>
                         </div>
                         <div class="mb-3">
-                            <label for="business_name" class="form-label">Назва підприємства</label>
+                            <label for="business_name" class="form-label"><i class="bi bi-building me-1"></i>Назва підприємства</label>
                             <input type="text" class="form-control" id="business_name" required>
                         </div>
                         <div class="mb-3">
-                            <label for="contact_person" class="form-label">Контактна особа</label>
+                            <label for="contact_person" class="form-label"><i class="bi bi-person-fill me-1"></i>Контактна особа</label>
                             <input type="text" class="form-control" id="contact_person" required>
                         </div>
                         <div class="mb-3">
-                            <label for="phone" class="form-label">Телефон</label>
+                            <label for="phone" class="form-label"><i class="bi bi-telephone-fill me-1"></i>Телефон</label>
                             <input type="tel" class="form-control" id="phone" required>
                         </div>
                         <div class="mb-3">
-                            <label for="note" class="form-label">Примітка</label>
+                            <label for="note" class="form-label"><i class="bi bi-chat-left-text-fill me-1"></i>Примітка</label>
                             <textarea class="form-control" id="note" rows="3"></textarea>
                         </div>
                         <input type="hidden" id="user_guid" value="">
-                        <button type="submit" class="btn btn-primary">Відправити</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-send-fill me-1"></i>Відправити</button>
                     </form>
                 </div>
             </div>
@@ -1651,7 +1657,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                         if (!statusAreas.has(status)) {
                             statusAreas.set(status, 0);
                         }
-                        statusAreas.set(status, statusAreas.get(status) + partArea);
+                        statusAreas.set(status, status.get(status) + partArea);
                     });
                 });
             });
@@ -4350,5 +4356,6 @@ function exportToExcel() {
 </script>
 <script src="js/pdfExport.js"></script>
 <script src="js/order.js"></script>
+<script src="js/coatuu-loader.js"></script>
 </body>
 </html>

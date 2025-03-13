@@ -15,7 +15,7 @@ function generateGUID() {
 }
 
 // При завантаженні сторінки
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Перевіряємо чи завантажився SDK
     if (!window.supabase) {
         console.error('Supabase SDK not loaded');
@@ -31,6 +31,73 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('userGuid', userGuid);
     }
     document.getElementById('user_guid').value = userGuid;
+
+    // Ініціалізуємо завантажувач КОАТУУ
+    const coatuuLoader = new CoatuuLoader();
+    
+    try {
+        await coatuuLoader.loadData();
+        
+        // Заповнюємо список областей
+        const areaSelect = document.getElementById('area');
+        
+        // Додаємо всі області, включаючи заблоковані
+        const allAreas = [...new Set(coatuuLoader.data.map(item => item.nameobl))];
+        allAreas.sort().forEach(area => {
+            const option = new Option(area, area);
+            if (coatuuLoader.blockedAreas.includes(area)) {
+                option.disabled = true;
+                option.className = 'text-danger';
+                option.text = `${area} (тимчасово недоступно)`;
+            }
+            areaSelect.add(option);
+        });
+
+        // Обробник зміни області
+        areaSelect.addEventListener('change', function() {
+            const districtSelect = document.getElementById('district');
+            const villageSelect = document.getElementById('village_council');
+            
+            districtSelect.innerHTML = '<option value="">Виберіть район</option>';
+            villageSelect.innerHTML = '<option value="">Виберіть сільську раду</option>';
+            
+            if (this.value) {
+                const districts = coatuuLoader.getDistricts(this.value);
+                districts.forEach(district => {
+                    const option = new Option(district, district);
+                    districtSelect.add(option);
+                });
+                districtSelect.disabled = false;
+                villageSelect.disabled = true;
+            } else {
+                districtSelect.disabled = true;
+                villageSelect.disabled = true;
+            }
+        });
+
+        // Обробник зміни району
+        document.getElementById('district').addEventListener('change', function() {
+            const area = document.getElementById('area').value;
+            const villageSelect = document.getElementById('village_council');
+            
+            villageSelect.innerHTML = '<option value="">Виберіть сільську раду</option>';
+            
+            if (this.value) {
+                const villages = coatuuLoader.getVillageCouncils(area, this.value);
+                villages.forEach(village => {
+                    const option = new Option(village, village);
+                    villageSelect.add(option);
+                });
+                villageSelect.disabled = false;
+            } else {
+                villageSelect.disabled = true;
+            }
+        });
+
+    } catch (error) {
+        console.error('Error initializing COATUU data:', error);
+        alert('Помилка завантаження довідника адрес. Спробуйте оновити сторінку.');
+    }
 
     // Обробка подання форми
     document.getElementById('business-info-form').addEventListener('submit', async (event) => {
