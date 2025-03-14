@@ -1052,11 +1052,17 @@
         attribution: 'Актуальні растри'
     });
 
-    // Инициализируем базовые слои глобально
-    baseMaps = {
+    const kadastrLayer = L.tileLayer('https://cdn.kadastr.live/tiles/raster/styles/parcels/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://kadastr.live">kadastr.live</a>'
+    });
+
+    // Обновляем структуру базовых слоев
+    overlays = {
         "Google Maps": googleLayer,
         "OpenStreetMap": openStreetMapLayer,
-        "Актуальні растри": rasterLayer
+        "Актуальні растри": rasterLayer,
+        "kadastr.live": kadastrLayer
     };
 
     // Добавляем контроль локации
@@ -1873,17 +1879,19 @@ function addPolygonToMap(geoJSON, originalProperties) {
 
         function clearSelection() {
     selectedFeatures.forEach(featureId => {
-        const layers = Object.values(overlays);
-        layers.forEach(layerGroup => {
-            layerGroup.eachLayer(layer => {
-                if (L.stamp(layer) === featureId && layer.feature) {
-                    layer.setStyle({
-                        fillOpacity: 0.4,
-                        weight: 0.5,
-                        color: getColor(layer.feature.properties["Орендар"])
-                    });
-                }
-            });
+        Object.values(overlays).forEach(layerGroup => {
+            // Проверяем, что это действительно слой карты
+            if (layerGroup && typeof layerGroup.eachLayer === 'function') {
+                layerGroup.eachLayer(layer => {
+                    if (L.stamp(layer) === featureId && layer.feature) {
+                        layer.setStyle({
+                            fillOpacity: 0.4,
+                            weight: 0.5,
+                            color: getColor(layer.feature.properties["Орендар"])
+                        });
+                    }
+                });
+            }
         });
     });
 
@@ -1926,6 +1934,14 @@ function addPolygonToMap(geoJSON, originalProperties) {
         });
 
         async function addGeoJsonLayer(url, layerName) {
+    // Зберігаємо поточний стан базових шарів
+    const baseLayersState = {
+        "Google Maps": map.hasLayer(overlays["Google Maps"]),
+        "OpenStreetMap": map.hasLayer(overlays["OpenStreetMap"]),
+        "Актуальні растри": map.hasLayer(overlays["Актуальні растри"]),
+        "kadastr.live": map.hasLayer(overlays["kadastr.live"])
+    };
+    
     clearOverlays();
     tenantAreas = {};
     freeArea = 0;
@@ -1966,6 +1982,13 @@ function addPolygonToMap(geoJSON, originalProperties) {
         map.fitBounds(geoJsonLayer.getBounds());
         overlays[layerName] = geoJsonLayer;
         geoJsonLayer.addTo(map);
+        
+        // Відновлюємо стан базових шарів
+        Object.entries(baseLayersState).forEach(([name, wasVisible]) => {
+            if (wasVisible && overlays[name]) {
+                overlays[name].addTo(map);
+            }
+        });
         
         // Обновляем интерфейс
         updateLayersControl();
@@ -2132,17 +2155,26 @@ function addPolygonToMap(geoJSON, originalProperties) {
         let colorIndex = 0;
 
         function clearOverlays() {
-            for (var layerName in overlays) {
-                if (overlays.hasOwnProperty(layerName) && layerName !== "Поля обробітку") {
-                    map.removeLayer(overlays[layerName]);
-                }
-            }
-            var fieldLayerTemp = overlays["Поля обробітку"];
-            overlays = {};
-            if (fieldLayerTemp) {
-                overlays["Поля обробітку"] = fieldLayerTemp;
-            }
+    // Зберігаємо базові шари та поля
+    const baseAndFieldLayers = {};
+    
+    // Копіюємо базові шари та поля
+    Object.entries(overlays).forEach(([key, layer]) => {
+        if (key === "Google Maps" || 
+            key === "OpenStreetMap" || 
+            key === "Актуальні растри" || 
+            key === "kadastr.live" || 
+            key === "Поля обробітку") {
+            baseAndFieldLayers[key] = layer;
+        } else {
+            // Видаляємо з карти тільки шари з даними
+            map.removeLayer(layer);
         }
+    });
+    
+    // Очищуємо overlays і відновлюємо базові шари та поля
+    overlays = {...baseAndFieldLayers};
+}
 
         function updateLayersControl() {
     if (layersControl) {
