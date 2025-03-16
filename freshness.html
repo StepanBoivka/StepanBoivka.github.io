@@ -7,6 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         .freshness-good { color: #28a745 !important; }
         .freshness-warning { color: #ffc107 !important; }
@@ -54,6 +56,12 @@
             height: 150px;
             margin-top: 1rem;
         }
+        #map {
+            height: 400px;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
@@ -76,6 +84,7 @@
     </nav>
 
     <div class="container py-4">
+        <div id="map"></div>
         <h1 class="mb-4">
             Актуальність даних по радах
             <small class="text-muted fs-5 ms-3">
@@ -109,7 +118,21 @@
     </div>
 
     <script>
+        let map;
+        let loadedRegions = new Set();
+        let councilsData = new Map(); // Зберігатиме дані про ради
+        let regionLayers = {}; // Зберігатиме шари карти
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Ініціалізація карти з налаштуваннями масштабування
+            map = L.map('map', {
+                minZoom: 6,
+                maxZoom: 18
+            });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
             const urlParams = new URLSearchParams(window.location.search);
             const id = urlParams.get('id');
             const dataPath = id ? `data/${id}/` : 'data/';
@@ -121,21 +144,52 @@
             try {
                 const response = await fetch(dataPath + 'file_list.json');
                 const data = await response.json();
-                const grid = document.getElementById('cardsView');
                 
+                // Спочатку збираємо всі унікальні regionId
+                const uniqueRegions = new Set();
+                for (const file of data.files) {
+                    const response = await fetch(dataPath + file);
+                    const councilData = await response.json();
+                    const firstFeature = councilData.features.find(f => 
+                        f.properties?.type === 'original' && 
+                        f.properties?.["Кадастровий номер"]
+                    );
+                    
+                    if (firstFeature) {
+                        const cadastralNumber = firstFeature.properties["Кадастровий номер"];
+                        const regionId = cadastralNumber.substring(0, 2);
+                        uniqueRegions.add(regionId);
+                    }
+                }
+                
+                // Тепер завантажуємо межі тільки для знайдених регіонів
+                await loadRegionBoundaries(Array.from(uniqueRegions));
+                
+                // Продовжуємо аналіз даних
                 let totalPlots = 0;
                 const totalCouncils = data.files.length;
                 
                 for (const file of data.files) {
                     const councilData = await analyzeCouncilData(dataPath + file);
                     const card = createCouncilCard(file.replace('.geojson', ''), councilData);
-                    grid.appendChild(card);
+                    document.getElementById('cardsView').appendChild(card);
                     totalPlots += councilData.totalRecords;
+
+                    if (councilData.regionId) {
+                        councilsData.set(councilData.regionId, {
+                            freshPercent: Math.round((councilData.fresh / councilData.totalRecords) * 100),
+                            mediumPercent: Math.round((councilData.medium / councilData.totalRecords) * 100)
+                        });
+                        updateRegionStyle(councilData.regionId);
+                    }
                 }
 
-                // Обновляем счетчики
+                // Оновлюємо лічильники
                 document.getElementById('totalCouncilsCounter').textContent = totalCouncils.toLocaleString('uk-UA');
                 document.getElementById('totalPlotsCounter').textContent = totalPlots.toLocaleString('uk-UA');
+
+                // Центруємо карту на всіх межах
+                centerMapOnBoundaries();
             } catch (error) {
                 console.error('Помилка завантаження даних:', error);
                 alert('Помилка завантаження списку файлів');
@@ -146,6 +200,14 @@
             const response = await fetch(filePath);
             const data = await response.json();
             const now = new Date();
+            
+            // Отримуємо перший кадастровий номер для визначення регіону
+            let regionId = null;
+            const firstFeature = data.features.find(f => f.properties?.type === 'original' && f.properties?.["Кадастровий номер"]);
+            if (firstFeature) {
+                const cadastralNumber = firstFeature.properties["Кадастровий номер"];
+                regionId = cadastralNumber.substring(0, 2);
+            }
             
             // Фільтруємо тільки original записи
             const originalFeatures = data.features.filter(feature => feature.properties?.type === 'original');
@@ -200,7 +262,151 @@
                 }
             }
 
-            return stats;
+            return {
+                ...stats,
+                regionId
+            };
+        }
+
+        async function loadRegionBoundaries(regionIds) {
+            const bounds = L.latLngBounds([]);
+            
+            for (const regionId of regionIds) {
+                try {
+                    const response = await fetch(`data/rada_regions/rada_${regionId}.geojson`);
+                    const data = await response.json();
+                    
+                    console.log(`Loading region ${regionId}, features count:`, data.features.length);
+                    
+                    // Створюємо окремий шар для кожної ради в регіоні
+                    data.features.forEach(feature => {
+                        // Використовуємо coatuu_namesr як назву ради
+                        const councilName = feature.properties.coatuu_namesr;
+                        console.log('Feature properties:', feature.properties);
+                        console.log('Found council name:', councilName);
+
+                        if (!councilName) return; // Пропускаємо features без назви
+
+                        const layer = L.geoJSON(feature, {
+                            style: () => ({
+                                color: '#FFD700',
+                                weight: 1,
+                                opacity: 0.5,
+                                fillOpacity: 0.1,
+                                fillColor: '#FFD700'
+                            })
+                        }).addTo(map);
+
+                        // Зберігаємо шар під усіма можливими варіантами назви
+                        if (!regionLayers[regionId]) {
+                            regionLayers[regionId] = {};
+                        }
+                        
+                        // Нормалізуємо назву для порівняння
+                        const normalizedName = councilName.normalize('NFKD')
+                            .replace(/[\u0300-\u036f]/g, '')
+                            .replace(/[''ʼ]/g, '')
+                            .toLowerCase();
+                        
+                        // Зберігаємо і оригінальну і нормалізовану назви
+                        regionLayers[regionId][councilName] = layer;
+                        regionLayers[regionId][normalizedName] = layer;
+                        
+                        // Додатково зберігаємо версію назви без "сільська рада" тощо
+                        const shortName = councilName.replace(/(сільська|міська|селищна|рада)/gi, '').trim();
+                        const normalizedShortName = shortName.normalize('NFKD')
+                            .replace(/[\u0300-\u036f]/g, '')
+                            .replace(/[''ʼ]/g, '')
+                            .toLowerCase();
+                        
+                        regionLayers[regionId][shortName] = layer;
+                        regionLayers[regionId][normalizedShortName] = layer;
+                        
+                        const layerBounds = layer.getBounds();
+                        bounds.extend(layerBounds);
+                    });
+                    
+                    loadedRegions.add(regionId);
+                    
+                    // Виводимо всі доступні назви рад для діагностики
+                    console.log('Available council names in region', regionId, ':', 
+                        Object.keys(regionLayers[regionId]));
+                        
+                } catch (error) {
+                    console.error(`Помилка завантаження регіону ${regionId}:`, error);
+                }
+            }
+            
+            return bounds;
+        }
+
+        async function loadRegionBoundary(regionId) {
+            if (loadedRegions.has(regionId)) return;
+            
+            try {
+                const response = await fetch(`data/rada_regions/rada_${regionId}.geojson`);
+                const data = await response.json();
+                
+                L.geoJSON(data, {
+                    style: {
+                        color: '#2196F3',
+                        weight: 2,
+                        opacity: 0.6,
+                        fillOpacity: 0.1
+                    }
+                }).addTo(map);
+                
+                loadedRegions.add(regionId);
+            } catch (error) {
+                console.warn(`Не вдалося завантажити межі для регіону ${regionId}:`, error);
+            }
+        }
+
+        function getRegionColor(freshPercent, mediumPercent) {
+            if (freshPercent >= 70) {
+                return '#28a745'; // Зелений
+            } else if (freshPercent + mediumPercent >= 70) {
+                return '#ffc107'; // Жовтий
+            } else {
+                return '#dc3545'; // Червоний
+            }
+        }
+
+        function updateRegionStyle(regionId) {
+            const councilInfo = councilsData.get(regionId);
+            const councilLayers = regionLayers[regionId];
+            
+            if (!councilInfo || !councilLayers) {
+                return;
+            }
+
+            const color = getRegionColor(councilInfo.freshPercent, councilInfo.mediumPercent);
+            
+            // Оновлюємо стилі для всіх рад в регіоні
+            Object.values(councilLayers).forEach(layer => {
+                layer.setStyle({
+                    color: color,
+                    weight: 2,
+                    opacity: 0.8,
+                    fillOpacity: 0.3,
+                    fillColor: color
+                });
+            });
+        }
+
+        function centerMapOnBoundaries() {
+            const bounds = L.latLngBounds([]);
+            map.eachLayer(layer => {
+                if (layer.getBounds) {
+                    bounds.extend(layer.getBounds());
+                }
+            });
+            if (!bounds.isValid()) return;
+            
+            map.fitBounds(bounds, {
+                padding: [50, 50],
+                maxZoom: 10
+            });
         }
 
         function createCouncilCard(name, stats) {
@@ -323,12 +529,22 @@
                 });
             }, 100);
 
+            div.querySelector('.card').addEventListener('click', () => {
+                if (stats.regionId) {
+                    handleRegionClick(stats.regionId);
+                }
+            });
+
             return div;
         }
 
         function addTableRow(name, statusClass, statusText, stats, freshPercent, mediumPercent, oldPercent, noDatePercent, latestDate) {
             const tbody = document.getElementById('tableBody');
             const row = document.createElement('tr');
+            
+            // Додаємо курсор pointer та hover ефект
+            row.style.cursor = 'pointer';
+            row.classList.add('table-hover');
             
             row.innerHTML = `
                 <td>
@@ -356,11 +572,122 @@
                 <td>${latestDate}</td>
             `;
             
+            row.addEventListener('click', () => {
+                if (stats.regionId) {
+                    handleRegionClick(stats.regionId);
+                }
+            });
+            
             tbody.appendChild(row);
+        }
+
+        function handleRegionClick(regionId) {
+            console.log('Обробка кліку для регіону:', regionId);
+            const councilLayers = regionLayers[regionId];
+            
+            if (!councilLayers) {
+                console.error('Не знайдено шари для регіону:', regionId);
+                return;
+            }
+
+            // Знаходимо назву ради з URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const selectedFile = urlParams.get('file');
+            const rawCouncilName = selectedFile ? decodeURIComponent(selectedFile).replace('.geojson', '') : null;
+            
+            console.log('Оригінальна назва ради:', rawCouncilName);
+            
+            // Функція для нормалізації назви
+            const normalizeCouncilName = (name) => name.toLowerCase()
+                .normalize('NFKD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[''ʼ]/g, '')
+                .replace(/\s+/g, ' ')
+                .replace(/(сільська|міська|селищна|рада)/gi, '')
+                .trim();
+            
+            const searchName = normalizeCouncilName(rawCouncilName);
+            console.log('Нормалізована назва для пошуку:', searchName);
+            
+            // Пошук відповідного шару
+            let layer = null;
+            const availableLayers = Object.entries(councilLayers);
+            
+            for (const [name, l] of availableLayers) {
+                if (!name) continue;
+                
+                const normalizedName = normalizeCouncilName(name);
+                console.log(`Порівняння: "${normalizedName}" з "${searchName}"`);
+                
+                // Перевіряємо на точну відповідність
+                if (normalizedName === searchName) {
+                    layer = l;
+                    break;
+                }
+                
+                // Перевіряємо чи одна назва містить іншу
+                if (normalizedName.includes(searchName) || searchName.includes(normalizedName)) {
+                    layer = l;
+                    break;
+                }
+            }
+
+            if (!layer) {
+                console.error('Не знайдено шар для ради:', rawCouncilName);
+                console.log('Доступні назви:', availableLayers.map(([name]) => name));
+                return;
+            }
+
+            const bounds = layer.getBounds();
+            console.log('Знайдено межі ради:', {
+                searchName,
+                bounds: {
+                    south: bounds.getSouth(),
+                    north: bounds.getNorth(),
+                    west: bounds.getWest(),
+                    east: bounds.getEast()
+                }
+            });
+
+            // Наближаємося до конкретної ради
+            map.fitBounds(bounds, { 
+                padding: [50, 50],
+                maxZoom: 13,
+                animate: true,
+                duration: 1
+            });
+
+            // Підсвічуємо межі
+            layer.setStyle({
+                weight: 4,
+                opacity: 1,
+                fillOpacity: 0.2,
+                fillColor: '#2196F3',
+                color: '#2196F3'
+            });
+            layer.bringToFront();
+
+            // Повертаємо попередній стиль через 2 секунди
+            setTimeout(() => updateRegionStyle(regionId), 2000);
+        }
+
+        // Додаємо стилі для hover ефекту
+        function addStyles() {
+            const style = document.createElement('style');
+            style.textContent = `
+                .council-card {
+                    cursor: pointer;
+                }
+                tr:hover td {
+                    background-color: rgba(0,0,0,0.05);
+                }
+            `;
+            document.head.appendChild(style);
         }
 
         // Додаємо перемикач видів
         document.addEventListener('DOMContentLoaded', function() {
+            addStyles();
             const viewButtons = document.querySelectorAll('[data-view]');
             viewButtons.forEach(button => {
                 button.addEventListener('click', function() {
