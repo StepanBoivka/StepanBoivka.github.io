@@ -1,0 +1,166 @@
+{
+  "regions": [
+    {
+      "code": "01",
+      "name": "Автономна Республіка Крим",
+      "count": 296,
+      "file": "rada_01.geojson"
+    },
+    {
+      "code": "05",
+      "name": "Вінницька область",
+      "count": 711,
+      "file": "rada_05.geojson"
+    },
+    {
+      "code": "07",
+      "name": "Волинська область",
+      "count": 418,
+      "file": "rada_07.geojson"
+    },
+    {
+      "code": "14",
+      "name": "Донецька область",
+      "count": 412,
+      "file": "rada_14.geojson"
+    },
+    {
+      "code": "21",
+      "name": "Закарпатська область",
+      "count": 337,
+      "file": "rada_21.geojson"
+    },
+    {
+      "code": "23",
+      "name": "Запорізька область",
+      "count": 299,
+      "file": "rada_23.geojson"
+    },
+    {
+      "code": "26",
+      "name": "Івано-Франківська область",
+      "count": 516,
+      "file": "rada_26.geojson"
+    },
+    {
+      "code": "32",
+      "name": "Київська область",
+      "count": 662,
+      "file": "rada_32.geojson"
+    },
+    {
+      "code": "35",
+      "name": "Кіровоградська область",
+      "count": 416,
+      "file": "rada_35.geojson"
+    },
+    {
+      "code": "44",
+      "name": "Луганська область",
+      "count": 332,
+      "file": "rada_44.geojson"
+    },
+    {
+      "code": "46",
+      "name": "Львівська область",
+      "count": 716,
+      "file": "rada_46.geojson"
+    },
+    {
+      "code": "48",
+      "name": "Миколаївська область",
+      "count": 320,
+      "file": "rada_48.geojson"
+    },
+    {
+      "code": "51",
+      "name": "Одеська область",
+      "count": 496,
+      "file": "rada_51.geojson"
+    },
+    {
+      "code": "53",
+      "name": "Полтавська область",
+      "count": 546,
+      "file": "rada_53.geojson"
+    },
+    {
+      "code": "56",
+      "name": "Рівненська область",
+      "count": 370,
+      "file": "rada_56.geojson"
+    },
+    {
+      "code": "59",
+      "name": "Сумська область",
+      "count": 422,
+      "file": "rada_59.geojson"
+    },
+    {
+      "code": "61",
+      "name": "Тернопільська область",
+      "count": 615,
+      "file": "rada_61.geojson"
+    },
+    {
+      "code": "63",
+      "name": "Харківська область",
+      "count": 509,
+      "file": "rada_63.geojson"
+    },
+    {
+      "code": "65",
+      "name": "Херсонська область",
+      "count": 301,
+      "file": "rada_65.geojson"
+    },
+    {
+      "code": "68",
+      "name": "Хмельницька область",
+      "count": 605,
+      "file": "rada_68.geojson"
+    },
+    {
+      "code": "73",
+      "name": "Чернівецька область",
+      "count": 273,
+      "file": "rada_73.geojson"
+    },
+    {
+      "code": "74",
+      "name": "Чернігівська область",
+      "count": 576,
+      "file": "rada_74.geojson"
+    },
+    {
+      "code": "80",
+      "name": "Київ",
+      "count": 2,
+      "file": "rada_80.geojson"
+    },
+    {
+      "code": "85",
+      "name": "Севастополь",
+      "count": 10,
+      "file": "rada_85.geojson"
+    },
+    {
+      "code": "12",
+      "name": "Дніпропетровська область",
+      "count": 351,
+      "file": "rada_12.geojson"
+    },
+    {
+      "code": "18",
+      "name": "Житомирська область",
+      "count": 637,
+      "file": "rada_18.geojson"
+    },
+    {
+      "code": "71",
+      "name": "Черкаська область",
+      "count": 558,
+      "file": "rada_71.geojson"
+    }
+  ]
+}
