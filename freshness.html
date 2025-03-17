@@ -351,6 +351,7 @@
 
         async function loadRegionBoundaries(regionIds) {
             const bounds = L.latLngBounds([]);
+            const mergedFeatures = {}; // Об'єднані features по регіонах
             
             for (const regionId of regionIds) {
                 try {
@@ -362,8 +363,21 @@
                     const data = await response.json();
                     console.log(`Loading region ${regionId}, features count:`, data.features.length);
                     
-                    // Створюємо один шар для всього регіону
-                    const regionalLayer = L.geoJSON(data, {
+                    // Об'єднуємо всі features в один GeoJSON
+                    const mergedGeoJSON = {
+                        type: "FeatureCollection",
+                        features: data.features.reduce((acc, feature) => {
+                            // Перевіряємо чи є координати у feature
+                            if (feature.geometry && feature.geometry.coordinates && 
+                                feature.geometry.coordinates.length > 0) {
+                                acc.push(feature);
+                            }
+                            return acc;
+                        }, [])
+                    };
+                    
+                    // Створюємо один шар для регіону
+                    const regionalLayer = L.geoJSON(mergedGeoJSON, {
                         style: {
                             color: '#FFD700',
                             weight: 1,
@@ -373,18 +387,13 @@
                         }
                     }).addTo(map);
 
-                    // Зберігаємо шари та нормалізовані назви рад
+                    // Зберігаємо для пошуку рад
                     regionLayers[regionId] = {
                         layer: regionalLayer,
-                        features: data.features.reduce((acc, feature) => {
+                        features: mergedGeoJSON.features.reduce((acc, feature) => {
                             const councilName = feature.properties.coatuu_namesr;
                             if (councilName) {
-                                const normalizedName = normalizeCouncilName(councilName);
-                                console.log(`Нормалізація назви: ${councilName} -> ${normalizedName}`);
-                                acc[councilName] = {
-                                    ...feature,
-                                    normalized: normalizedName
-                                };
+                                acc[councilName] = feature;
                             }
                             return acc;
                         }, {})
@@ -393,7 +402,7 @@
                     bounds.extend(regionalLayer.getBounds());
                     loadedRegions.add(regionId);
                     
-                    console.log('Доступні ради в регіоні:', Object.keys(regionLayers[regionId].features));
+                    console.log(`Регіон ${regionId}: об'єднано ${mergedGeoJSON.features.length} полігонів`);
                 } catch (error) {
                     console.error(`Помилка завантаження регіону ${regionId}:`, error);
                 }
@@ -596,6 +605,12 @@
 
             div.querySelector('.card').addEventListener('click', () => {
                 if (stats.regionId) {
+                    // Додаємо file параметр в URL при кліку
+                    const urlParams = new URLSearchParams(window.location.search);
+                    urlParams.set('file', `${name}.geojson`);
+                    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+                    window.history.pushState({}, '', newUrl);
+                    
                     handleRegionClick(stats.regionId);
                 }
             });
@@ -642,6 +657,12 @@
             
             row.addEventListener('click', () => {
                 if (stats.regionId) {
+                    // Додаємо file параметр в URL при кліку
+                    const urlParams = new URLSearchParams(window.location.search);
+                    urlParams.set('file', `${name}.geojson`);
+                    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+                    window.history.pushState({}, '', newUrl);
+                    
                     handleRegionClick(stats.regionId);
                 }
             });
@@ -669,57 +690,34 @@
             if (!rawCouncilName) {
                 console.log('Назва ради відсутня, показуємо весь регіон');
                 const regionBounds = regionData.layer.getBounds();
-                map.flyToBounds(regionBounds, {
+                map.fitBounds(regionBounds, {
                     padding: [50, 50],
-                    maxZoom: 10,
-                    duration: 1
+                    maxZoom: 10
                 });
                 return;
             }
 
-            // Функція для нормалізації назви
-            const normalizeCouncilName = (name) => {
-                if (!name) return '';
-                return name.toLowerCase()
-                    .normalize('NFKD')
-                    .replace(/[\u0300-\u036f]/g, '')
-                    .replace(/[''ʼ]/g, '')
-                    .replace(/\s+/g, ' ')
-                    .replace(/(сільська|міська|селищна|рада)/gi, '')
-                    .trim();
-            };
-
-            const normalizedSearchName = normalizeCouncilName(rawCouncilName);
-            console.log('Нормалізована назва для пошуку:', normalizedSearchName);
-            
             // Шукаємо відповідну раду в features регіону
             let foundFeature = null;
             const allFeatures = Object.values(regionData.features);
             
-            // Спочатку шукаємо точне співпадіння
-            foundFeature = allFeatures.find(feature => {
-                const coatuuName = feature.properties.coatuu_namesr;
-                return normalizeCouncilName(coatuuName) === normalizedSearchName;
-            });
+            // Логуємо всі доступні ради для діагностики
+            console.log('Доступні ради в регіоні:', allFeatures.map(f => ({
+                name: f.properties.coatuu_namesr,
+                koatuu: f.properties.koatuu
+            })));
 
-            // Якщо точного співпадіння немає, шукаємо часткове
-            if (!foundFeature) {
-                foundFeature = allFeatures.find(feature => {
-                    const coatuuName = normalizeCouncilName(feature.properties.coatuu_namesr);
-                    return coatuuName.includes(normalizedSearchName) || 
-                           normalizedSearchName.includes(coatuuName);
-                });
-            }
+            // Спочатку шукаємо по точному співпадінню назви
+            foundFeature = allFeatures.find(feature => 
+                feature.properties.coatuu_namesr === rawCouncilName
+            );
 
             if (!foundFeature) {
                 console.error('Не знайдено раду:', rawCouncilName);
-                console.log('Доступні ради в регіоні:', 
-                    allFeatures.map(f => f.properties.coatuu_namesr)
-                );
                 return;
             }
 
-            console.log('Знайдено раду:', foundFeature.properties.coatuu_namesr);
+            console.log('Знайдено раду:', foundFeature.properties);
 
             // Створюємо тимчасовий шар для знайденої ради
             const tempLayer = L.geoJSON(foundFeature, {
@@ -732,29 +730,18 @@
                 }
             }).addTo(map);
 
-            // Використовуємо flyToBounds замість fitBounds і додаємо затримку
+            // Наближаємося до меж ради
             const bounds = tempLayer.getBounds();
-            const paddedBounds = bounds.pad(0.1); // Додаємо 10% відступу навколо меж
-
-            // Спочатку центруємо карту без зуму
-            map.flyTo(paddedBounds.getCenter(), undefined, {
-                duration: 1
+            map.fitBounds(bounds, {
+                padding: [50, 50],
+                maxZoom: 13
             });
 
-            // Потім, після невеликої затримки, застосовуємо зум
-            setTimeout(() => {
-                map.flyToBounds(paddedBounds, {
-                    padding: [50, 50],
-                    maxZoom: 14,
-                    duration: 0.5
-                });
-            }, 1000);
-
-            // Видаляємо підсвічування через 3 секунди
+            // Видаляємо підсвічування через 2 секунди
             setTimeout(() => {
                 map.removeLayer(tempLayer);
                 updateRegionStyle(regionId);
-            }, 3000);
+            }, 2000);
         }
 
         // Додаємо стилі для hover ефекту
@@ -804,67 +791,21 @@
             window.location.href = returnUrl;
         }
 
-        function normalizeCouncilName(name) {
-            if (!name) return '';
-            
-            // Базова нормалізація
-            let normalized = name.toLowerCase()
-                .normalize('NFKD')
-                .replace(/[\u0300-\u036f]/g, '')    // Видаляємо діакритичні знаки
-                .replace(/[''ʼ`]/g, '')             // Видаляємо різні види апострофів
-                .replace(/[-]/g, ' ')               // Замінюємо дефіс на пробіл
-                .replace(/\s+/g, ' ')              // Нормалізуємо пробіли
-                .trim();
-            
-            // Заміна українських літер (з урахуванням позиції у слові)
-            normalized = normalized
-                .replace(/[іи]/g, 'i')              // і, и -> i
-                .replace(/ї/g, 'yi')                // ї -> yi
-                .replace(/є/g, 'e')                 // є -> e
-                .replace(/[её]/g, 'e')              // е, ё -> e
-                .replace(/ґ/g, 'g')                 // ґ -> g
-                .replace(/[йj]/g, 'i')              // й, j -> i
-            
-            // Видаляємо типові суфікси/закінчення
-            normalized = normalized
-                .replace(/(ська|ський|цька|цький|зька|зький)$/g, '')
-                .replace(/(івська|ївська|ївка|івка)$/g, '')
-                .replace(/(ська сільська рада|міська рада|селищна рада|сільська рада|рада)$/g, '');
-                
-            return normalized;
-        }
-
         function findMatchingCouncil(searchName, availableFeatures) {
-            const normalizedSearch = normalizeCouncilName(searchName);
-            console.log(`Пошук ради: "${searchName}" (${normalizedSearch})`);
+            console.log(`Пошук ради: "${searchName}"`);
             
-            // Шукаємо точне співпадіння
-            const exactMatch = availableFeatures.find(feature => {
-                const normalizedName = normalizeCouncilName(feature.properties.coatuu_namesr);
-                const isExact = normalizedName === normalizedSearch;
-                if (isExact) {
-                    console.log(`Знайдено точне співпадіння: "${feature.properties.coatuu_namesr}" (${normalizedName})`);
-                }
-                return isExact;
-            });
+            // Шукаємо тільки точне співпадіння
+            const exactMatch = availableFeatures.find(feature => 
+                feature.properties.coatuu_namesr === searchName
+            );
             
-            if (exactMatch) return exactMatch;
-            
-            // Шукаємо часткове співпадіння за основою назви
-            const partialMatch = availableFeatures.find(feature => {
-                const normalizedName = normalizeCouncilName(feature.properties.coatuu_namesr);
-                
-                // Перевіряємо включення основи назви
-                const isPartial = normalizedName.includes(normalizedSearch) || 
-                                 normalizedSearch.includes(normalizedName);
-                
-                if (isPartial) {
-                    console.log(`Знайдено часткове співпадіння: "${feature.properties.coatuu_namesr}" (${normalizedName}) ~ "${searchName}" (${normalizedSearch})`);
-                }
-                return isPartial;
-            });
-            
-            return partialMatch;
+            if (exactMatch) {
+                console.log(`Знайдено раду: "${exactMatch.properties.coatuu_namesr}"`);
+                return exactMatch;
+            }
+
+            console.warn(`Не знайдено раду: "${searchName}"`);
+            return null;
         }
     </script>
 </body>
