@@ -122,6 +122,7 @@
         let loadedRegions = new Set();
         let councilsData = new Map(); // Зберігатиме дані про ради
         let regionLayers = {}; // Зберігатиме шари карти
+        let ourCouncils = new Set();
 
         document.addEventListener('DOMContentLoaded', function() {
             // Ініціалізація карти з налаштуваннями масштабування
@@ -129,8 +130,11 @@
                 minZoom: 6,
                 maxZoom: 18
             });
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
+            
+            // Змінюємо базову карту на Google Satellite
+            L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
             }).addTo(map);
 
             const urlParams = new URLSearchParams(window.location.search);
@@ -188,6 +192,13 @@
                     firstFile: data.files[0],
                     dataPath: dataPath
                 });
+
+                // Зберігаємо список наших рад
+                data.files.forEach(file => {
+                    ourCouncils.add(file.replace('.geojson', ''));
+                });
+                
+                console.log('Наші ради:', Array.from(ourCouncils));
 
                 // Продовжуємо виконання існуючого коду...
                 const uniqueRegions = new Set();
@@ -351,49 +362,59 @@
 
         async function loadRegionBoundaries(regionIds) {
             const bounds = L.latLngBounds([]);
-            const mergedFeatures = {}; // Об'єднані features по регіонах
+            let labels = [];  // Масив для зберігання міток
             
             for (const regionId of regionIds) {
                 try {
                     const response = await fetch(`data/rada_regions/rada_${regionId}.geojson`);
-                    if (!response.ok) {
-                        throw new Error(`HTTP помилка: ${response.status}`);
-                    }
+                    if (!response.ok) throw new Error(`HTTP помилка: ${response.status}`);
                     
                     const data = await response.json();
-                    console.log(`Loading region ${regionId}, features count:`, data.features.length);
-                    
-                    // Об'єднуємо всі features в один GeoJSON
-                    const mergedGeoJSON = {
-                        type: "FeatureCollection",
-                        features: data.features.reduce((acc, feature) => {
-                            // Перевіряємо чи є координати у feature
-                            if (feature.geometry && feature.geometry.coordinates && 
-                                feature.geometry.coordinates.length > 0) {
-                                acc.push(feature);
-                            }
-                            return acc;
-                        }, [])
-                    };
+                    console.log(`Loading region ${regionId, features count:`, data.features.length);
                     
                     // Створюємо один шар для регіону
-                    const regionalLayer = L.geoJSON(mergedGeoJSON, {
-                        style: {
-                            color: '#FFD700',
-                            weight: 1,
-                            opacity: 0.5,
-                            fillOpacity: 0.1,
-                            fillColor: '#FFD700'
+                    const regionalLayer = L.geoJSON(data, {
+                        style: feature => {
+                            // Перевіряємо чи це "наша" рада по імені
+                            const isOurCouncil = ourCouncils.has(feature.properties.coatuu_namesr);
+                            
+                            return {
+                                color: '#FFD700',           // Жовтий контур для всіх
+                                weight: 1,                  // Тонка лінія
+                                opacity: 0.8,               // Прозорість контуру
+                                fillColor: '#28a745',       // Зелений для всіх
+                                fillOpacity: isOurCouncil ? 0.3 : 0  // Прозорість тільки для наших
+                            };
+                        },
+                        onEachFeature: (feature, layer) => {
+                            // Створюємо мітку для кожного полігону
+                            const label = L.divIcon({
+                                className: 'map-label',
+                                html: feature.properties.coatuu_namesr,
+                                iconSize: null
+                            });
+                            
+                            const center = layer.getBounds().getCenter();
+                            const marker = L.marker(center, {
+                                icon: label,
+                                interactive: false
+                            });
+                            
+                            labels.push({
+                                marker: marker,
+                                minZoom: 10  // Показувати мітки тільки при зумі >= 10
+                            });
+                            
+                            layer.bindPopup(feature.properties.coatuu_namesr);
                         }
                     }).addTo(map);
 
                     // Зберігаємо для пошуку рад
                     regionLayers[regionId] = {
                         layer: regionalLayer,
-                        features: mergedGeoJSON.features.reduce((acc, feature) => {
-                            const councilName = feature.properties.coatuu_namesr;
-                            if (councilName) {
-                                acc[councilName] = feature;
+                        features: data.features.reduce((acc, feature) => {
+                            if (feature.properties.coatuu_namesr) {
+                                acc[feature.properties.coatuu_namesr] = feature;
                             }
                             return acc;
                         }, {})
@@ -402,35 +423,28 @@
                     bounds.extend(regionalLayer.getBounds());
                     loadedRegions.add(regionId);
                     
-                    console.log(`Регіон ${regionId}: об'єднано ${mergedGeoJSON.features.length} полігонів`);
                 } catch (error) {
                     console.error(`Помилка завантаження регіону ${regionId}:`, error);
                 }
             }
             
-            return bounds;
-        }
-
-        async function loadRegionBoundary(regionId) {
-            if (loadedRegions.has(regionId)) return;
-            
-            try {
-                const response = await fetch(`data/rada_regions/rada_${regionId}.geojson`);
-                const data = await response.json();
-                
-                L.geoJSON(data, {
-                    style: {
-                        color: '#2196F3',
-                        weight: 2,
-                        opacity: 0.6,
-                        fillOpacity: 0.1
+            // Додаємо обробник зміни зуму
+            map.on('zoomend', () => {
+                const currentZoom = map.getZoom();
+                labels.forEach(label => {
+                    if (currentZoom >= label.minZoom) {
+                        if (!map.hasLayer(label.marker)) {
+                            label.marker.addTo(map);
+                        }
+                    } else {
+                        if (map.hasLayer(label.marker)) {
+                            label.marker.remove();
+                        }
                     }
-                }).addTo(map);
-                
-                loadedRegions.add(regionId);
-            } catch (error) {
-                console.warn(`Не вдалося завантажити межі для регіону ${regionId}:`, error);
-            }
+                });
+            });
+            
+            return bounds;
         }
 
         function getRegionColor(freshPercent, mediumPercent) {
@@ -452,15 +466,18 @@
                 return;
             }
 
-            const color = getRegionColor(councilInfo.freshPercent, councilInfo.mediumPercent);
-            
-            // Оновлюємо стиль для шару регіону
-            regionData.layer.setStyle({
-                color: color,
-                weight: 2,
-                opacity: 0.8,
-                fillOpacity: 0.3,
-                fillColor: color
+            // Оновлюємо стиль для кожного feature в шарі
+            regionData.layer.setStyle(feature => {
+                // Перевіряємо чи це "наша" рада по імені
+                const isOurCouncil = ourCouncils.has(feature.properties.coatuu_namesr);
+                
+                return {
+                    color: '#FFD700',           // Жовтий контур для всіх
+                    weight: 1,                  // Тонка лінія
+                    opacity: 0.8,               // Прозорість контуру
+                    fillColor: '#28a745',       // Зелений для всіх
+                    fillOpacity: isOurCouncil ? 0.3 : 0  // Прозорість тільки для наших
+                };
             });
         }
 
