@@ -131,8 +131,8 @@
                 maxZoom: 18
             });
             
-            // Змінюємо базову карту на Google Satellite
-            L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            // Змінюємо базову карту на Google Satellite - виправляємо протокол на HTTPS
+            L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
                 maxZoom: 20,
                 subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
             }).addTo(map);
@@ -363,6 +363,8 @@
         async function loadRegionBoundaries(regionIds) {
             const bounds = L.latLngBounds([]);
             let labels = [];  // Масив для зберігання міток
+            const COUNCIL_MIN_ZOOM = 9;  // Мінімальний зум для відображення меж рад
+            const LABELS_MIN_ZOOM = 11;  // Підвищуємо мінімальний зум для міток
             
             for (const regionId of regionIds) {
                 try {
@@ -370,7 +372,7 @@
                     if (!response.ok) throw new Error(`HTTP помилка: ${response.status}`);
                     
                     const data = await response.json();
-                    console.log(`Loading region ${regionId, features count:`, data.features.length);
+                    console.log(`Loading region ${regionId}`, `features count: ${data.features.length}`);
                     
                     // Створюємо один шар для регіону
                     const regionalLayer = L.geoJSON(data, {
@@ -379,33 +381,26 @@
                             const isOurCouncil = ourCouncils.has(feature.properties.coatuu_namesr);
                             
                             return {
-                                color: '#FFD700',           // Жовтий контур для всіх
-                                weight: 1,                  // Тонка лінія
-                                opacity: 0.8,               // Прозорість контуру
-                                fillColor: '#28a745',       // Зелений для всіх
-                                fillOpacity: isOurCouncil ? 0.3 : 0  // Прозорість тільки для наших
+                                color: isOurCouncil ? '#FFFFFF' : '#FFD700', 
+                                weight: isOurCouncil ? 2 : 1,
+                                opacity: 0,
+                                fillColor: '#28a745',
+                                fillOpacity: isOurCouncil ? 0.3 : 0,
+                                dashArray: isOurCouncil ? '3,5' : null
                             };
                         },
                         onEachFeature: (feature, layer) => {
-                            // Створюємо мітку для кожного полігону
-                            const label = L.divIcon({
-                                className: 'map-label',
-                                html: feature.properties.coatuu_namesr,
-                                iconSize: null
-                            });
-                            
-                            const center = layer.getBounds().getCenter();
-                            const marker = L.marker(center, {
-                                icon: label,
-                                interactive: false
-                            });
-                            
-                            labels.push({
-                                marker: marker,
-                                minZoom: 10  // Показувати мітки тільки при зумі >= 10
-                            });
-                            
+                            // Додаємо попап, але не створюємо мітки тут
                             layer.bindPopup(feature.properties.coatuu_namesr);
+                            
+                            // Зберігаємо інформацію для міток, але не створюємо їх одразу
+                            if (ourCouncils.has(feature.properties.coatuu_namesr)) {
+                                labels.push({
+                                    center: layer.getBounds().getCenter(),
+                                    name: feature.properties.coatuu_namesr,
+                                    created: false // Мітка ще не створена
+                                });
+                            }
                         }
                     }).addTo(map);
 
@@ -428,20 +423,74 @@
                 }
             }
             
-            // Додаємо обробник зміни зуму
-            map.on('zoomend', () => {
+            // Додаємо CSS для світіння
+            addGlowEffect();
+            
+            // Змінна для збереження та управління мітками
+            let activeLabels = [];
+            
+            // Додаємо обробник зміни зуму для міток та меж рад
+            map.on('zoomend moveend', () => {
                 const currentZoom = map.getZoom();
-                labels.forEach(label => {
-                    if (currentZoom >= label.minZoom) {
-                        if (!map.hasLayer(label.marker)) {
-                            label.marker.addTo(map);
-                        }
-                    } else {
-                        if (map.hasLayer(label.marker)) {
-                            label.marker.remove();
-                        }
+                
+                // Керуємо видимістю меж рад
+                for (const regionId of Object.keys(regionLayers)) {
+                    const regionData = regionLayers[regionId];
+                    if (regionData && regionData.layer) {
+                        regionData.layer.setStyle(feature => {
+                            const isOurCouncil = ourCouncils.has(feature.properties.coatuu_namesr);
+                            return {
+                                opacity: currentZoom >= COUNCIL_MIN_ZOOM ? 0.8 : 0,
+                                fillOpacity: isOurCouncil ? 0.3 : 0,
+                                className: isOurCouncil ? 'council-glow' : ''
+                            };
+                        });
                     }
-                });
+                }
+                
+                // Оптимізоване управління мітками
+                if (currentZoom >= LABELS_MIN_ZOOM) {
+                    // Якщо зум достатній для міток
+                    // Очищаємо попередні мітки 
+                    activeLabels.forEach(marker => marker.remove());
+                    activeLabels = [];
+                    
+                    // Отримуємо поточні межі карти
+                    const mapBounds = map.getBounds();
+                    
+                    // Фільтруємо тільки мітки в поточному вікні видимості
+                    const visibleLabels = labels.filter(label => 
+                        mapBounds.contains(label.center)
+                    );
+                    
+                    // Обмежуємо кількість міток для відображення
+                    const maxLabels = 30; // Максимальна кількість міток для хорошої продуктивності
+                    const labelsToShow = visibleLabels.slice(0, maxLabels);
+                    
+                    // Створюємо і додаємо тільки потрібні мітки
+                    labelsToShow.forEach(labelInfo => {
+                        const label = L.divIcon({
+                            className: 'map-label',
+                            html: labelInfo.name,
+                            iconSize: null
+                        });
+                        
+                        const marker = L.marker(labelInfo.center, {
+                            icon: label,
+                            interactive: false
+                        }).addTo(map);
+                        
+                        activeLabels.push(marker);
+                    });
+                    
+                    if (visibleLabels.length > maxLabels) {
+                        console.log(`Обмежено кількість міток: показано ${maxLabels} з ${visibleLabels.length}`);
+                    }
+                } else {
+                    // Якщо зум недостатній - видаляємо всі мітки
+                    activeLabels.forEach(marker => marker.remove());
+                    activeLabels = [];
+                }
             });
             
             return bounds;
@@ -467,16 +516,21 @@
             }
 
             // Оновлюємо стиль для кожного feature в шарі
+            const currentZoom = map.getZoom();
+            const COUNCIL_MIN_ZOOM = 9;  // Має співпадати з константою у loadRegionBoundaries
+            
             regionData.layer.setStyle(feature => {
                 // Перевіряємо чи це "наша" рада по імені
                 const isOurCouncil = ourCouncils.has(feature.properties.coatuu_namesr);
                 
                 return {
-                    color: '#FFD700',           // Жовтий контур для всіх
-                    weight: 1,                  // Тонка лінія
-                    opacity: 0.8,               // Прозорість контуру
+                    color: isOurCouncil ? '#FFFFFF' : '#FFD700', // Білий контур для наших
+                    weight: isOurCouncil ? 2 : 1,               // Товстіша лінія для наших рад
+                    opacity: currentZoom >= COUNCIL_MIN_ZOOM ? 0.8 : 0,  // Прозорість контуру залежно від зуму
                     fillColor: '#28a745',       // Зелений для всіх
-                    fillOpacity: isOurCouncil ? 0.3 : 0  // Прозорість тільки для наших
+                    fillOpacity: isOurCouncil ? 0.3 : 0,  // Прозорість тільки для наших
+                    dashArray: isOurCouncil ? '3,5' : null, // Пунктирна лінія для наших рад
+                    className: isOurCouncil ? 'council-glow' : ''
                 };
             });
         }
@@ -771,6 +825,15 @@
                 tr:hover td {
                     background-color: rgba(0,0,0,0.05);
                 }
+                
+                /* Додаткові стилі для покращення видимості на карті */
+                .leaflet-interactive {
+                    transition: opacity 0.3s ease;
+                }
+                
+                .council-glow path {
+                    filter: drop-shadow(0 0 3px white);
+                }
             `;
             document.head.appendChild(style);
         }
@@ -823,6 +886,29 @@
 
             console.warn(`Не знайдено раду: "${searchName}"`);
             return null;
+        }
+
+        // Функція для додавання CSS-ефекту світіння
+        function addGlowEffect() {
+            const style = document.createElement('style');
+            style.textContent = `
+                .council-glow {
+                    filter: drop-shadow(0 0 3px white) drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
+                }
+                
+                .map-label {
+                    background: rgba(255, 255, 255, 0.7);
+                    border-radius: 3px;
+                    padding: 1px 4px;
+                    font-size: 10px;
+                    font-weight: bold;
+                    box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+                    pointer-events: none;
+                    white-space: nowrap;
+                    transition: opacity 0.2s ease;
+                }
+            `;
+            document.head.appendChild(style);
         }
     </script>
 </body>
