@@ -1047,7 +1047,7 @@
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     });
 
-    const rasterLayer = L.tileLayer(dataPath + 'tiles/sat/{z}/{x}/{y}.png', {
+    const rasterLayer = L.tileLayer(dataPath + 'tiles/{z}/{x}/{y}.png', {
         maxZoom: 20,
         attribution: 'Актуальні растри'
     });
@@ -1734,7 +1734,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             });
 
-            const rasterLayer = L.tileLayer(dataPath + 'tiles/sat/{z}/{x}/{y}.png', {
+            const rasterLayer = L.tileLayer(dataPath + 'tiles/{z}/{x}/{y}.png', {
                 maxZoom: 20,
                 attribution: 'Актуальні растри'
             });
