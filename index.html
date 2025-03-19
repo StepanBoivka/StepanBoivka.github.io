@@ -529,15 +529,94 @@
         white-space: normal; /* Разрешаем перенос текста */
         word-break: break-word; /* Переносим длинные слова */
     }
+    .announcement-container {
+        display: none;
+        position: fixed;
+        top: 56px;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.95);
+        border-bottom: 1px solid #ddd;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .announcement-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 15px;
+        position: relative;
+    }
+
+    .announcement-content {
+        font-size: 14px;
+        color: #333;
+        line-height: 1.4;
+    }
+
+    .announcement-close {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: #666;
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    .announcement-close:hover {
+        color: #333;
+    }
+    .announcement {
+    display: none;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    padding: 12px;
+    background: white;
+    border-bottom: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.announcement.important {
+    background: #fff3cd;
+    border-bottom: 2px solid #ffeeba;
+}
+
+.announcement-content {
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 14px;
+    line-height: 1.4;
+    position: relative;
+    padding-right: 30px;
+}
+
+.announcement-close {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    padding: 5px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    opacity: 0.5;
+}
+
+.announcement-close:hover {
+    opacity: 1;
+}
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
-    <!-- Добавляем библиотеку JSZip для распаковки KMZ файлов -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
-    <!-- Оставляем тільки один navbar -->
+    <!-- Навбар -->
     <nav class="navbar navbar-dark bg-dark fixed-top py-1">
         <div class="container-fluid px-2">
             <!-- Кнопка для відкриття бокового меню -->
@@ -555,16 +634,42 @@
                 <i class="bi bi-clock-history text-light me-1"></i>
                 <small class="text-light" id="dataFreshnessText"></small>
             </div>
+            <div class="d-flex align-items-center">
+                <button class="btn btn-outline-light btn-sm ms-2" id="showAllAnnouncements">
+                    <i class="bi bi-bell"></i>
+                    <span class="badge bg-danger" id="unreadCount" style="display: none;"></span>
+                </button>
+            </div>
         </div>
     </nav>
 
+    <!-- Контейнер для повідомлень -->
+    <div id="announcementContainer" class="announcement" style="display: none;">
+        <div class="announcement-content">
+            <div id="announcementText"></div>
+            <div class="announcement-actions mt-2">
+                <button class="btn btn-sm btn-outline-secondary" id="prevAnnouncement">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <small class="mx-2" id="announcementCounter"></small>
+                <button class="btn btn-sm btn-outline-secondary" id="nextAnnouncement">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary ms-2" id="closeAnnouncement">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Бокове меню -->
-    <div class="offcanvas offcanvas-start bg-dark text-light" tabindex="-1" id="mainMenu">
+    <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="mainMenu">
         <div class="offcanvas-header">
-            <h5 class="offcanvas-title">Головне меню</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            <h5 class="offcanvas-title">Меню</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body">
+            <!-- Існуючий контент бокового меню -->
             <!-- Секція вибору області перегляду -->
             <div class="mb-4">
                 <h6 class="border-bottom border-secondary pb-2 mb-3">Вибір області перегляду</h6>
@@ -771,6 +876,36 @@
                 <button type="button" class="btn btn-secondary" id="backToExchangeInput">
                     <i class="bi bi-arrow-left me-2"></i>Повернутися до редагування
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Додаємо модальне вікно для всіх повідомлень -->
+<div class="modal fade" id="allAnnouncementsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Всі повідомлення</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#currentTab">Актуальні</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#archiveTab">Архів</a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="currentTab">
+                        <!-- Тут будуть актуальні повідомлення -->
+                    </div>
+                    <div class="tab-pane fade" id="archiveTab">
+                        <!-- Тут будуть архівні повідомлення -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -4364,5 +4499,285 @@ function exportToExcel() {
 </script>
 
 <script src="js/pdfExport.js"></script>
+<script>
+        // Система повідомлень
+        const announcements = [
+            {
+                id: 1,
+                date: '2024-01-20',
+                title: 'Оновлення системи',
+                content: 'Додано нові функції для роботи з картою та покращено швидкодію.',
+                priority: 'normal' // or 'high'
+            }
+            // Можна додавати інші повідомлення
+        ];
+
+        function showAnnouncements() {
+            // Отримуємо прочитані повідомлення з localStorage
+            const readAnnouncements = JSON.parse(localStorage.getItem('readAnnouncements') || '[]');
+            
+            // Фільтруємо непрочитані повідомлення
+            const unreadAnnouncements = announcements.filter(a => !readAnnouncements.includes(a.id))
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (unreadAnnouncements.length > 0) {
+                const announcement = unreadAnnouncements[0]; // Показуємо найновіше
+                
+                const container = document.getElementById('announcementContainer');
+                const content = document.getElementById('announcementContent');
+                
+                content.innerHTML = `
+                    <strong>${announcement.title}</strong><br>
+                    ${announcement.content}
+                `;
+                
+                if (announcement.priority === 'high') {
+                    container.style.backgroundColor = 'rgba(255, 243, 205, 0.95)';
+                }
+                
+                container.style.display = 'block';
+                
+                // Обробник закриття
+                document.getElementById('closeAnnouncement').onclick = () => {
+                    container.style.display = 'none';
+                    // Зберігаємо ID прочитаного повідомлення
+                    readAnnouncements.push(announcement.id);
+                    localStorage.setItem('readAnnouncements', JSON.stringify(readAnnouncements));
+                };
+            }
+        }
+
+        // Викликаємо показ повідомлень при завантаженні сторінки
+        document.addEventListener('DOMContentLoaded', showAnnouncements);
+    </script>
+<script>
+    // Замінюємо стару функцію showAnnouncements
+    async function showAnnouncements() {
+        try {
+            // Отримуємо прочитані повідомлення
+            const readAnnouncements = JSON.parse(localStorage.getItem('readAnnouncements') || '[]');
+            
+            // Завантажуємо повідомлення з файлу
+            const response = await fetch('data/announcements.json');
+            const data = await response.json();
+            
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            // Фільтруємо активні непрочитані повідомлення
+            const unreadAnnouncements = data.announcements.filter(a => 
+                !readAnnouncements.includes(a.id) &&
+                a.startDate <= today &&
+                a.endDate >= today
+            ).sort((a, b) => {
+                // Спочатку за пріоритетом, потім за датою
+                if (a.priority === 'high' && b.priority !== 'high') return -1;
+                if (a.priority !== 'high' && b.priority === 'high') return 1;
+                return new Date(b.startDate) - new Date(a.startDate);
+            });
+            
+            if (unreadAnnouncements.length > 0) {
+                const announcement = unreadAnnouncements[0];
+                const category = data.categories.find(c => c.id === announcement.category);
+                
+                const container = document.getElementById('announcementContainer');
+                const content = document.getElementById('announcementContent');
+                
+                content.innerHTML = `
+                    <strong>${announcement.title}</strong>
+                    ${category ? `<span class="badge bg-secondary ms-2">${category.name}</span>` : ''}
+                    <br>${announcement.content}
+                `;
+                
+                if (announcement.priority === 'high') {
+                    container.style.backgroundColor = 'rgba(255, 243, 205, 0.95)';
+                }
+                
+                container.style.display = 'block';
+                
+                document.getElementById('closeAnnouncement').onclick = () => {
+                    container.style.display = 'none';
+                    readAnnouncements.push(announcement.id);
+                    localStorage.setItem('readAnnouncements', JSON.stringify(readAnnouncements));
+                };
+            }
+        } catch (error) {
+            console.error('Error loading announcements:', error);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', showAnnouncements);
+</script>
+<script>
+// ...existing code...
+
+async function showAnnouncements() {
+    try {
+        const readAnnouncements = JSON.parse(localStorage.getItem('readAnnouncements') || '[]');
+        
+        const response = await fetch('data/announcements.json');
+        if (!response.ok) {
+            console.warn('Немає нових повідомлень');
+            return;
+        }
+        
+        const data = await response.json();
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        
+        // Фільтруємо активні непрочитані повідомлення
+        const activeAnnouncements = data.announcements.filter(a => 
+            !readAnnouncements.includes(a.id) &&
+            a.startDate <= today &&
+            a.endDate >= today
+        ).sort((a, b) => {
+            // Спочатку пріоритетні
+            if (a.priority === 'high' && b.priority !== 'high') return -1;
+            if (a.priority !== 'high' && b.priority === 'high') return 1;
+            // Потім за датою створення (новіші спочатку)
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+        
+        if (activeAnnouncements.length > 0) {
+            const announcement = activeAnnouncements[0];
+            const category = data.categories.find(c => c.id === announcement.category);
+            
+            const container = document.getElementById('announcementContainer');
+            const content = document.getElementById('announcementContent');
+            
+            // Оновлений HTML для повідомлення
+            content.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <strong>${announcement.title}</strong>
+                        ${category ? `<span class="badge bg-secondary ms-2">${category.name}</span>` : ''}
+                        ${announcement.priority === 'high' ? '<span class="badge bg-danger ms-2">Важливо</span>' : ''}
+                    </div>
+                    <small class="text-muted">${formatDate(announcement.createdAt)}</small>
+                </div>
+                <div>${announcement.content}</div>
+            `;
+            
+            // Стилізація в залежності від пріоритету
+            if (announcement.priority === 'high') {
+                container.style.backgroundColor = 'rgba(255, 243, 205, 0.95)';
+                container.style.borderBottom = '2px solid #ffc107';
+            } else {
+                container.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+                container.style.borderBottom = '1px solid #dee2e6';
+            }
+            
+            container.style.display = 'block';
+            
+            document.getElementById('closeAnnouncement').onclick = () => {
+                container.style.display = 'none';
+                readAnnouncements.push(announcement.id);
+                localStorage.setItem('readAnnouncements', JSON.stringify(readAnnouncements));
+            };
+        }
+    } catch (error) {
+        console.error('Error loading announcements:', error);
+    }
+}
+
+// Допоміжна функція для форматування дати
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('uk-UA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+// ...existing code...
+</script>
+<script>
+document.getElementById('showAllAnnouncements').addEventListener('click', async function() {
+    try {
+        const modal = new bootstrap.Modal(document.getElementById('allAnnouncementsModal'));
+        const readAnnouncements = JSON.parse(localStorage.getItem('readAnnouncements') || '[]');
+        
+        const response = await fetch('data/announcements.json');
+        const data = await response.json();
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        
+        // Розділяємо повідомлення на активні та архівні
+        const currentAnnouncements = data.announcements.filter(a => a.endDate >= today);
+        const archivedAnnouncements = data.announcements.filter(a => a.endDate < today);
+        
+        // Оновлюємо вкладки
+        document.querySelector('#currentTab').innerHTML = renderAnnouncementsList(currentAnnouncements, readAnnouncements);
+        document.querySelector('#archiveTab').innerHTML = renderAnnouncementsList(archivedAnnouncements, readAnnouncements);
+        
+        modal.show();
+    } catch (error) {
+        console.error('Error loading announcements:', error);
+    }
+});
+
+function renderAnnouncementsList(announcements, readAnnouncements) {
+    if (announcements.length === 0) {
+        return '<p class="text-muted m-3">Немає повідомлень</p>';
+    }
+    
+    return announcements
+        .sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
+        .map(announcement => `
+            <div class="card mb-3 ${announcement.type === 'important' ? 'border-warning' : ''}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            ${!readAnnouncements.includes(announcement.id) 
+                                ? '<span class="badge bg-danger me-2">Нове</span>' 
+                                : ''
+                            }
+                            <span class="badge ${announcement.type === 'important' ? 'bg-warning text-dark' : 'bg-secondary'}">
+                                ${announcement.type === 'important' ? 'Важливе' : 'Інформаційне'}
+                            </span>
+                        </div>
+                        <small class="text-muted">
+                            ${formatDate(announcement.startDate)} - ${formatDate(announcement.endDate)}
+                        </small>
+                    </div>
+                    <p class="card-text mt-2 mb-0">${announcement.text}</p>
+                </div>
+            </div>
+        `).join('');
+}
+
+// ...existing code...
+</script>
+
+<!-- Оновлюємо структуру вкладок у модальному вікні -->
+<div class="modal fade" id="allAnnouncementsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Всі повідомлення</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#currentTab">Актуальні</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#archiveTab">Архів</a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="currentTab">
+                        <!-- Тут будуть актуальні повідомлення -->
+                    </div>
+                    <div class="tab-pane fade" id="archiveTab">
+                        <!-- Тут будуть архівні повідомлення -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

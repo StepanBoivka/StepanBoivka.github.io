@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Керування повідомленнями</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand">Керування повідомленнями</span>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        Нове повідомлення
+                    </div>
+                    <div class="card-body">
+                        <form id="announcementForm">
+                            <div class="mb-3">
+                                <label class="form-label">Заголовок</label>
+                                <input type="text" class="form-control" id="title" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Зміст</label>
+                                <textarea class="form-control" id="content" rows="3" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Категорія</label>
+                                <select class="form-select" id="category" required>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Пріоритет</label>
+                                <select class="form-select" id="priority" required>
+                                    <option value="normal">Звичайний</option>
+                                    <option value="high">Високий</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Дата початку показу</label>
+                                <input type="date" class="form-control" id="startDate" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Дата закінчення показу</label>
+                                <input type="date" class="form-control" id="endDate" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Додати</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Список повідомлень</span>
+                        <button class="btn btn-sm btn-outline-secondary" id="refreshList">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table" id="announcementsList">
+                                <thead>
+                                    <tr>
+                                        <th>Заголовок</th>
+                                        <th>Категорія</th>
+                                        <th>Період показу</th>
+                                        <th>Дії</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'site_announcements';
+        
+        // Спрощена функція отримання даних
+        async function fetchAnnouncements() {
+            try {
+                const response = await fetch('/data/announcements.json');
+                if (!response.ok) throw new Error('Failed to fetch');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching announcements:', error);
+                return null;
+            }
+        }
+
+        // Оновлена функція завантаження категорій
+        async function loadCategories() {
+            try {
+                const data = await fetchAnnouncements();
+                if (!data || !data.categories) {
+                    throw new Error('Invalid data structure');
+                }
+                
+                const select = document.getElementById('category');
+                select.innerHTML = ''; 
+                
+                data.categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    select.appendChild(option);
+                });
+                
+                await loadAnnouncements();
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                const select = document.getElementById('category');
+                select.innerHTML = '<option value="">Помилка завантаження категорій</option>';
+            }
+        }
+
+        // Оновлюємо функцію завантаження оголошень
+        async function loadAnnouncements() {
+            try {
+                const data = await fetchAnnouncements();
+                if (!data) throw new Error('Cannot load data');
+
+                const tbody = document.querySelector('#announcementsList tbody');
+                tbody.innerHTML = '';
+                
+                data.announcements
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                    .forEach(announcement => {
+                        const tr = document.createElement('tr');
+                        const category = data.categories.find(c => c.id === announcement.category);
+                        
+                        tr.innerHTML = `
+                            <td>
+                                <strong>${announcement.text}</strong>
+                            </td>
+                            <td>${category ? category.name : ''}</td>
+                            <td>
+                                <small>
+                                    ${announcement.startDate}<br>до ${announcement.endDate}
+                                </small>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-danger delete-btn" 
+                                        data-id="${announcement.id}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        
+                        tbody.appendChild(tr);
+                    });
+                    
+                // Додаємо обробники для кнопок видалення
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.onclick = () => deleteAnnouncement(parseInt(btn.dataset.id));
+                });
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+                alert('Помилка завантаження повідомлень');
+            }
+        }
+
+        // Оновлюємо функцію видалення
+        async function deleteAnnouncement(id) {
+            if (!confirm('Видалити це повідомлення?')) return;
+            
+            try {
+                const data = await fetchAnnouncements();
+                if (!data) throw new Error('Cannot load data');
+                
+                data.announcements = data.announcements.filter(a => a.id !== id);
+                
+                if (await saveData(data)) {
+                    await loadAnnouncements();
+                } else {
+                    throw new Error('Failed to save data');
+                }
+            } catch (error) {
+                console.error('Error deleting announcement:', error);
+                alert('Помилка при видаленні повідомлення');
+            }
+        }
+
+        // Заміняємо обробник форми на генерацію JSON
+        document.getElementById('announcementForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            try {
+                // Завантажуємо поточні дані
+                const data = await fetchAnnouncements();
+                if (!data) throw new Error('Cannot load current data');
+                
+                // Створюємо нове повідомлення
+                const newAnnouncement = {
+                    id: Date.now(),
+                    text: document.getElementById('title').value + "\n" + document.getElementById('content').value,
+                    type: document.getElementById('priority').value === 'high' ? 'important' : 'normal',
+                    category: parseInt(document.getElementById('category').value),
+                    startDate: document.getElementById('startDate').value,
+                    endDate: document.getElementById('endDate').value
+                };
+                
+                // Додаємо нове повідомлення до масиву
+                const updatedData = {
+                    ...data,
+                    announcements: [...data.announcements, newAnnouncement]
+                };
+                
+                // Форматуємо JSON для зручного копіювання
+                const jsonStr = JSON.stringify(updatedData, null, 2);
+                const dialog = document.createElement('div');
+                dialog.innerHTML = `
+                    <div class="modal" id="copyDialog" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Оновлений JSON для announcements.json</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="text-muted small">Скопіюйте цей код та замініть ним вміст файлу announcements.json:</p>
+                                    <pre class="border bg-light p-3" style="max-height: 400px; overflow-y: auto;"><code>${jsonStr}</code></pre>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
+                                    <button type="button" class="btn btn-primary" onclick="copyToClipboard(this)">
+                                        Копіювати JSON
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                
+                document.body.appendChild(dialog);
+                const modalElement = document.getElementById('copyDialog');
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+                
+                modalElement.addEventListener('hidden.bs.modal', function () {
+                    document.body.removeChild(dialog);
+                });
+                
+                // Очищаємо форму
+                e.target.reset();
+                
+                // Оновлюємо список
+                await loadAnnouncements();
+                
+            } catch (error) {
+                console.error('Error generating announcement:', error);
+                alert('Помилка при створенні повідомлення');
+            }
+        };
+
+        // Функція для копіювання в буфер обміну
+        function copyToClipboard(button) {
+            const pre = button.closest('.modal-content').querySelector('pre');
+            const text = pre.textContent;
+            
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    // Змінюємо текст кнопки на підтвердження
+                    button.innerHTML = '✓ Скопійовано';
+                    button.classList.replace('btn-primary', 'btn-success');
+                    
+                    // Повертаємо original текст через 2 секунди
+                    setTimeout(() => {
+                        button.innerHTML = 'Копіювати JSON';
+                        button.classList.replace('btn-success', 'btn-primary');
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Error copying text:', err);
+                    alert('Помилка при копіюванні');
+                });
+        }
+
+        // Ініціалізація при завантаженні сторінки
+        document.addEventListener('DOMContentLoaded', loadCategories);
+        
+        // Оновлення списку
+        document.getElementById('refreshList').onclick = loadAnnouncements;
+    </script>
+</body>
+</html>
