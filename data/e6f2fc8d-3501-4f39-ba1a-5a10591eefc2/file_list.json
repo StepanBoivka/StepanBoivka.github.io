@@ -1,19 +1,20 @@
 {
     "files": [
-        "Поморяни.geojson",
-        "Бібщанська.geojson",
         "Єлиховицька.geojson",
+        "Бібщанська.geojson",
         "Жуківська.geojson",
+        "Кальненська.geojson",
         "Колтівська.geojson",
         "Коропецька.geojson",
-        "Підлипецька.geojson",
+        "Осталовицька.geojson",
         "Полянська.geojson",
+        "Поморяни.geojson",
+        "Підлипецька.geojson",
+        "Рекшинська.geojson",
         "Ремезівцівська.geojson",
         "Сасівська.geojson",
         "Сновицька.geojson",
         "Шпиколоська.geojson",
-        "Ясеновецька.geojson",
-        "Рекшинська.geojson",
-        "Кальненська.geojson"
+        "Ясеновецька.geojson"
     ]
 }
