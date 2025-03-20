@@ -613,6 +613,36 @@
 .announcement-close:hover {
     opacity: 1;
 }
+.toast {
+    min-width: 300px;
+}
+
+.toast.bg-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.toast:not(.bg-warning) {
+    border-left: 4px solid #0d6efd;
+}
+
+.toast-header {
+    border-bottom: none;
+}
+
+.toast-body {
+    white-space: pre-line;
+}
+
+@media (max-width: 576px) {
+    .toast-container {
+        width: 100%;
+        padding: 10px;
+    }
+    .toast {
+        width: 100%;
+        max-width: none;
+    }
+}
     </style>
 </head>
 <body>
@@ -890,25 +920,41 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <ul class="nav nav-tabs mb-3">
-                    <li class="nav-item">
-                        <a class="nav-link active" data-bs-toggle="tab" href="#currentTab">Актуальні</a>
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="current-tab" data-bs-toggle="tab" 
+                                data-bs-target="#currentTab" type="button" role="tab">
+                            Актуальні
+                        </button>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="tab" href="#archiveTab">Архів</a>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="archive-tab" data-bs-toggle="tab" 
+                                data-bs-target="#archiveTab" type="button" role="tab">
+                            Архів
+                        </button>
                     </li>
                 </ul>
                 <div class="tab-content">
-                    <div class="tab-pane fade show active" id="currentTab">
-                        <!-- Тут будуть актуальні повідомлення -->
-                    </div>
-                    <div class="tab-pane fade" id="archiveTab">
-                        <!-- Тут будуть архівні повідомлення -->
-                    </div>
+                    <div class="tab-pane fade show active" id="currentTab" role="tabpanel"></div>
+                    <div class="tab-pane fade" id="archiveTab" role="tabpanel"></div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Замінюємо старий контейнер повідомлень на новий Toast container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="margin-top: 56px;">
+  <div id="announcementToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header">
+      <i id="toastIcon" class="bi bi-info-circle me-2"></i>
+      <strong class="me-auto" id="announcementTitle"></strong>
+      <small id="announcementDate"></small>
+      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body" id="announcementText">
+    </div>
+  </div>
 </div>
 
     <!-- Скрипты -->
@@ -3847,8 +3893,6 @@ function analyzeExchange() {
                 
                 const analysisDiv = document.createElement('div');
                 const comparison = `${tenant1} ↔ ${tenant2}:<br>` +
-                    `${area1.toFixed(4)} га ↔ ${area2.toFixed(4)} га<br>` +
-                    `(різниця: ${diff.toFixed(4)} га, ${diffPercent.toFixed(1)}%)<br>`;
                 
                 if (diffPercent > maxDiffPercent) {
                     analysisDiv.className = 'text-danger';
@@ -4632,8 +4676,8 @@ async function showAnnouncements() {
             a.endDate >= today
         ).sort((a, b) => {
             // Спочатку пріоритетні
-            if (a.priority === 'high' && b.priority !== 'high') return -1;
-            if (a.priority !== 'high' && b.priority === 'high') return 1;
+            if (a.type === 'important' && b.type !== 'important') return -1;
+            if (a.type !== 'important' && b.type === 'important') return 1;
             // Потім за датою створення (новіші спочатку)
             return new Date(b.createdAt) - new Date(a.createdAt);
         });
@@ -4642,52 +4686,38 @@ async function showAnnouncements() {
             const announcement = activeAnnouncements[0];
             const category = data.categories.find(c => c.id === announcement.category);
             
-            const container = document.getElementById('announcementContainer');
-            const content = document.getElementById('announcementContent');
+            const toast = document.getElementById('announcementToast');
+            const toastTitle = document.getElementById('announcementTitle');
+            const toastDate = document.getElementById('announcementDate');
+            const toastBody = document.getElementById('announcementText');
             
-            // Оновлений HTML для повідомлення
-            content.innerHTML = `
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                        <strong>${announcement.title}</strong>
-                        ${category ? `<span class="badge bg-secondary ms-2">${category.name}</span>` : ''}
-                        ${announcement.priority === 'high' ? '<span class="badge bg-danger ms-2">Важливо</span>' : ''}
-                    </div>
-                    <small class="text-muted">${formatDate(announcement.createdAt)}</small>
-                </div>
-                <div>${announcement.content}</div>
-            `;
+            // Встановлюємо вміст
+            toastTitle.textContent = category ? category.name : 'Повідомлення';
+            toastDate.textContent = new Date(announcement.startDate).toLocaleDateString();
+            toastBody.textContent = announcement.text;
             
-            // Стилізація в залежності від пріоритету
-            if (announcement.priority === 'high') {
-                container.style.backgroundColor = 'rgba(255, 243, 205, 0.95)';
-                container.style.borderBottom = '2px solid #ffc107';
+            // Налаштовуємо стилі для важливих повідомлень
+            if (announcement.type === 'important') {
+                toast.classList.add('bg-warning', 'text-dark');
             } else {
-                container.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-                container.style.borderBottom = '1px solid #dee2e6';
+                toast.classList.remove('bg-warning', 'text-dark');
             }
             
-            container.style.display = 'block';
+            // Створюємо і показуємо toast
+            const bsToast = new bootstrap.Toast(toast, {
+                autohide: false
+            });
+            bsToast.show();
             
-            document.getElementById('closeAnnouncement').onclick = () => {
-                container.style.display = 'none';
+            // Обробник закриття
+            toast.addEventListener('hidden.bs.toast', () => {
                 readAnnouncements.push(announcement.id);
                 localStorage.setItem('readAnnouncements', JSON.stringify(readAnnouncements));
-            };
+            });
         }
     } catch (error) {
         console.error('Error loading announcements:', error);
     }
-}
-
-// Допоміжна функція для форматування дати
-function formatDate(dateStr) {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('uk-UA', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
 }
 
 // ...existing code...
