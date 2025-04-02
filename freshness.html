@@ -81,6 +81,11 @@
             <small class="text-muted fs-5 ms-3">
                 рад - <span id="totalCouncilsCounter">0</span>, 
                 ділянок - <span id="totalPlotsCounter">0</span>
+                <button class="btn btn-sm btn-link text-muted ms-2 text-decoration-none" 
+                        style="font-size: 0.8em; padding: 2px 6px;" 
+                        onclick="copyKoatuuList()">
+                    <i class="bi bi-clipboard"></i>
+                </button>
             </small>
         </h1>
         
@@ -93,8 +98,9 @@
         <div id="tableView" class="table-view">
             <table class="table">
                 <thead>
-                    <tr></tr>
+                    <tr>
                         <th>Рада</th>
+                        <th>КОАТУУ</th>
                         <th>Статус</th>
                         <th>Ділянок</th>
                         <th>Актуальність даних</th>
@@ -158,8 +164,18 @@
                 noDate: 0,
                 latestUpdate: null,
                 oldestUpdate: null,
-                dailyUpdates: {}
+                dailyUpdates: {},
+                koatuu: ''
             };
+
+            // Отримуємо КОАТУУ з першої ділянки
+            if (originalFeatures.length > 0) {
+                const firstFeature = originalFeatures[0];
+                const cadastralNumber = firstFeature.properties?.["Кадастровий номер"];
+                if (cadastralNumber) {
+                    stats.koatuu = cadastralNumber.substring(0, 10);
+                }
+            }
 
             // Збираємо дані оновлень
             originalFeatures.forEach(feature => {
@@ -335,6 +351,7 @@
                     <i class="bi bi-geo-alt-fill me-2 ${statusClass}"></i>
                     ${name}
                 </td>
+                <td>${stats.koatuu || 'Н/Д'}</td>
                 <td><span class="${statusClass}">${statusText}</span></td>
                 <td>${stats.totalRecords}</td>
                 <td>
@@ -389,6 +406,26 @@
             }
             
             window.location.href = returnUrl;
+        }
+
+        // Додаємо нову функцію для копіювання КОАТУУ
+        function copyKoatuuList() {
+            const tableRows = document.querySelectorAll('#tableBody tr');
+            const koatuuList = Array.from(tableRows)
+                .map(row => row.children[1].textContent.trim())
+                .filter(koatuu => koatuu !== 'Н/Д')
+                .map(koatuu => `'${koatuu}'`)
+                .join(',\n');
+
+            navigator.clipboard.writeText(koatuuList).then(() => {
+                // Показуємо тимчасове повідомлення про успіх
+                const btn = document.querySelector('button[onclick="copyKoatuuList()"]');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check"></i> Скопійовано';
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                }, 2000);
+            });
         }
     </script>
 </body>
