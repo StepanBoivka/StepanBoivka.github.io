@@ -587,6 +587,13 @@
                         <option value="">Всі роки</option>
                     </select>
                 </div>
+                <!-- Додаємо новий select для фільтрації за датою реєстрації -->
+                <div class="mb-3">
+                    <label for="registrationYearSelect" class="form-label">Дата реєстрації оренди</label>
+                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="registrationYearSelect">
+                        <option value="">Всі роки</option>
+                    </select>
+                </div>
             </div>
             <!-- Секція інструментів -->
             <div class="mb-4">
@@ -811,6 +818,18 @@
         let cadastralModal;
         let ownMarkersLayer, othersMarkersLayer;
         let editableLayers;
+
+        // Автоматичне відкриття головного меню після завантаження сторінки
+        document.addEventListener('DOMContentLoaded', function() {
+            // Невелика затримка, щоб дати сторінці повністю завантажитись
+            setTimeout(function() {
+                const mainMenu = document.getElementById('mainMenu');
+                if (mainMenu) {
+                    const offcanvasMenu = new bootstrap.Offcanvas(mainMenu);
+                    offcanvasMenu.show();
+                }
+            }, 500);
+        });
 
         // Функция для сбора данных карты с видимых слоев
         function collectMapData() {
@@ -1977,6 +1996,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
         // Обновляем списки для фильтрации
         updateFieldSelect(data);
         updateExpiryYearSelect(data);
+        updateRegistrationYearSelect(data); // Додаємо виклик функції для заповнення списку датами реєстрації
 
         // Добавляем слой на карту
         map.fitBounds(geoJsonLayer.getBounds());
@@ -3062,6 +3082,30 @@ function processGeoJsonData(data, clearExisting) {
             });
         }
 
+        // Додаємо нову функцію для заповнення списку роками реєстрації оренди
+        function updateRegistrationYearSelect(data) {
+            var registrationYearSelect = document.getElementById('registrationYearSelect');
+            registrationYearSelect.innerHTML = '<option value="">Всі роки</option>';
+            registrationYearSelect.innerHTML += '<option value="no_date">Без дати</option>'; 
+            var uniqueYears = new Set();
+            data.features.forEach(feature => {
+                // Собираем годы регистрации только из split-частей
+                if (feature.properties?.type === 'split' && feature.properties?.['Дата реєстрації оренди']) {
+                    const dateStr = feature.properties['Дата реєстрації оренди'];
+                    const year = dateStr.split('.')[2];
+                    if (year) {
+                        uniqueYears.add(year);
+                    }
+                }
+            });
+            Array.from(uniqueYears).sort().forEach(year => {
+                var option = document.createElement('option');
+                option.value = year;
+                option.textContent = year + ' рік';
+                registrationYearSelect.appendChild(option);
+            });
+        }
+
         // Модифицируем функцию фильтрации для корректной обработки записей без даты
         function filterByExpiryYear(feature, selectedYear) {
             if (selectedYear === '') return true; // Показать все записи
@@ -3076,47 +3120,50 @@ function processGeoJsonData(data, clearExisting) {
             }
             return false;
         }
+        
+        // Функція фільтрації за роком реєстрації оренди
+        function filterByRegistrationYear(feature, selectedYear) {
+            if (selectedYear === '') return true; // Показати всі записи
+            if (selectedYear === 'no_date') {
+                // Показати тільки записи без дати
+                return !feature.properties?.['Дата реєстрації оренди'];
+            }
+            if (feature.properties?.['Дата реєстрації оренди']) {
+                const dateStr = feature.properties['Дата реєстрації оренди'];
+                const year = dateStr.split('.')[2];
+                return year === selectedYear;
+            }
+            return false;
+        }
 
-        // Обновляем обработчик изменения в списке годов
-        document.getElementById('expiryYearSelect').addEventListener('change', function() {
+        // Обробник зміни в списку років (для фільтрації за роком реєстрації оренди)
+        document.getElementById('registrationYearSelect').addEventListener('change', function() {
             var selectedField = document.getElementById('fieldSelect').value;
             var selectedFile = document.getElementById('fileSelect').value;
-            var selectedYear = this.value;
+            var selectedExpiryYear = document.getElementById('expiryYearSelect').value;
+            var selectedRegistrationYear = this.value;
+            
             if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
                 clearOverlays();
                 tenantAreas = {};
                 freeArea = 0;
                 selectedFeatures.clear(); // Очищаем выделение при смене фильтра
                 
-                
                 // Фильтруем только split-части
                 const filteredFeatures = originalGeoJsonData.features.filter(feature => {
-                    // Проверяем тип объекта
-                    if (!feature.properties || feature.properties.type !== 'split') {
-                        return false;
-                    }
+                    // Фільтр за полем
+                    const fieldMatch = !selectedField || feature.properties?.['Назва поля'] === selectedField;
                     
-                    // Проверяем соответствие полю
-                    const fieldMatch = !selectedField || 
-                        feature.properties['Назва поля'] === selectedField;
+                    // Фільтр за роком завершення оренди
+                    const expiryYearMatch = filterByExpiryYear(feature, selectedExpiryYear);
                     
-                    // Проверяем соответствие году
-                    let yearMatch = true;
-                    if (selectedYear) {
-                        if (selectedYear === 'no_date') {
-                            yearMatch = !feature.properties['Дата завершення'];
-                        } else if (feature.properties['Дата завершення']) {
-                            const dateStr = feature.properties['Дата завершення'];
-                            const year = dateStr.split('.')[2];
-                            yearMatch = year === selectedYear;
-                        } else {
-                            yearMatch = false;
-                        }
-                    }
+                    // Фільтр за роком реєстрації оренди
+                    const registrationYearMatch = filterByRegistrationYear(feature, selectedRegistrationYear);
                     
-                    return fieldMatch && yearMatch;
+                    // Повертаємо true тільки якщо запис відповідає всім умовам
+                    return feature.properties?.type === 'split' && 
+                           fieldMatch && expiryYearMatch && registrationYearMatch;
                 });
-                
                 
                 const filteredData = {
                     type: "FeatureCollection",
