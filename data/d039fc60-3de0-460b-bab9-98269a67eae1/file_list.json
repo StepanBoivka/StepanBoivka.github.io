@@ -1,19 +1,19 @@
 {
     "files": [
-        "Мостиська.geojson",
         "Балицька.geojson",
         "Гостинцівська.geojson",
         "Дмитровицька.geojson",
         "Зав'язанцівська.geojson",
         "Крукеницька.geojson",
         "Маломокрянська.geojson",
+        "Мостиська.geojson",
+        "Міженецька.geojson",
         "Пнікутська.geojson",
         "Поповицька.geojson",
         "Соколянська.geojson",
         "Тщенецька.geojson",
-        "Чернівська.geojson",
-        "Шегинівська.geojson",
         "Хлиплівська.geojson",
-        "Міженецька.geojson"
+        "Чернівська.geojson",
+        "Шегинівська.geojson"
     ]
 }
