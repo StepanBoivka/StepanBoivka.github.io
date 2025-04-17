@@ -599,36 +599,24 @@
             <div class="mb-4">
                 <h6 class="border-bottom border-secondary pb-2 mb-3">Інструменти</h6>
                 <div class="d-grid gap-2">
-                    <button class="btn btn-outline-light text-start" id="cadastralSearchButton">
-                        <i class="bi bi-search me-2"></i>
-                        Пошук за списком номерів
+                    <button type="button" class="btn btn-outline-light btn-sm" id="cadastralSearchButton">
+                        <i class="bi bi-search"></i> Пошук за кадастровими номерами
                     </button>
-                    <button class="btn btn-outline-light text-start" id="statisticsButton">
-                        <i class="bi bi-pie-chart-fill me-2"></i>
-                        Статистика
+                    <button type="button" class="btn btn-outline-light btn-sm" id="freshnessButton">
+                        <i class="bi bi-clock-history"></i> Актуальність даних
                     </button>
-                    <button class="btn btn-outline-light text-start" id="exportButton">
-                        <i class="bi bi-table me-2"></i>
-                        Експорт в Excel
+                    <button type="button" class="btn btn-outline-light btn-sm" id="statisticsButton">
+                        <i class="bi bi-bar-chart"></i> Статистика
                     </button>
-                    <button class="btn btn-outline-light text-start" id="freshnessButton">
-                        <i class="bi bi-database me-2"></i>
-                        Мої ресурси
+                    <a href="registration_timeline.html" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-calendar-check"></i> Хронологія реєстрації
+                    </a>
+                    <button type="button" class="btn btn-outline-light btn-sm" id="exchangeButton">
+                        <i class="bi bi-arrow-left-right"></i> Аналіз обміну
                     </button>
-                    <button class="btn btn-outline-light text-start" id="exchangeButton">
-                        <i class="bi bi-arrow-left-right me-2"></i>
-                        Пропозиція обміну
+                    <button type="button" class="btn btn-outline-light btn-sm" id="exportButton">
+                        <i class="bi bi-file-earmark-excel"></i> Експорт в Excel
                     </button>
-                    <div id="selectionTools" style="display: none;">
-                        <button class="btn btn-outline-warning text-start w-100 mb-2" data-action="clear-selection">
-                            <i class="bi bi-trash3 me-2"></i>
-                            Очистити виділення
-                        </button>
-                        <button class="btn btn-outline-success text-start w-100" data-action="export-selected">
-                            <i class="bi bi-file-earmark-excel me-2"></i>
-                            Експортувати виділені
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
