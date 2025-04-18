@@ -3,265 +3,237 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Хронологія реєстрації договорів оренди</title>
+    <title>Аналіз конкуренції реєстрації договорів оренди</title>
     
     <!-- CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     
-    <!-- Додаємо Chart.js -->
+    <!-- Додаткові бібліотеки -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     
     <style>
-        .registration-stats {
-            background-color: #f8f9fa;
+        :root {
+            --primary-color: #198754;
+            --secondary-color: #6c757d;
+            --warning-color: #ffc107;
+            --info-color: #0dcaf0;
+        }
+
+        .competition-view {
+            background: #fff;
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
-        }
-
-        .month-group {
-            margin-bottom: 2rem;
-            border-radius: 8px;
-            background-color: #fff;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        .month-header {
-            padding: 1rem;
-            background-color: #198754;
-            color: white;
-            border-radius: 8px 8px 0 0;
-            font-weight: 500;
-        }
-
-        .registration-card {
-            border-left: 4px solid #198754;
-            margin: 1rem;
-            padding: 1rem;
-            background-color: #fff;
+        .tenant-bar {
+            height: 40px;
+            margin: 10px 0;
             border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
+            position: relative;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            padding-left: 200px;  /* Місце для назви */
         }
 
-        .registration-card:hover {
+        .tenant-bar:hover {
             transform: translateX(5px);
         }
 
-        .tenant-badge {
-            display: inline-block;
-            padding: 0.25em 0.6em;
-            font-size: 0.875em;
+        .tenant-name {
+            position: absolute;
+            left: 0;
+            width: 180px;
+            text-align: right;
+            padding-right: 15px;
             font-weight: 500;
-            border-radius: 0.25rem;
-            margin: 0.2em;
-            background-color: #e9ecef;
-            border: 1px solid #dee2e6;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
         }
 
-        .date-badge {
-            background-color: #198754;
+        .bar-container {
+            flex-grow: 1;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .bar-segment {
+            height: 100%;
+            display: inline-block;
+            transition: all 0.3s ease;
+            position: relative;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .bar-segment:hover {
+            filter: brightness(1.1);
+        }
+
+        .comparison-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .comparison-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .tooltip-custom {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
             color: white;
-            padding: 0.25em 0.6em;
-            border-radius: 0.25rem;
-            font-size: 0.875em;
-            margin-right: 0.5em;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
         }
 
-        .cadastral-number {
-            color: #6c757d;
-            font-family: monospace;
-            font-size: 0.9em;
+        .filters-panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
         }
 
-        .area-badge {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            padding: 0.25em 0.6em;
-            border-radius: 0.25rem;
-            font-size: 0.875em;
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
         }
 
-        .status-badge {
-            padding: 0.25em 0.6em;
-            border-radius: 0.25rem;
-            font-size: 0.75em;
-        }
-
-        .status-active {
+        .trend-up {
             background-color: #d1e7dd;
             color: #0f5132;
         }
 
-        .status-pending {
+        .trend-down {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+
+        .trend-stable {
             background-color: #fff3cd;
             color: #664d03;
         }
 
-        /* Адаптивність для мобільних */
         @media (max-width: 768px) {
-            .registration-card {
-                margin: 0.5rem;
-                padding: 0.75rem;
+            .tenant-bar {
+                padding-left: 0;
+                margin-left: 0;
+                flex-direction: column;
+                height: auto;
+                align-items: flex-start;
+                gap: 5px;
             }
 
-            .month-header {
-                padding: 0.75rem;
+            .tenant-name {
+                position: relative;
+                width: 100%;
+                text-align: left;
+                padding: 5px 0;
             }
-        }
 
-        /* Анімація появи нових елементів */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
+            .bar-container {
+                width: 100%;
+                height: 30px;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .registration-card {
-            animation: fadeIn 0.3s ease-out forwards;
-        }
-
-        .chart-container {
-            background-color: #fff;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            height: 400px; /* Фіксована висота */
-            position: relative;
-        }
-
-        /* Змінюємо розмір canvas всередині контейнера */
-        #registrationChart {
-            max-height: 350px !important; /* Залишаємо місце для елементів керування та легенди */
-        }
-
-        .chart-controls {
-            margin-bottom: 15px;
-        }
-
-        .chart-type-toggle {
-            display: inline-block;
-        }
-
-        .chart-type-toggle .btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
-        }
-
-        .tenants-table {
-            background-color: #fff;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            overflow-x: auto;
         }
 
         .matrix-table {
             width: 100%;
+            margin-bottom: 0;
+            background-color: #fff;
+        }
+        .matrix-table th {
+            background-color: #f8f9fa;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .matrix-table td, .matrix-table th {
+            padding: 0.25rem;
+            text-align: center;
+        }
+        .table-responsive {
+            scrollbar-width: thin;
+        }
+        .matrix-table {
+            width: 100%;
             border-collapse: collapse;
+        }
+        
+        .matrix-table th,
+        .matrix-table td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        .matrix-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        
+        .matrix-cell {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .cell-value-0 { background-color: #ffffff; }
+        .cell-value-1 { background-color: #d1e7dd; }
+        .cell-value-2 { background-color: #a3cfbb; }
+        .cell-value-3 { background-color: #75b798; }
+        .cell-value-4 { background-color: #479f76; }
+        .cell-value-5 { background-color: #198754; }
+        .matrix-table {
+            border-collapse: collapse;
+            margin: 20px auto;
+            font-family: Arial, sans-serif;
+        }
+
+        .matrix-table th, .matrix-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
         }
 
         .matrix-table th {
-            position: sticky;
-            top: 0;
-            background-color: #fff;
-            z-index: 1;
-            padding: 8px;
-            border: 1px solid #dee2e6;
-            text-align: center;
+            background-color: #f5f5f5;
+            font-weight: bold;
         }
 
-        .matrix-table td {
-            padding: 8px;
-            border: 1px solid #dee2e6;
-            text-align: center;
-            transition: background-color 0.2s;
+        .matrix-cell {
+            width: 40px;
+            height: 40px;
         }
 
-        .matrix-table tr:hover {
-            background-color: rgba(25, 135, 84, 0.05);
-        }
-
-        .matrix-table .tenant-name {
-            position: sticky;
-            left: 0;
-            background-color: #fff;
-            font-weight: 500;
-            text-align: left;
-            z-index: 2;
-        }
-
-        .matrix-table th.tenant-name {
-            z-index: 3;
-        }
-
-        .heat-cell {
-            position: relative;
-            cursor: pointer;
-        }
-
-        .heat-cell-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .heat-cell-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(25, 135, 84, 0);
-            opacity: 0.2;
-            z-index: 0;
-        }
-
-        .year-header {
-            background-color: #f8f9fa;
-            font-weight: 500;
-        }
-
-        .month-header {
-            font-size: 0.9em;
-            white-space: nowrap;
-        }
-
-        .filter-row {
-            margin-bottom: 1rem;
-        }
-
-        .table-filters {
-            margin-bottom: 1rem;
-            padding: 1rem;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .total-row td {
-            background-color: #f8f9fa;
-            font-weight: 500;
-        }
-
-        .matrix-tooltip {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.875rem;
-            z-index: 1000;
-            pointer-events: none;
-            display: none;
-        }
+        .cell-value-0 { background-color: #ffffff; }
+        .cell-value-1 { background-color: #ffe5e5; }
+        .cell-value-2 { background-color: #ffcccc; }
+        .cell-value-3 { background-color: #ffb3b3; }
+        .cell-value-4 { background-color: #ff9999; }
+        .cell-value-5 { background-color: #ff8080; }
     </style>
 </head>
 <body class="bg-light">
@@ -294,697 +266,694 @@
 
     <!-- Основний контент -->
     <div class="container-fluid" style="margin-top: 60px;">
-        <!-- Графік -->
-        <div class="chart-container">
-            <div class="chart-controls">
-                <div class="row align-items-center">
-                    <div class="col-auto">
-                        <div class="chart-type-toggle btn-group" role="group">
-                            <input type="radio" class="btn-check" name="chartType" id="byMonth" value="month" checked>
-                            <label class="btn btn-outline-success btn-sm" for="byMonth">По місяцях</label>
-                            
-                            <input type="radio" class="btn-check" name="chartType" id="byYear" value="year">
-                            <label class="btn btn-outline-success btn-sm" for="byYear">По роках</label>
-                        </div>
+        <!-- Фільтри -->
+        <div class="filters-panel">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control form-control-sm" id="tenantFilter" 
+                           placeholder="Пошук орендаря...">
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select form-select-sm" id="viewType">
+                        <option value="year">По роках</option>
+                        <option value="month">По місяцях</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="showTrends" checked>
+                        <label class="form-check-label" for="showTrends">
+                            Показувати тренди
+                        </label>
                     </div>
-                    <div class="col-auto">
-                        <select class="form-select form-select-sm" id="chartView">
-                            <option value="stacked">Накопичувальний</option>
-                            <option value="grouped">Згрупований</option>
-                        </select>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="showAllYears" checked>
+                        <label class="form-check-label" for="showAllYears">
+                            Показувати всі роки на графіках
+                        </label>
                     </div>
                 </div>
             </div>
-            <canvas id="registrationChart"></canvas>
         </div>
 
-        <!-- Таблиця орендарів -->
-        <div class="tenants-table">
-            <h5 class="mb-3">Матриця реєстрацій за орендарями</h5>
-            
-            <!-- Фільтри -->
-            <div class="table-filters">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <input type="text" class="form-control form-control-sm" id="tenantFilter" placeholder="Пошук орендаря...">
-                    </div>
-                    <div class="col-md-4">
-                        <select class="form-select form-select-sm" id="yearRangeFilter">
-                            <option value="">Всі роки</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="showEmptyRows" checked>
-                            <label class="form-check-label" for="showEmptyRows">
-                                Показувати порожні рядки
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+        <!-- Візуалізація змагання орендарів -->
+        <div class="competition-view" id="competitionView">
+            <h5 class="mb-4">Порівняння активності реєстрації</h5>
             <div class="table-responsive">
-                <div class="matrix-tooltip" id="cellTooltip"></div>
-                <table class="matrix-table">
-                    <thead id="matrixHeader">
+                <table class="table table-bordered matrix-table" id="matrixTable">
+                    <thead>
+                        <tr>
+                            <th>Орендар</th>
+                            <!-- Заголовки періодів будуть додані через JavaScript -->
+                        </tr>
                     </thead>
-                    <tbody id="matrixBody">
+                    <tbody>
+                        <!-- Дані будуть додані через JavaScript -->
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Статистика -->
-        <div class="registration-stats">
-            <div class="row">
-                <div class="col-md-3 mb-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h6 class="card-title">Всього договорів</h6>
-                            <h3 class="card-text" id="totalContracts">0</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h6 class="card-title">Унікальних орендарів</h6>
-                            <h3 class="card-text" id="uniqueTenants">0</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h6 class="card-title">Середня площа (га)</h6>
-                            <h3 class="card-text" id="averageArea">0</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h6 class="card-title">Загальна площа (га)</h6>
-                            <h3 class="card-text" id="totalArea">0</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- Порівняльна статистика -->
+        <div class="competition-view">
+            <h5 class="mb-4">Детальна статистика по орендарях</h5>
+            <div id="tenantsStats" class="row"></div>
         </div>
 
-        <!-- Заміняємо старий timeline на нову структуру -->
-        <div id="registrations-container">
-            <!-- Тут буде згенерована хронологія по місяцях -->
-        </div>
+        <!-- Спливаюча підказка -->
+        <div id="tooltip" class="tooltip-custom"></div>
     </div>
 
     <!-- Скрипти -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Базові змінні
         let originalData = null;
-        
-        // Завантаження списку файлів
-        fetch('data/file_list.json')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Помилка завантаження: ' + response.status);
-                }
-                return response.json();
-            })
-            .then(response => {
-                const fileSelect = document.getElementById('fileSelect');
-                
-                // Перевіряємо структуру даних
-                if (!response.files || !Array.isArray(response.files)) {
-                    console.error('Неправильна структура даних:', response);
-                    throw new Error('Неправильна структура даних');
-                }
-                
-                const data = response.files;
-                
-                // Очищуємо список перед додаванням нових опцій
-                while (fileSelect.options.length > 1) {
-                    fileSelect.remove(1);
-                }
-                
-                // Додаємо нові опції
-                data.forEach(filename => {
-                    if (filename && typeof filename === 'string' && filename.endsWith('.geojson')) {
-                        const option = document.createElement('option');
-                        option.value = filename;
-                        option.textContent = filename.replace('.geojson', '');
-                        fileSelect.appendChild(option);
-                    }
-                });
-                
-                // Сортуємо опції за алфавітом
-                const options = Array.from(fileSelect.options).slice(1);
-                options.sort((a, b) => a.text.localeCompare(b.text, 'uk'));
-                while (fileSelect.options.length > 1) {
-                    fileSelect.remove(1);
-                }
-                options.forEach(option => fileSelect.add(option));
-            })
-            .catch(error => {
-                console.error('Помилка завантаження списку файлів:', error);
-                // Показуємо повідомлення про помилку користувачу
-                const fileSelect = document.getElementById('fileSelect');
-                const errorOption = document.createElement('option');
-                errorOption.value = '';
-                errorOption.textContent = 'Помилка завантаження списку';
-                errorOption.disabled = true;
-                fileSelect.appendChild(errorOption);
-            });
+        const months = [
+            'Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень',
+            'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'
+        ];
 
-        // Обробник вибору файлу
-        document.getElementById('fileSelect').addEventListener('change', function() {
-            const selectedFile = this.value;
-            if (selectedFile) {
-                loadGeoJsonData(selectedFile);
-            }
-        });
+        // Кольори для років
+        const yearColors = {
+            '2020': '#2563eb', // синій
+            '2021': '#16a34a', // зелений
+            '2022': '#ea580c', // помаранчевий
+            '2023': '#9333ea', // фіолетовий
+            '2024': '#dc2626', // червоний
+            '2025': '#0891b2'  // блакитний
+        };
 
-        // Завантаження GeoJSON даних
-        function loadGeoJsonData(filename) {
-            fetch('data/' + filename)
-                .then(response => response.json())
-                .then(data => {
-                    originalData = data;
-                    processData(data);
-                })
-                .catch(error => console.error('Помилка завантаження GeoJSON:', error));
-        }
-
-        // Оновлена функція обробки даних
+        // Функції для обробки даних
         function processData(data) {
-            // Фільтруємо тільки записи з датою реєстрації
             const features = data.features.filter(f => 
                 f.properties && 
                 f.properties['Дата реєстрації оренди'] &&
                 f.properties.type === 'split'
             );
 
-            // Сортуємо за датою реєстрації (найновіші зверху)
-            features.sort((a, b) => {
-                const dateA = parseUkrainianDate(a.properties['Дата реєстрації оренди']);
-                const dateB = parseUkrainianDate(b.properties['Дата реєстрації оренди']);
-                return dateB - dateA; // Змінюємо порядок сортування
-            });
-
-            // Збираємо статистику
-            const stats = calculateStats(features);
-            updateStats(stats);
-
-            // Оновлюємо список років
-            updateYearSelect(features);
-
-            // Генеруємо групований список
-            generateGroupedRegistrations(features);
-            updateChart(features); // Додаємо оновлення графіка
-            updateTenantsTable(features); // Додаємо оновлення таблиці орендарів
-        }
-
-        // Парсинг української дати (DD.MM.YYYY)
-        function parseUkrainianDate(dateStr) {
-            const [day, month, year] = dateStr.split('.').map(Number);
-            return new Date(year, month - 1, day);
-        }
-
-        // Форматування дати
-        function formatDate(date) {
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            return `${day}.${month}.${year}`;
-        }
-
-        // Функція форматування місяця
-        function formatMonth(date) {
-            const months = [
-                'Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень',
-                'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'
-            ];
-            return `${months[date.getMonth()]} ${date.getFullYear()}`;
-        }
-
-        // Розрахунок статистики
-        function calculateStats(features) {
-            const tenants = new Set();
-            let totalArea = 0;
+            // Підготовка даних для візуалізації
+            const tenantsData = prepareTenantsData(features);
             
-            features.forEach(f => {
-                const tenant = f.properties['Орендар частини'] || f.properties['Орендар'];
-                if (tenant) tenants.add(tenant);
-                totalArea += parseFloat(f.properties['Площа частини']) || 0;
-            });
-
-            return {
-                totalContracts: features.length,
-                uniqueTenants: tenants.size,
-                averageArea: features.length ? (totalArea / features.length).toFixed(2) : 0,
-                totalArea: totalArea.toFixed(2)
-            };
-        }
-
-        // Оновлення статистики
-        function updateStats(stats) {
-            document.getElementById('totalContracts').textContent = stats.totalContracts;
-            document.getElementById('uniqueTenants').textContent = stats.uniqueTenants;
-            document.getElementById('averageArea').textContent = stats.averageArea;
-            document.getElementById('totalArea').textContent = stats.totalArea;
-        }
-
-        // Оновлення списку років
-        function updateYearSelect(features) {
+            // Оновлюємо список років у фільтрі
             const yearSelect = document.getElementById('yearSelect');
-            yearSelect.innerHTML = '<option value="">Всі роки</option>';
+            const currentYear = yearSelect.value;
             
-            const years = new Set(features.map(f => {
-                const date = parseUkrainianDate(f.properties['Дата реєстрації оренди']);
-                return date.getFullYear();
-            }));
-
-            Array.from(years).sort().forEach(year => {
-                const option = document.createElement('option');
-                option.value = year;
-                option.textContent = year + ' рік';
-                yearSelect.appendChild(option);
-            });
-
-            // Додаємо обробник події
-            yearSelect.addEventListener('change', function() {
-                if (originalData) {
-                    const selectedYear = this.value;
-                    const filteredFeatures = originalData.features.filter(f => {
-                        if (!f.properties['Дата реєстрації оренди']) return false;
-                        const date = parseUkrainianDate(f.properties['Дата реєстрації оренди']);
-                        return selectedYear === '' || date.getFullYear() === parseInt(selectedYear);
-                    });
-                    const filteredData = {
-                        type: "FeatureCollection",
-                        features: filteredFeatures
-                    };
-                    processData(filteredData);
-                }
-            });
-        }
-
-        // Нова функція генерації згрупованого списку
-        function generateGroupedRegistrations(features) {
-            const container = document.getElementById('registrations-container');
-            container.innerHTML = '';
-
-            // Групуємо реєстрації по місяцях
-            const groupedByMonth = features.reduce((groups, feature) => {
-                const date = parseUkrainianDate(feature.properties['Дата реєстрації оренди']);
-                const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
-                if (!groups[monthKey]) {
-                    groups[monthKey] = {
-                        date: date,
-                        items: []
-                    };
-                }
-                groups[monthKey].items.push(feature);
-                return groups;
-            }, {});
-
-            // Створюємо групи місяців
-            Object.values(groupedByMonth).forEach(group => {
-                const monthGroup = document.createElement('div');
-                monthGroup.className = 'month-group';
-
-                const monthHeader = document.createElement('div');
-                monthHeader.className = 'month-header';
-                monthHeader.textContent = formatMonth(group.date);
-                monthGroup.appendChild(monthHeader);
-
-                // Додаємо реєстрації в групу
-                group.items.forEach(feature => {
-                    const props = feature.properties;
-                    const date = parseUkrainianDate(props['Дата реєстрації оренди']);
-                    const tenant = props['Орендар частини'] || props['Орендар'] || 'Невідомий орендар';
-                    const area = parseFloat(props['Площа частини']).toFixed(4);
-                    const cadastralNumber = props['Кадастровий номер'];
-                    const status = props['Статус'] || 'Статус не вказано';
-
-                    const card = document.createElement('div');
-                    card.className = 'registration-card';
-                    card.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <span class="date-badge">${formatDate(date)}</span>
-                            <span class="tenant-badge">${tenant}</span>
-                        </div>
-                        <div class="mb-2">
-                            <span class="cadastral-number">${cadastralNumber}</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="area-badge">
-                                <i class="bi bi-rulers"></i> ${area} га
-                            </span>
-                            <span class="status-badge ${status.toLowerCase().includes('обробляється') ? 'status-active' : 'status-pending'}">
-                                ${status}
-                            </span>
-                        </div>
-                    `;
-
-                    monthGroup.appendChild(card);
-                });
-
-                container.appendChild(monthGroup);
-            });
-        }
-
-        let registrationChart = null;
-
-        // Кольори для графіка
-        const colors = [
-            '#198754', '#dc3545', '#ffc107', '#0dcaf0', '#6610f2',
-            '#fd7e14', '#20c997', '#0d6efd', '#d63384', '#198754'
-        ];
-
-        // Функція для підготовки даних для графіка
-        function prepareChartData(features) {
-            const chartType = document.querySelector('input[name="chartType"]:checked').value;
+            yearSelect.innerHTML = '<option value="">Всі роки</option>' +
+                Array.from(tenantsData.years)
+                    .sort((a, b) => b - a)
+                    .map(year => `<option value="${year}" ${year === currentYear ? 'selected' : ''}>${year}</option>`)
+                    .join('');
             
-            if (chartType === 'year') {
-                // Групуємо дані за роками
-                const yearData = features.reduce((acc, feature) => {
-                    const date = parseUkrainianDate(feature.properties['Дата реєстрації оренди']);
-                    const year = date.getFullYear().toString();
-                    
-                    if (!acc[year]) {
-                        acc[year] = 0;
-                    }
-                    acc[year]++;
-                    return acc;
-                }, {});
-
-                // Сортуємо роки
-                const sortedYears = Object.keys(yearData).sort();
-
-                return {
-                    labels: sortedYears,
-                    datasets: [{
-                        label: 'Кількість реєстрацій',
-                        data: sortedYears.map(year => yearData[year]),
-                        backgroundColor: '#198754',
-                        borderColor: '#198754',
-                        borderWidth: 1
-                    }]
-                };
-            } else {
-                // Групуємо дані за місяцями
-                const monthData = features.reduce((acc, feature) => {
-                    const date = parseUkrainianDate(feature.properties['Дата реєстрації оренди']);
-                    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                    
-                    if (!acc[key]) {
-                        acc[key] = 0;
-                    }
-                    acc[key]++;
-                    return acc;
-                }, {});
-
-                // Сортуємо місяці
-                const sortedMonths = Object.keys(monthData).sort();
-
-                return {
-                    labels: sortedMonths.map(date => {
-                        const [year, month] = date.split('-');
-                        return `${months[parseInt(month) - 1]} ${year}`;
-                    }),
-                    datasets: [{
-                        label: 'Кількість реєстрацій',
-                        data: sortedMonths.map(month => monthData[month]),
-                        backgroundColor: '#198754',
-                        borderColor: '#198754',
-                        borderWidth: 1
-                    }]
-                };
-            }
+            // Оновлення візуалізацій
+            updateCompetitionView(tenantsData);
+            updateTenantsStats(tenantsData);
         }
 
-        // Функція для оновлення графіка
-        function updateChart(features) {
-            const ctx = document.getElementById('registrationChart').getContext('2d');
-            const chartType = document.querySelector('input[name="chartType"]:checked').value;
-            
-            if (registrationChart) {
-                registrationChart.destroy();
-            }
-
-            const data = prepareChartData(features);
-
-            registrationChart = new Chart(ctx, {
-                type: 'bar',
-                data: data,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    aspectRatio: 2,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: chartType === 'year' ? 'Кількість реєстрацій по роках' : 'Кількість реєстрацій по місяцях',
-                            font: {
-                                size: 16
-                            }
-                        },
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            title: {
-                                display: true,
-                                text: chartType === 'year' ? 'Рік' : 'Місяць'
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            },
-                            title: {
-                                display: true,
-                                text: 'Кількість реєстрацій'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Додаємо обробники подій для елементів керування графіком
-        document.querySelectorAll('input[name="chartType"]').forEach(input => {
-            input.addEventListener('change', () => {
-                if (originalData) {
-                    updateChart(getFilteredFeatures()); // Оновлюємо тільки графік
-                }
-            });
-        });
-
-        // Допоміжна функція для отримання відфільтрованих даних
-        function getFilteredFeatures() {
-            if (!originalData) return [];
-            
-            const selectedYear = document.getElementById('yearSelect').value;
-            return originalData.features.filter(f => {
-                if (!f.properties['Дата реєстрації оренди'] || f.properties.type !== 'split') return false;
-                if (!selectedYear) return true;
-                
-                const date = parseUkrainianDate(f.properties['Дата реєстрації оренди']);
-                return date.getFullYear() === parseInt(selectedYear);
-            });
-        }
-
-        // Функція для оновлення таблиці орендарів
-        function updateTenantsTable(features) {
-            const matrixData = prepareMatrixData(features);
-            renderMatrixTable(matrixData);
-            setupMatrixFilters(matrixData);
-            setupTooltips();
-        }
-
-        // Підготовка даних для матриці
-        function prepareMatrixData(features) {
+        function prepareTenantsData(features) {
             const data = {
-                tenants: new Set(),
+                tenants: {},
+                maxRegistrations: 0,
+                totalArea: 0,
                 years: new Set(),
-                months: new Set(),
-                cells: {},
-                maxCount: 0
+                months: new Set()
             };
 
             features.forEach(feature => {
                 const date = parseUkrainianDate(feature.properties['Дата реєстрації оренди']);
-                const year = date.getFullYear();
-                const month = date.getMonth();
                 const tenant = feature.properties['Орендар частини'] || feature.properties['Орендар'] || 'Невідомий орендар';
                 const area = parseFloat(feature.properties['Площа частини']) || 0;
+                const year = date.getFullYear();
+                const month = date.getMonth();
 
-                data.tenants.add(tenant);
-                data.years.add(year);
-                data.months.add(month);
-
-                const key = `${tenant}|${year}|${month}`;
-                if (!data.cells[key]) {
-                    data.cells[key] = {
-                        count: 0,
+                if (!data.tenants[tenant]) {
+                    data.tenants[tenant] = {
+                        total: 0,
                         area: 0,
-                        dates: []
+                        byYear: {},
+                        byMonth: {},
+                        lastRegistration: null,
+                        trend: []
                     };
                 }
 
-                data.cells[key].count++;
-                data.cells[key].area += area;
-                data.cells[key].dates.push(date);
+                data.years.add(year);
+                data.months.add(month);
 
-                data.maxCount = Math.max(data.maxCount, data.cells[key].count);
+                // Загальні дані
+                data.tenants[tenant].total++;
+                data.tenants[tenant].area += area;
+                data.totalArea += area;
+
+                // По роках
+                if (!data.tenants[tenant].byYear[year]) {
+                    data.tenants[tenant].byYear[year] = {
+                        count: 0,
+                        area: 0
+                    };
+                }
+                data.tenants[tenant].byYear[year].count++;
+                data.tenants[tenant].byYear[year].area += area;
+
+                // По місяцях
+                const monthKey = `${year}-${month}`;
+                if (!data.tenants[tenant].byMonth[monthKey]) {
+                    data.tenants[tenant].byMonth[monthKey] = {
+                        count: 0,
+                        area: 0
+                    };
+                }
+                data.tenants[tenant].byMonth[monthKey].count++;
+                data.tenants[tenant].byMonth[monthKey].area += area;
+
+                // Оновлення останньої реєстрації
+                if (!data.tenants[tenant].lastRegistration || 
+                    date > data.tenants[tenant].lastRegistration) {
+                    data.tenants[tenant].lastRegistration = date;
+                }
+
+                // Оновлення максимальної кількості реєстрацій
+                data.maxRegistrations = Math.max(data.maxRegistrations, data.tenants[tenant].total);
+            });
+
+            // Розрахунок трендів
+            Object.keys(data.tenants).forEach(tenant => {
+                const tenantData = data.tenants[tenant];
+                const years = Object.keys(tenantData.byYear).sort();
+                if (years.length >= 2) {
+                    const lastYear = years[years.length - 1];
+                    const prevYear = years[years.length - 2];
+                    const change = tenantData.byYear[lastYear].count - tenantData.byYear[prevYear].count;
+                    tenantData.trend = {
+                        direction: Math.sign(change),
+                        percentage: Math.abs(Math.round(change / tenantData.byYear[prevYear].count * 100))
+                    };
+                }
             });
 
             return data;
         }
 
-        // Рендеринг матричної таблиці
-        function renderMatrixTable(data) {
-            const header = document.getElementById('matrixHeader');
-            const body = document.getElementById('matrixBody');
-            const years = Array.from(data.years).sort((a, b) => b - a);
-            const tenants = Array.from(data.tenants).sort();
-
-            // Створюємо заголовок
-            let headerHtml = '<tr><th class="tenant-name">Орендар</th>';
-            years.forEach(year => {
-                headerHtml += `<th colspan="12" class="year-header">${year}</th>`;
-            });
-            headerHtml += '</tr><tr><th class="tenant-name"></th>';
+        // Візуалізація змагання орендарів
+        function updateCompetitionView(data) {
+            const selectedYear = document.getElementById('yearSelect').value;
+            const viewType = document.getElementById('viewType').value;
+            const showTrends = document.getElementById('showTrends').checked;
             
-            years.forEach(() => {
-                months.forEach(month => {
-                    headerHtml += `<th class="month-header">${month.slice(0, 3)}</th>`;
-                });
-            });
-            header.innerHTML = headerHtml + '</tr>';
+            // Оновлюємо легенду
+            const legendContainer = document.getElementById('yearLegend');
+            const yearsToShow = selectedYear ? [selectedYear] : Array.from(data.years);
+            
+            legendContainer.innerHTML = yearsToShow
+                .sort((a, b) => a - b)
+                .map(year => `
+                    <div class="d-flex align-items-center">
+                        <div style="width: 20px; height: 20px; background-color: ${yearColors[year] || 'var(--primary-color)'}; 
+                                  border-radius: 4px; margin-right: 8px;"></div>
+                        <span>${year}</span>
+                    </div>
+                `).join('');
 
-            // Створюємо рядки для кожного орендаря
-            body.innerHTML = tenants.map(tenant => {
-                let row = `<tr><td class="tenant-name">${tenant}</td>`;
-                years.forEach(year => {
-                    months.forEach((_, monthIndex) => {
-                        const key = `${tenant}|${year}|${monthIndex}`;
-                        const cell = data.cells[key] || { count: 0, area: 0 };
-                        const intensity = cell.count ? (cell.count / data.maxCount) : 0;
+            const container = document.getElementById('tenantsCompetition');
+            
+            // Фільтруємо дані по вибраному року
+            const filteredTenants = {};
+            Object.entries(data.tenants).forEach(([tenant, tenantData]) => {
+                if (selectedYear) {
+                    // Якщо вибрано рік, показуємо тільки дані за цей рік
+                    if (tenantData.byYear[selectedYear]) {
+                        filteredTenants[tenant] = {
+                            ...tenantData,
+                            total: tenantData.byYear[selectedYear].count,
+                            area: tenantData.byYear[selectedYear].area,
+                            byMonth: Object.fromEntries(
+                                Object.entries(tenantData.byMonth)
+                                    .filter(([key]) => key.startsWith(selectedYear))
+                            )
+                        };
+                    }
+                } else {
+                    // Якщо рік не вибрано, показуємо всі дані
+                    filteredTenants[tenant] = tenantData;
+                }
+            });
+
+            // Знаходимо максимальну кількість реєстрацій для масштабування
+            const maxRegistrations = Math.max(
+                ...Object.values(filteredTenants)
+                    .map(t => selectedYear ? (t.byYear[selectedYear]?.count || 0) : t.total)
+            );
+            
+            // Сортуємо орендарів за кількістю реєстрацій
+            const sortedTenants = Object.entries(filteredTenants)
+                .sort((a, b) => (b[1].total - a[1].total));
+
+            container.innerHTML = '';
+            container.style.position = 'relative';
+            container.style.paddingLeft = '200px';
+
+            sortedTenants.forEach(([tenant, tenantData]) => {
+                const barContainer = document.createElement('div');
+                barContainer.className = 'tenant-bar';
+                
+                // Додаємо назву орендаря
+                const nameContainer = document.createElement('div');
+                nameContainer.className = 'tenant-name';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = tenant;
+                nameContainer.appendChild(nameSpan);
+
+                // Додаємо тренд, якщо він є і не вибрано конкретний рік
+                if (!selectedYear && showTrends && tenantData.trend) {
+                    const trendSpan = document.createElement('span');
+                    const trendClass = tenantData.trend.direction > 0 ? 'trend-up' : 
+                                     tenantData.trend.direction < 0 ? 'trend-down' : 
+                                     'trend-stable';
+                    trendSpan.className = `trend-indicator ${trendClass}`;
+                    trendSpan.innerHTML = `${tenantData.trend.direction > 0 ? '↑' : '↓'} ${tenantData.trend.percentage}%`;
+                    nameContainer.appendChild(trendSpan);
+                }
+
+                // Створюємо контейнер для сегментів
+                const barWrapper = document.createElement('div');
+                barWrapper.className = 'bar-container';
+
+                // Отримуємо дані по періодах
+                let items;
+                if (selectedYear) {
+                    // Якщо вибрано рік, показуємо помісячні дані
+                    items = Array.from({length: 12}, (_, i) => {
+                        const monthKey = `${selectedYear}-${i}`;
+                        return [monthKey, tenantData.byMonth[monthKey] || { count: 0, area: 0 }];
+                    });
+                } else if (viewType === 'year') {
+                    items = Object.entries(tenantData.byYear).sort((a, b) => a[0] - b[0]);
+                } else {
+                    items = Object.entries(tenantData.byMonth).sort((a, b) => a[0].localeCompare(b[0]));
+                }
+
+                // Розраховуємо масштаб для сегментів
+                const totalWidth = container.offsetWidth - 220;
+                const scale = totalWidth / maxRegistrations;
+
+                // Додаємо сегменти
+                items.forEach(([period, periodData]) => {
+                    if (periodData.count > 0) {
+                        const segment = document.createElement('div');
+                        segment.className = 'bar-segment';
+                        segment.style.width = Math.max(periodData.count * scale, 2) + 'px';
                         
-                        row += `
-                            <td class="heat-cell" data-count="${cell.count}" data-area="${cell.area.toFixed(4)}" data-tenant="${tenant}" data-year="${year}" data-month="${months[monthIndex]}">
-                                <div class="heat-cell-content">${cell.count || ''}</div>
-                                <div class="heat-cell-background" style="background-color: rgba(25, 135, 84, ${intensity})"></div>
-                            </td>`;
-                    });
-                });
-                return row + '</tr>';
-            }).join('');
+                        // Встановлюємо колір залежно від режиму перегляду
+                        const year = period.split('-')[0];
+                        segment.style.backgroundColor = selectedYear ? 
+                            `hsl(${(parseInt(period.split('-')[1]) * 30) % 360}, 70%, 50%)` : 
+                            yearColors[year] || 'var(--primary-color)';
+                        
+                        // Додаємо підказку при наведенні
+                        segment.addEventListener('mouseover', (e) => {
+                            const tooltip = document.getElementById('tooltip');
+                            tooltip.innerHTML = `
+                                <strong>${tenant}</strong><br>
+                                Період: ${selectedYear ? 
+                                    months[parseInt(period.split('-')[1])] + ' ' + period.split('-')[0] :
+                                    (viewType === 'year' ? period : 
+                                        months[parseInt(period.split('-')[1])] + ' ' + period.split('-')[0])}<br>
+                                Кількість: ${periodData.count}<br>
+                                Площа: ${periodData.area.toFixed(2)} га
+                            `;
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = (e.pageX + 10) + 'px';
+                            tooltip.style.top = (e.pageY + 10) + 'px';
+                        });
 
-            // Додаємо підсумковий рядок
-            let totalRow = '<tr class="total-row"><td class="tenant-name">Всього</td>';
-            years.forEach(year => {
-                months.forEach((_, monthIndex) => {
-                    let monthTotal = 0;
-                    tenants.forEach(tenant => {
-                        const key = `${tenant}|${year}|${monthIndex}`;
-                        monthTotal += (data.cells[key]?.count || 0);
-                    });
-                    totalRow += `<td>${monthTotal || ''}</td>`;
-                });
-            });
-            body.innerHTML += totalRow + '</tr>';
-        }
+                        segment.addEventListener('mouseout', () => {
+                            document.getElementById('tooltip').style.display = 'none';
+                        });
 
-        // Налаштування фільтрів для матриці
-        function setupMatrixFilters(data) {
-            const tenantFilter = document.getElementById('tenantFilter');
-            const yearRangeFilter = document.getElementById('yearRangeFilter');
-            const showEmptyRows = document.getElementById('showEmptyRows');
-
-            // Оновлюємо список років у фільтрі
-            const years = Array.from(data.years).sort((a, b) => b - a);
-            yearRangeFilter.innerHTML = '<option value="">Всі роки</option>' +
-                years.map(year => `<option value="${year}">${year}</option>`).join('');
-
-            // Функція фільтрації
-            const filterTable = () => {
-                const filterText = tenantFilter.value.toLowerCase();
-                const selectedYear = yearRangeFilter.value;
-                const showEmpty = showEmptyRows.checked;
-
-                document.querySelectorAll('#matrixBody tr:not(.total-row)').forEach(row => {
-                    const tenant = row.querySelector('.tenant-name').textContent.toLowerCase();
-                    let hasData = false;
-                    
-                    // Перевіряємо наявність даних в рядку
-                    row.querySelectorAll('.heat-cell').forEach(cell => {
-                        if (parseInt(cell.dataset.count) > 0) {
-                            hasData = true;
-                        }
-                        // Фільтруємо по року
-                        if (selectedYear && cell.dataset.year !== selectedYear) {
-                            cell.style.display = 'none';
-                        } else {
-                            cell.style.display = '';
-                        }
-                    });
-
-                    // Показуємо/приховуємо рядок
-                    if (tenant.includes(filterText) && (showEmpty || hasData)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
+                        barWrapper.appendChild(segment);
                     }
                 });
-            };
 
-            // Додаємо обробники подій
-            tenantFilter.addEventListener('input', filterTable);
-            yearRangeFilter.addEventListener('change', filterTable);
-            showEmptyRows.addEventListener('change', filterTable);
+                barContainer.appendChild(nameContainer);
+                barContainer.appendChild(barWrapper);
+                container.appendChild(barContainer);
+            });
         }
 
-        // Налаштування спливаючих підказок
-        function setupTooltips() {
-            const tooltip = document.getElementById('cellTooltip');
+        // Візуалізація статистики по орендарях
+        function updateTenantsStats(data) {
+            const container = document.getElementById('tenantsStats');
+            const selectedYear = document.getElementById('yearSelect').value;
+            const showAllYears = document.getElementById('showAllYears').checked;
             
-            document.querySelectorAll('.heat-cell').forEach(cell => {
-                cell.addEventListener('mouseover', (e) => {
-                    const count = cell.dataset.count;
-                    if (count > 0) {
-                        tooltip.innerHTML = `
-                            ${cell.dataset.tenant}<br>
-                            ${cell.dataset.month} ${cell.dataset.year}<br>
-                            Кількість: ${count}<br>
-                            Площа: ${cell.dataset.area} га
-                        `;
-                        tooltip.style.display = 'block';
-                    }
-                });
+            // Фільтруємо дані по вибраному року для відображення статистики
+            const filteredTenants = {};
+            Object.entries(data.tenants).forEach(([tenant, tenantData]) => {
+                if (selectedYear && tenantData.byYear[selectedYear]) {
+                    filteredTenants[tenant] = {
+                        ...tenantData,
+                        total: tenantData.byYear[selectedYear].count,
+                        area: tenantData.byYear[selectedYear].area
+                    };
+                } else if (!selectedYear) {
+                    filteredTenants[tenant] = tenantData;
+                }
+            });
 
-                cell.addEventListener('mousemove', (e) => {
-                    if (cell.dataset.count > 0) {
-                        tooltip.style.left = (e.pageX + 10) + 'px';
-                        tooltip.style.top = (e.pageY + 10) + 'px';
-                    }
-                });
+            const sortedTenants = Object.entries(filteredTenants)
+                .sort((a, b) => b[1].total - a[1].total);
 
-                cell.addEventListener('mouseout', () => {
-                    tooltip.style.display = 'none';
+            container.innerHTML = '';
+
+            sortedTenants.forEach(([tenant, tenantData]) => {
+                const card = document.createElement('div');
+                card.className = 'col-md-4 col-lg-3 mb-4';
+                
+                // Створюємо матричну таблицю замість графіка
+                const table = document.createElement('table');
+                table.className = 'table table-sm table-bordered matrix-table';
+                table.style.fontSize = '0.8rem';
+                
+                // Визначаємо роки для відображення
+                const years = showAllYears ? 
+                    Object.keys(tenantData.byYear).sort() : 
+                    (selectedYear ? [selectedYear] : Object.keys(tenantData.byYear).sort());
+                
+                // Створюємо заголовок таблиці
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                headerRow.innerHTML = '<th>Рік</th><th>К-сть</th><th>Площа</th>';
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+                
+                // Створюємо тіло таблиці
+                const tbody = document.createElement('tbody');
+                years.forEach(year => {
+                    const yearData = tenantData.byYear[year] || { count: 0, area: 0 };
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${year}</td>
+                        <td>${yearData.count}</td>
+                        <td>${yearData.area ? yearData.area.toFixed(2) : '0'}</td>
+                    `;
+                    tbody.appendChild(row);
                 });
+                table.appendChild(tbody);
+                
+                // Додаємо заголовок і статистику
+                card.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${tenant}</h5>
+                            <p class="card-text">
+                                Всього реєстрацій: ${tenantData.total}<br>
+                                Загальна площа: ${tenantData.area ? tenantData.area.toFixed(2) : '0'} га
+                            </p>
+                            <div class="table-responsive" style="height: 200px;">
+                                ${table.outerHTML}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
             });
         }
+
+        // Допоміжні функції
+        function parseUkrainianDate(dateStr) {
+            const [day, month, year] = dateStr.split('.').map(Number);
+            return new Date(year, month - 1, day);
+        }
+
+        // Завантаження та ініціалізація
+        fetch('data/file_list.json')
+            .then(response => response.json())
+            .then(response => {
+                const fileSelect = document.getElementById('fileSelect');
+                if (!response.files || !Array.isArray(response.files)) {
+                    throw new Error('Неправильна структура даних');
+                }
+                
+                // Додаємо опції до списку
+                response.files
+                    .filter(filename => filename.endsWith('.geojson'))
+                    .sort((a, b) => a.localeCompare(b, 'uk'))
+                    .forEach(filename => {
+                        const option = document.createElement('option');
+                        option.value = filename;
+                        option.textContent = filename.replace('.geojson', '');
+                        fileSelect.appendChild(option);
+                    });
+            })
+            .catch(error => {
+                console.error('Помилка завантаження списку файлів:', error);
+                const errorOption = document.createElement('option');
+                errorOption.textContent = 'Помилка завантаження списку';
+                errorOption.disabled = true;
+                document.getElementById('fileSelect').appendChild(errorOption);
+            });
+
+        // Обробники подій
+        document.getElementById('fileSelect').addEventListener('change', function() {
+            const selectedFile = this.value;
+            if (selectedFile) {
+                fetch('data/' + selectedFile)
+                    .then(response => response.json())
+                    .then(data => {
+                        originalData = data;
+                        processData(data);
+                    })
+                    .catch(error => console.error('Помилка завантаження GeoJSON:', error));
+            }
+        });
+
+        document.getElementById('viewType').addEventListener('change', () => {
+            if (originalData) {
+                processData(originalData);
+            }
+        });
+
+        document.getElementById('showTrends').addEventListener('change', () => {
+            if (originalData) {
+                processData(originalData);
+            }
+        });
+
+        document.getElementById('yearSelect').addEventListener('change', () => {
+            if (originalData) {
+                processData(originalData);
+            }
+        });
+
+        document.getElementById('tenantFilter').addEventListener('input', (e) => {
+            if (originalData) {
+                const filterText = e.target.value.toLowerCase();
+                const selectedYear = document.getElementById('yearSelect').value;
+                
+                document.querySelectorAll('.tenant-bar').forEach(bar => {
+                    const tenantName = bar.querySelector('.tenant-name').textContent.toLowerCase();
+                    const hasMatchingName = tenantName.includes(filterText);
+                    
+                    // Перевіряємо наявність даних за вибраний рік
+                    const tenant = Object.entries(originalData.features)
+                        .find(([_, feature]) => 
+                            (feature.properties['Орендар частини'] || 
+                             feature.properties['Орендар'] || 
+                             'Невідомий орендар').toLowerCase() === tenantName
+                        );
+                    
+                    let hasDataForYear = true;
+                    if (selectedYear && tenant) {
+                        const date = tenant[1].properties['Дата реєстрації оренди'];
+                        const year = date.split('.')[2];
+                        hasDataForYear = year === selectedYear;
+                    }
+                    
+                    bar.style.display = (hasMatchingName && hasDataForYear) ? '' : 'none';
+                });
+            }
+        });
+
+        // Додаємо обробник події для перемикача
+        document.getElementById('showAllYears').addEventListener('change', () => {
+            if (originalData) {
+                processData(originalData);
+            }
+        });
+    </script>
+
+    <div class="table-responsive">
+        <table class="matrix-table table table-bordered">
+            <thead>
+                <tr>
+                    <th>Орендар</th>
+                    <th>Площа (га)</th>
+                    <th>Кількість ділянок</th>
+                    <th>Дата реєстрації</th>
+                </tr>
+            </thead>
+            <tbody id="matrixTableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <div id="matrix-container">
+        <table class="matrix-table">
+            <thead id="matrix-header"></thead>
+            <tbody id="matrix-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        fetch('data/file_list.json')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('matrixTableBody');
+                const processedData = {};
+
+                // Обробка даних
+                data.forEach(item => {
+                    const key = item.tenant;
+                    if (!processedData[key]) {
+                        processedData[key] = {
+                            area: 0,
+                            count: 0,
+                            date: item.registration_date
+                        };
+                    }
+                    processedData[key].area += parseFloat(item.area_ha);
+                    processedData[key].count += 1;
+                });
+
+                // Створення рядків таблиці
+                Object.entries(processedData)
+                    .sort((a, b) => b[1].area - a[1].area)
+                    .forEach(([tenant, info]) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${tenant}</td>
+                            <td>${info.area.toFixed(2)}</td>
+                            <td>${info.count}</td>
+                            <td>${new Date(info.date).toLocaleDateString('uk-UA')}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+            })
+            .catch(error => console.error('Помилка завантаження даних:', error));
+
+        function createMatrixView(data) {
+            const months = ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень', 
+                           'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
+            
+            // Створюємо заголовок таблиці
+            const headerRow = document.createElement('tr');
+            headerRow.innerHTML = '<th></th>' + months.map(month => `<th>${month}</th>`).join('');
+            document.getElementById('matrix-header').appendChild(headerRow);
+            
+            // Отримуємо унікальні роки з даних
+            const years = [...new Set(data.map(item => new Date(item.date).getFullYear()))].sort();
+            
+            // Створюємо матрицю даних
+            const matrixData = {};
+            years.forEach(year => {
+                matrixData[year] = new Array(12).fill(0);
+            });
+            
+            // Заповнюємо матрицю даними
+            data.forEach(item => {
+                const date = new Date(item.date);
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                matrixData[year][month]++;
+            });
+            
+            // Створюємо рядки таблиці
+            years.forEach(year => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<th>${year}</th>` + 
+                    matrixData[year].map(count => {
+                        const colorClass = `cell-value-${Math.min(5, count)}`;
+                        return `<td class="matrix-cell ${colorClass}">${count}</td>`;
+                    }).join('');
+                document.getElementById('matrix-body').appendChild(row);
+            });
+        }
+
+        // Використовуємо існуючий код завантаження даних
+        fetch('data/file_list.json')
+            .then(response => response.json())
+            .then(data => {
+                const processedData = data.map(item => ({
+                    date: item.date,
+                    value: 1
+                }));
+                createMatrixView(processedData);
+            });
+    </script>
+
+    <script>
+        function createMatrixTable(data) {
+            // Отримуємо унікальні роки та місяці
+            const years = [...new Set(data.map(item => new Date(item.date).getFullYear()))].sort();
+            const months = Array.from({length: 12}, (_, i) => i + 1);
+            
+            // Створюємо таблицю
+            const table = document.createElement('table');
+            table.className = 'matrix-table';
+            
+            // Створюємо заголовок з місяцями
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            headerRow.innerHTML = '<th></th>' + months.map(m => `<th>${m}</th>`).join('');
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Створюємо тіло таблиці
+            const tbody = document.createElement('tbody');
+            
+            // Створюємо матрицю даних
+            const matrix = {};
+            years.forEach(year => {
+                matrix[year] = new Array(12).fill(0);
+            });
+            
+            // Заповнюємо матрицю даними
+            data.forEach(item => {
+                const date = new Date(item.date);
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                matrix[year][month]++;
+            });
+            
+            // Додаємо рядки для кожного року
+            years.forEach(year => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<th>${year}</th>` + 
+                    matrix[year].map(count => {
+                        const intensity = Math.min(Math.floor(count), 5);
+                        return `<td class="matrix-cell cell-value-${intensity}">${count}</td>`;
+                    }).join('');
+                tbody.appendChild(row);
+            });
+            
+            table.appendChild(tbody);
+            return table;
+        }
+
+        // Замінюємо існуючий код графіка на створення таблиці
+        fetch('data/file_list.json')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('chartContainer');
+                container.innerHTML = ''; // Очищуємо контейнер
+                const table = createMatrixTable(data);
+                container.appendChild(table);
+            })
+            .catch(error => console.error('Error:', error));
     </script>
 </body>
 </html>
