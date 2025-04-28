@@ -8,3 +8,22 @@
     box-shadow: none; /* Прибирає тінь */
 }
 
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 3px rgba(0, 255, 0, 0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 3px rgba(0, 255, 0, 0.3);
+    }
+}
+
+.pulse-button {
+    animation: pulse 2s infinite;
+}
+
