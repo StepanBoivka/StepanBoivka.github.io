@@ -813,7 +813,7 @@
     </script>
     <!-- Основной скрипт -->
     <script>
-        // Глобальные переменные
+        // Глобальні змінні
         let selectedFeatures = new Set();
         let isCtrlPressed = false;
         let map, layersControl, searchControl, fieldLayer;
@@ -827,6 +827,30 @@
         let cadastralModal;
         let ownMarkersLayer, othersMarkersLayer;
         let editableLayers;
+        let selectedFile = ''; // Додаємо глобальну змінну для вибраного файлу
+
+        // Функція для очищення шарів
+        function clearOverlays() {
+            // Зберігаємо базові шари та поля
+            const baseAndFieldLayers = {};
+            
+            // Копіюємо базові шари та поля
+            Object.entries(overlays).forEach(([key, layer]) => {
+                if (key === "Google Maps" || 
+                    key === "OpenStreetMap" || 
+                    key === "Актуальні растри" || 
+                    key === "kadastr.live" || 
+                    key === "Поля обробітку") {
+                    baseAndFieldLayers[key] = layer;
+                } else {
+                    // Видаляємо з карти тільки шари з даними
+                    map.removeLayer(layer);
+                }
+            });
+            
+            // Очищуємо overlays і відновлюємо базові шари та поля
+            overlays = {...baseAndFieldLayers};
+        }
 
         // Автоматичне відкриття головного меню після завантаження сторінки
         document.addEventListener('DOMContentLoaded', function() {
@@ -1603,6 +1627,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                         // Уникальный идентификатор комбинации
                         const partId = `${kadNum}_${tenant}_${status}`;
                         
+                        // Проверяем, не добавляли ли мы уже этот объект
                         if (processedParts.has(partId) || !kadNum || isNaN(partArea) || partArea <= 0) {
                             return; // Пропускаем уже обработанные или некорректные данные
                         }
@@ -4420,5 +4445,152 @@ function exportToExcel() {
 </script>
 
 <script src="js/pdfExport.js"></script>
+<script>
+        // ...existing code...
+        
+        // Додаємо обробник зміни року завершення оренди
+        document.getElementById('expiryYearSelect').addEventListener('change', function() {
+            var selectedField = document.getElementById('fieldSelect').value;
+            var selectedFile = document.getElementById('fileSelect').value;
+            var selectedExpiryYear = this.value;
+            var selectedRegistrationYear = document.getElementById('registrationYearSelect').value;
+            
+            if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
+                clearOverlays();
+                tenantAreas = {};
+                freeArea = 0;
+                selectedFeatures.clear(); // Очищуємо виділення при зміні фільтра
+                
+                // Фільтруємо тільки split-частини
+                const filteredFeatures = originalGeoJsonData.features.filter(feature => {
+                    if (!feature.properties || feature.properties.type !== 'split') {
+                        return false;
+                    }
+                    
+                    // Перевіряємо відповідність полю
+                    const fieldMatch = !selectedField || feature.properties['Назва поля'] === selectedField;
+                    
+                    // Перевіряємо відповідність року завершення
+                    const expiryYearMatch = filterByExpiryYear(feature, selectedExpiryYear);
+                    
+                    // Перевіряємо відповідність року реєстрації
+                    const registrationYearMatch = filterByRegistrationYear(feature, selectedRegistrationYear);
+                    
+                    return fieldMatch && expiryYearMatch && registrationYearMatch;
+                });
+                
+                const filteredData = {
+                    type: "FeatureCollection",
+                    features: filteredFeatures
+                };
+                
+                var geoJsonLayer = L.geoJSON(filteredData, {
+                    style: styleFeature,
+                    onEachFeature: onEachFeature
+                });
+                
+                overlays[selectedFile] = geoJsonLayer;
+                geoJsonLayer.addTo(map);
+                
+                if (geoJsonLayer.getBounds().isValid()) {
+                    map.fitBounds(geoJsonLayer.getBounds());
+                }
+                
+                updateLayersControl();
+                addSearchControl(geoJsonLayer);
+                updateDataFreshnessIndicator(filteredData);
+            }
+        });
+</script>
+<!-- Обробник фільтрації за роком завершення -->
+<script>
+document.getElementById('expiryYearSelect').addEventListener('change', function() {
+    var selectedExpiryYear = this.value;
+    var selectedRegistrationYear = document.getElementById('registrationYearSelect').value;
+    var selectedField = document.getElementById('fieldSelect').value;
+    selectedFile = document.getElementById('fileSelect').value;
+    
+    if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
+        clearOverlays();
+        tenantAreas = {};
+        freeArea = 0;
+        selectedFeatures.clear();
+        
+        // Фільтруємо тільки split-частини
+        const filteredFeatures = originalGeoJsonData.features.filter(feature => {
+            const fieldMatch = !selectedField || feature.properties["Назва поля"] === selectedField;
+            const expiryMatch = !selectedExpiryYear || filterByExpiryYear(feature, selectedExpiryYear);
+            const registrationMatch = !selectedRegistrationYear || filterByRegistrationYear(feature, selectedRegistrationYear);
+            return feature.properties?.type === 'split' && fieldMatch && expiryMatch && registrationMatch;
+        });
+        
+        const filteredData = {
+            type: "FeatureCollection",
+            features: filteredFeatures
+        };
+        
+        var geoJsonLayer = L.geoJSON(filteredData, {
+            style: styleFeature,
+            onEachFeature: onEachFeature
+        });
+        
+        overlays[selectedFile] = geoJsonLayer;
+        geoJsonLayer.addTo(map);
+        
+        if (geoJsonLayer.getBounds().isValid()) {
+            map.fitBounds(geoJsonLayer.getBounds());
+        }
+        
+        updateLayersControl();
+        addSearchControl(geoJsonLayer);
+        updateDataFreshnessIndicator(filteredData);
+    }
+});
+</script>
+<!-- Обробник фільтрації за роком реєстрації -->
+<script>
+document.getElementById('registrationYearSelect').addEventListener('change', function() {
+    var selectedRegistrationYear = this.value;
+    var selectedExpiryYear = document.getElementById('expiryYearSelect').value;
+    var selectedField = document.getElementById('fieldSelect').value;
+    selectedFile = document.getElementById('fileSelect').value;
+    
+    if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
+        clearOverlays();
+        tenantAreas = {};
+        freeArea = 0;
+        selectedFeatures.clear();
+        
+        // Фільтруємо тільки split-частини
+        const filteredFeatures = originalGeoJsonData.features.filter(feature => {
+            const fieldMatch = !selectedField || feature.properties["Назва поля"] === selectedField;
+            const expiryMatch = !selectedExpiryYear || filterByExpiryYear(feature, selectedExpiryYear);
+            const registrationMatch = !selectedRegistrationYear || filterByRegistrationYear(feature, selectedRegistrationYear);
+            return feature.properties?.type === 'split' && fieldMatch && expiryMatch && registrationMatch;
+        });
+        
+        const filteredData = {
+            type: "FeatureCollection",
+            features: filteredFeatures
+        };
+        
+        var geoJsonLayer = L.geoJSON(filteredData, {
+            style: styleFeature,
+            onEachFeature: onEachFeature
+        });
+        
+        overlays[selectedFile] = geoJsonLayer;
+        geoJsonLayer.addTo(map);
+        
+        if (geoJsonLayer.getBounds().isValid()) {
+            map.fitBounds(geoJsonLayer.getBounds());
+        }
+        
+        updateLayersControl();
+        addSearchControl(geoJsonLayer);
+        updateDataFreshnessIndicator(filteredData);
+    }
+});
+</script>
 </body>
 </html>
