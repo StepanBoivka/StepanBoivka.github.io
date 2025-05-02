@@ -2010,6 +2010,9 @@ function addPolygonToMap(geoJSON, originalProperties) {
         const data = await response.json();
         originalGeoJsonData = data;
         
+        // Викликаємо функцію порівняння кадастрових номерів
+        await compareCadastralNumbers();
+        
         // Фильтруем только split-части для отображения на карте
         const splitFeatures = data.features.filter(feature => 
             feature.properties && feature.properties.type === "split"
@@ -2207,6 +2210,55 @@ function addPolygonToMap(geoJSON, originalProperties) {
             "#F5B041", "#2471A3", "#AF7AC5", "#58D68D", "#5DADE2"
         ];
         let colorIndex = 0;
+
+        async function compareCadastralNumbers() {
+            try {
+                // Отримуємо guid з URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const id = urlParams.get('id');
+                if (!id) {
+                    console.log('ID не знайдено в URL');
+                    return;
+                }
+
+                // Завантажуємо файл clients_rrp_statistic.json
+                const response = await fetch('data/clients_rrp_statistic.json');
+                const statistics = await response.json();
+
+                // Знаходимо об'єкт з відповідним id
+                const clientData = statistics[id];
+                if (!clientData) {
+                    alert('Даних для цього ID не знайдено');
+                    return;
+                }
+
+                // Отримуємо кадастрові номери з файлу статистики
+                const missingCadastral = new Set(clientData.missing_cadastral || []);
+
+                // Виводимо інформацію про розбіжності
+                const numberOfMissing = missingCadastral.size;
+                
+                // Створюємо детальне повідомлення
+                let message = `Результати перевірки кадастрових номерів:\n\n`;
+                message += `Загальна кількість кадастрових номерів: ${clientData.statistics.total_cadastral || clientData.all_cadastral.length}\n`;
+                message += `Кількість відсутніх номерів в базі: ${numberOfMissing}\n`;
+                message += `Кількість знайдених полігонів: ${clientData.statistics.has_polygon || 'невідомо'}\n\n`;
+                
+                if (numberOfMissing > 0) {
+                    message += 'Перші 5 відсутніх номерів:\n';
+                    const firstFive = Array.from(missingCadastral).slice(0, 5);
+                    message += firstFive.join('\n');
+                }
+
+                // Показуємо повідомлення через alert
+                alert(message);
+                console.log('Порівняння кадастрових номерів завершено успішно');
+
+            } catch (error) {
+                console.error('Помилка при порівнянні кадастрових номерів:', error);
+                alert('Помилка при порівнянні кадастрових номерів: ' + error.message);
+            }
+        }
 
         function clearOverlays() {
     // Зберігаємо базові шари та поля
