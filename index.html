@@ -1031,24 +1031,21 @@
                     if (layerGroup && typeof layerGroup.eachLayer === 'function') {
                         layerGroup.eachLayer(layer => {
                             if (layer.feature && layer.feature.properties) {
-                                var kadNum = layer.feature.properties['Кадастровий номер'];
-                                
-                                if (kadNum && !foundFeatures.has(kadNum)) {
-                                    var isOwn = ownNumbers.includes(kadNum);
-                                    var isOther = othersNumbers.includes(kadNum);
-                                    if (isOwn || isOther) {
+                                const kadNum = layer.feature.properties["Кадастровий номер"];
+                                if (kadNum) {
+                                    const isOwn = ownNumbers.includes(kadNum);
+                                    const isOthers = othersNumbers.includes(kadNum);
+                                    
+                                    if (isOwn || isOthers) {
                                         foundFeatures.set(kadNum, layer);
+                                        
+                                        // Додаємо маркер для знайденої ділянки
+                                        // Використовуємо допоміжну функцію для отримання центра
                                         var center = getPolygonCenter(layer);
                                         var marker = createMarker(center, kadNum, isOwn);
-                                        marker.bindPopup(`
-                                            <div style="font-size: 14px; font-weight: bold;">
-                                                ${kadNum}
-                                                <br>
-                                                <span style="color: ${isOwn ? '#28a745' : '#dc3545'}">
-                                                    ${isOwn ? 'Своя ділянка' : 'Чужа ділянка'}
-                                                </span>
-                                            </div>
-                                        `, {
+                                        
+                                        // Додаємо попап
+                                        marker.bindPopup(`Кадастровий номер: ${kadNum}`, {
                                             offset: [0, -20]
                                         });
                                         
@@ -1061,19 +1058,18 @@
                 });
 
                 if (foundFeatures.size > 0) {
-                    // Создаем массив всех найденных полигонов
-                    const foundLayers = Array.from(foundFeatures.values());
-                    const bounds = getBoundsFromLayers(foundLayers);
-                    
-                    if (bounds) {
-                        map.fitBounds(bounds, {
-                            padding: [50, 50]
-                        });
-                    }
-                    
-                    alert(`Знайдено ${foundFeatures.size} ділянок`);
-                    cadastralModal.style.display = "none";
-                } else {
+                // Перевіряємо, чи є маркери в шарах перед створенням групи і викликом getBounds()
+                if (ownMarkersLayer.getLayers().length > 0 || othersMarkersLayer.getLayers().length > 0) {
+                    var group = L.featureGroup([ownMarkersLayer, othersMarkersLayer]);
+                    map.fitBounds(group.getBounds(), {
+                        padding: [50, 50]
+                    });
+                }
+                
+                alert(`Знайдено ${foundFeatures.size} ділянок`);
+                cadastralModal.style.display = "none";
+                clearCadastralLists();
+            } else {
                     alert('Ділянок не знайдено');
                 }     
             }
@@ -2488,22 +2484,25 @@ function addPolygonToMap(geoJSON, originalProperties) {
     const uniqueFeatures = new Map();
     selectedFeatures.forEach(featureId => {
         Object.values(overlays).forEach(layerGroup => {
-            layerGroup.eachLayer(layer => {
-                if (L.stamp(layer) === featureId && layer.feature) {
-                    const props = layer.feature.properties;
-                    const kadNum = props["Кадастровий номер"];
-                    if (kadNum && !uniqueFeatures.has(kadNum)) {
-                        uniqueFeatures.set(kadNum, [
-                            kadNum,
-                            props["Площа частини"] || "",
-                            props["Власник"] || "",
-                            props["Орендар частини"] || "",
-                            props["Орендар"] || "",
-                            props["Статус"] || ""
-                        ]);
+            // Перевіряємо, що це шар з методом eachLayer
+            if (layerGroup && typeof layerGroup.eachLayer === 'function') {
+                layerGroup.eachLayer(layer => {
+                    if (L.stamp(layer) === featureId && layer.feature) {
+                        const props = layer.feature.properties;
+                        const kadNum = props["Кадастровий номер"];
+                        if (kadNum && !uniqueFeatures.has(kadNum)) {
+                            uniqueFeatures.set(kadNum, [
+                                kadNum,
+                                props["Площа частини"] || "",
+                                props["Власник"] || "",
+                                props["Орендар частини"] || "",
+                                props["Орендар"] || "",
+                                props["Статус"] || ""
+                            ]);
+                        }
                     }
-                }
-            });
+                });
+            }
         });
     });
     uniqueFeatures.forEach(row => rows.push(row));
@@ -2771,24 +2770,21 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 if (layerGroup && typeof layerGroup.eachLayer === 'function') {
                     layerGroup.eachLayer(layer => {
                         if (layer.feature && layer.feature.properties) {
-                            var kadNum = layer.feature.properties['Кадастровий номер'];
-                            
-                            if (kadNum && !foundFeatures.has(kadNum)) {
-                                var isOwn = ownNumbers.includes(kadNum);
-                                var isOther = othersNumbers.includes(kadNum);
-                                if (isOwn || isOther) {
+                            const kadNum = layer.feature.properties["Кадастровий номер"];
+                            if (kadNum) {
+                                const isOwn = ownNumbers.includes(kadNum);
+                                const isOthers = othersNumbers.includes(kadNum);
+                                
+                                if (isOwn || isOthers) {
                                     foundFeatures.set(kadNum, layer);
+                                    
+                                    // Додаємо маркер для знайденої ділянки
+                                    // Використовуємо допоміжну функцію для отримання центра
                                     var center = getPolygonCenter(layer);
                                     var marker = createMarker(center, kadNum, isOwn);
-                                    marker.bindPopup(`
-                                        <div style="font-size: 14px; font-weight: bold;">
-                                            ${kadNum}
-                                            <br>
-                                            <span style="color: ${isOwn ? '#28a745' : '#dc3545'}">
-                                                ${isOwn ? 'Своя ділянка' : 'Чужа ділянка'}
-                                            </span>
-                                        </div>
-                                    `, {
+                                    
+                                    // Додаємо попап
+                                    marker.bindPopup(`Кадастровий номер: ${kadNum}`, {
                                         offset: [0, -20]
                                     });
                                     
@@ -2801,10 +2797,13 @@ function addPolygonToMap(geoJSON, originalProperties) {
             });
 
             if (foundFeatures.size > 0) {
-                var group = L.featureGroup([ownMarkersLayer, othersMarkersLayer]);
-                map.fitBounds(group.getBounds(), {
-                    padding: [50, 50]
-                });
+                // Перевіряємо, чи є маркери в шарах перед створенням групи і викликом getBounds()
+                if (ownMarkersLayer.getLayers().length > 0 || othersMarkersLayer.getLayers().length > 0) {
+                    var group = L.featureGroup([ownMarkersLayer, othersMarkersLayer]);
+                    map.fitBounds(group.getBounds(), {
+                        padding: [50, 50]
+                    });
+                }
                 
                 alert(`Знайдено ${foundFeatures.size} ділянок`);
                 cadastralModal.style.display = "none";
@@ -3140,7 +3139,7 @@ function processGeoJsonData(data, clearExisting) {
             });
         }
 
-        // Модифицируем функцию фильтрации для корректной обработки записей без даты
+        // Функція для фільтрації даних за роком завершення оренди
         function filterByExpiryYear(feature, selectedYear) {
             if (selectedYear === '') return true; // Показать все записи
             if (selectedYear === 'no_date') {
@@ -3170,12 +3169,11 @@ function processGeoJsonData(data, clearExisting) {
             return false;
         }
 
-        // Обробник зміни в списку років (для фільтрації за роком реєстрації оренди)
-        document.getElementById('registrationYearSelect').addEventListener('change', function() {
+        document.getElementById('expiryYearSelect').addEventListener('change', function() {
             var selectedField = document.getElementById('fieldSelect').value;
             var selectedFile = document.getElementById('fileSelect').value;
-            var selectedExpiryYear = document.getElementById('expiryYearSelect').value;
-            var selectedRegistrationYear = this.value;
+            var selectedExpiryYear = this.value;
+            var selectedRegistrationYear = document.getElementById('registrationYearSelect').value;
             
             if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
                 clearOverlays();
