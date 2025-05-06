@@ -829,6 +829,37 @@
         let editableLayers;
         let selectedFile = ''; // Додаємо глобальну змінну для вибраного файлу
 
+        // Функції для фільтрації
+        // Функція для фільтрації за роком завершення оренди
+        function filterByExpiryYear(feature, selectedYear) {
+            if (selectedYear === '') return true; // Показати всі записи
+            if (selectedYear === 'no_date') {
+                // Показати тільки записи без дати
+                return !feature.properties?.['Дата завершення'];
+            }
+            if (feature.properties?.['Дата завершення']) {
+                const dateStr = feature.properties['Дата завершення'];
+                const year = dateStr.split('.')[2];
+                return year === selectedYear;
+            }
+            return false;
+        }
+        
+        // Функція для фільтрації за роком реєстрації оренди
+        function filterByRegistrationYear(feature, selectedYear) {
+            if (selectedYear === '') return true; // Показати всі записи
+            if (selectedYear === 'no_date') {
+                // Показати тільки записи без дати
+                return !feature.properties?.['Дата реєстрації оренди'];
+            }
+            if (feature.properties?.['Дата реєстрації оренди']) {
+                const dateStr = feature.properties['Дата реєстрації оренди'];
+                const year = dateStr.split('.')[2];
+                return year === selectedYear;
+            }
+            return false;
+        }
+
         // Функція для очищення шарів
         function clearOverlays() {
             // Зберігаємо базові шари та поля
