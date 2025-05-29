@@ -307,13 +307,12 @@
                        } else {
                            baseColor = getColor(tenant); // Використовуємо функцію для кольорів орендарів
                        }
-                       
-                       return {
+                         return {
                            color: baseColor,
                            weight: 1,
                            opacity: 1,
                            fillColor: baseColor,
-                           fillOpacity: status === 'Обробляється' ? 0.3 : 0.1,
+                           fillOpacity: status === 'Обробляється' ? 0.6 : 0.4,
                            dashArray: status === 'Не обробляється' ? '3' : null
                        };
                    },

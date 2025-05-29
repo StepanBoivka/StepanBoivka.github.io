@@ -1,9 +1,11 @@
 <!doctype html>
 <html lang="uk">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta charset="utf-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Карта земельних ділянок</title>
+      <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     
     <!-- CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -523,11 +525,63 @@
         }
     }
 
-    /* Оптимизация для колонки "Фактичний орендар" */
-    .factual-tenant-cell {
+    /* Оптимизация для колонки "Фактичний орендар" */    .factual-tenant-cell {
         font-size: 12px; /* Уменьшаем размер шрифта */
         white-space: normal; /* Разрешаем перенос текста */
         word-break: break-word; /* Переносим длинные слова */
+    }
+
+    /* Стили для кнопки замовлення доступу */
+    .order-access-btn {
+        white-space: nowrap;
+    }
+    
+    .order-text-short {
+        display: none;
+    }
+    
+    .order-text-full {
+        display: inline;
+    }
+    
+    .order-badge {
+        margin-left: 0.25rem;
+    }
+
+    /* Адаптивність для мобільних пристроїв */
+    @media (max-width: 768px) {
+        .order-text-full {
+            display: none;
+        }
+        
+        .order-text-short {
+            display: inline;
+        }
+        
+        .order-badge {
+            display: none;
+        }
+        
+        .order-access-btn {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        .order-access-btn i {
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .order-access-btn {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+        }
+        
+        .order-access-btn i {
+            font-size: 0.75rem;
+            margin-right: 0.2rem !important;
+        }
     }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
@@ -548,14 +602,15 @@
                     aria-controls="mainMenu"
                     style="width: 32px; height: 32px;">
                 <i class="bi bi-list"></i>
-            </button>
-
-            <!-- Кнопка замовлення доступу по центру -->
+            </button>            <!-- Кнопка замовлення доступу по центру -->
             <div class="position-absolute start-50 translate-middle-x">
                 <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGQcVSh5EnTCa6eJKT9KYX6HleJnXveBcyrCEgaKvlQgRInQ/viewform" 
-                   class="btn btn-success btn-sm pulse-button" 
+                   class="btn btn-success btn-sm pulse-button order-access-btn" 
                    target="_blank">
-                    <i class="bi bi-gift me-1"></i>Замовити доступ <span class="badge bg-light text-success">безкоштовно</span>
+                    <i class="bi bi-gift me-1"></i>
+                    <span class="order-text-full">Замовити доступ</span>
+                    <span class="order-text-short">Доступ</span>
+                    <span class="badge bg-light text-success order-badge">безкоштовно</span>
                 </a>
             </div>
 
@@ -1562,13 +1617,11 @@ function addPolygonToMap(geoJSON, originalProperties) {
         L.DomEvent.stopPropagation(e);
     }
 
-    const featureId = L.stamp(layer);
-
-    if (selectedFeatures.has(featureId)) {
+    const featureId = L.stamp(layer);    if (selectedFeatures.has(featureId)) {
         // Знімаємо виділення
         selectedFeatures.delete(featureId);
         layer.setStyle({
-            fillOpacity: 0.4,
+            fillOpacity: 0.7,
             weight: 0.5,
             color: getColor(layer.feature.properties["Орендар"])
         });
@@ -1580,7 +1633,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
         }
         selectedFeatures.add(featureId);
         layer.setStyle({
-            fillOpacity: 0.6,
+            fillOpacity: 0.8,
             weight: 2,
             color: '#FFFF00'
         });
@@ -1934,7 +1987,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 layerGroup.eachLayer(layer => {
                     if (L.stamp(layer) === featureId && layer.feature) {
                         layer.setStyle({
-                            fillOpacity: 0.4,
+                            fillOpacity: 0.7,
                             weight: 0.5,
                             color: getColor(layer.feature.properties["Орендар"])
                         });
@@ -2050,16 +2103,14 @@ function addPolygonToMap(geoJSON, originalProperties) {
         console.error('Error loading GeoJSON:', error);
         throw error;
     }
-}
-
-        function styleFeature(feature) {
+}        function styleFeature(feature) {
             // Для split используем орендаря части если есть
             const tenant = feature.properties["Орендар частини"] || feature.properties["Орендар"];
             return {
                 color: getColor(tenant),
                 weight: 0.5,
                 opacity: 1,
-                fillOpacity: 0.4
+                fillOpacity: 0.7
             };
         }
 

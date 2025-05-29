@@ -11,19 +11,19 @@
 @keyframes pulse {
     0% {
         transform: scale(1);
-        box-shadow: 0 0 3px rgba(0, 255, 0, 0.3);
+        box-shadow: 0 0 2px rgba(0, 255, 0, 0.2);
     }
     50% {
-        transform: scale(1.05);
-        box-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
+        transform: scale(1.02);
+        box-shadow: 0 0 4px rgba(0, 255, 0, 0.3);
     }
     100% {
         transform: scale(1);
-        box-shadow: 0 0 3px rgba(0, 255, 0, 0.3);
+        box-shadow: 0 0 2px rgba(0, 255, 0, 0.2);
     }
 }
 
 .pulse-button {
-    animation: pulse 2s infinite;
+    animation: pulse 4s ease-in-out infinite;
 }
 
