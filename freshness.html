@@ -73,14 +73,12 @@
                 </div>
             </div>
         </div>
-    </nav>
-
-    <div class="container py-4">        <h1 class="mb-4" id="pageTitle">
-            Мої ресурси
+    </nav>    <div class="container py-4">        <h1 class="mb-4" id="pageTitle">
+            Моє підприємство
             <small class="text-muted fs-5 ms-3" id="pageSubtitle">
                 завантаження...
             </small>
-        </h1>        <!-- Контейнер для інформації про підприємство -->
+        </h1><!-- Контейнер для інформації про підприємство -->
         <div id="enterpriseInfo" class="card border-primary mb-4" style="display: none;">
             <div class="card-header bg-primary text-white">
                 <h4 class="mb-0"><i class="bi bi-building-fill me-2"></i>Інформація про підприємство</h4>
@@ -96,16 +94,15 @@
         </div>
 
         <!-- Контейнер для таблиці -->
-        <div id="tableView" class="table-view">
-            <table class="table">
-                <thead>
+        <div id="tableView" class="table-view">            <table class="table">                <thead>
                     <tr>
                         <th>Рада</th>
-                        <th>КОАТУУ</th>
-                        <th>Статус</th>
+                        <th>КОАТУУ</th>                        <th>Статус</th>
                         <th>Ділянок</th>
                         <th>Актуальність даних</th>
                         <th>Останнє оновлення</th>
+                        <th class="badge-column">Відсутні в ДЗК</th>
+                        <th class="badge-column">Відсутні в РРП</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -113,9 +110,10 @@
                 </tbody>
             </table>
         </div>
-    </div>
-
-    <script>        document.addEventListener('DOMContentLoaded', function() {
+    </div>    <script>        // Глобальні змінні для зберігання даних про розбіжності по радах
+        let councilMissingInDzk = new Map(); // Відсутні в ДЗК (є в РРП, немає в ДЗК)
+        let councilMissingInRrp = new Map(); // Відсутні в РРП (є в ДЗК, немає в РРП)
+          document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const id = urlParams.get('id');
             const dataPath = id ? `data/${id}/` : 'data/';
@@ -124,8 +122,8 @@
             loadEnterpriseData(dataPath, id);
             
             // Потім завантажуємо дані рад
-            loadAndAnalyzeData(dataPath);
-        });        async function loadEnterpriseData(dataPath, enterpriseId) {
+            loadAndAnalyzeData(dataPath, !!id);
+        });async function loadEnterpriseData(dataPath, enterpriseId) {
             if (!enterpriseId) {
                 // Якщо немає ID підприємства, ховаємо блок
                 return;
@@ -299,51 +297,85 @@
                             ${exactMatchPercent.toFixed(1)}% відповідність
                         </small>
                     </div>
-                </div>
-
-                ${comparison.missingInGeojson > 0 ? `
+                </div>                ${comparison.missingInGeojson > 0 || comparison.missingInRrp > 0 ? `
                     <!-- Блок з проблемними ділянками -->
                     <div class="card border-warning">
                         <div class="card-header bg-warning bg-opacity-10">
                             <h6 class="mb-0 text-warning">
                                 <i class="bi bi-exclamation-triangle me-2"></i>
-                                Виявлені невідповідності
+                                Виявлені невідповідності реєстрів
                             </h6>
                         </div>
                         <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between mb-3">                                <div>
-                                    <p class="mb-1">
-                                        <strong>${comparison.missingInGeojson} з ${totalCadastralNumbers}</strong> кадастрових номерів 
-                                        мають зареєстровані договори оренди в РРП, але відсутні межі ділянок в ДЗК
-                                        <span class="text-warning fw-semibold">(${(100 - exactMatchPercent).toFixed(1)}% невідповідність)</span>
-                                    </p>
-                                    <small class="text-muted">
-                                        Це може свідчити про необхідність актуалізації меж ділянок або технічні проблеми синхронізації реєстрів
-                                    </small>
-                                </div>
-                                <div class="text-end">
-                                    <button class="btn btn-outline-warning btn-sm" type="button" 
-                                            data-bs-toggle="collapse" data-bs-target="#missingNumbers" 
-                                            aria-expanded="false">
-                                        <i class="bi bi-list me-1"></i>
-                                        Показати список
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="collapse" id="missingNumbers">
-                                <div class="border-top pt-3">
-                                    <h6 class="text-muted mb-2">
-                                        <i class="bi bi-file-earmark-x me-1"></i>
-                                        Кадастрові номери без меж в ДЗК:
-                                    </h6>
-                                    <div style="max-height: 200px; overflow-y: auto;">
-                                        ${Array.from(comparison.missingNumbers).map(num => 
-                                            `<span class="badge bg-light text-dark border me-1 mb-1 font-monospace">${num}</span>`
-                                        ).join('')}
+                            ${comparison.missingInGeojson > 0 ? `
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div>
+                                        <p class="mb-1">
+                                            <strong>${comparison.missingInGeojson} з ${totalCadastralNumbers}</strong> кадастрових номерів 
+                                            мають зареєстровані договори оренди в РРП, але відсутні межі ділянок в ДЗК
+                                            <span class="text-danger fw-semibold">(${((comparison.missingInGeojson / totalCadastralNumbers) * 100).toFixed(1)}%)</span>
+                                        </p>
+                                        <small class="text-muted">
+                                            Необхідність актуалізації меж ділянок або технічні проблеми синхронізації реєстрів
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <button class="btn btn-outline-danger btn-sm" type="button" 
+                                                data-bs-toggle="collapse" data-bs-target="#missingInDzk" 
+                                                aria-expanded="false">
+                                            <i class="bi bi-list me-1"></i>
+                                            Відсутні в ДЗК
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
+                                
+                                <div class="collapse" id="missingInDzk">
+                                    <div class="border-top pt-3 mb-3">
+                                        <h6 class="text-muted mb-2">
+                                            <i class="bi bi-file-earmark-x me-1"></i>
+                                            Кадастрові номери без меж в ДЗК:
+                                        </h6>
+                                        <div style="max-height: 200px; overflow-y: auto;">
+                                            ${Array.from(comparison.missingNumbers).map(num => 
+                                                `<span class="badge bg-light text-dark border me-1 mb-1 font-monospace">${num}</span>`
+                                            ).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                              ${comparison.missingInRrp > 0 ? `
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div>                                        <p class="mb-1">
+                                            <strong>${comparison.missingInRrp}</strong> кадастрових номерів 
+                                            мають зареєстровану оренду в ДЗК за цим підприємством, але відсутні в РРП
+                                        </p>
+                                        <small class="text-muted">
+                                            Можливо завершені договори оренди або розбіжності між реєстрами
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <button class="btn btn-outline-info btn-sm" type="button" 
+                                                data-bs-toggle="collapse" data-bs-target="#missingInRrp" 
+                                                aria-expanded="false">
+                                            <i class="bi bi-list me-1"></i>
+                                            Відсутні в РРП
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="collapse" id="missingInRrp">
+                                    <div class="border-top pt-3">                                        <h6 class="text-muted mb-2">
+                                            <i class="bi bi-file-earmark-plus me-1"></i>
+                                            Кадастрові номери з орендою в ДЗК, що відсутні в РРП:
+                                        </h6>
+                                        <div style="max-height: 200px; overflow-y: auto;">
+                                            ${Array.from(comparison.extraNumbers).map(num => 
+                                                `<span class="badge bg-light text-dark border me-1 mb-1 font-monospace">${num}</span>`
+                                            ).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 ` : `
@@ -361,8 +393,7 @@
                     </div>
                 `}
 
-                <!-- Додаткова інформація -->
-                <div class="text-center mt-4 pt-3 border-top">
+                <!-- Додаткова інформація -->                <div class="text-center mt-4 pt-3 border-top">
                     <small class="text-muted">
                         <i class="bi bi-info-circle me-1"></i>
                         Дані актуальні станом на ${data.actualityDate} • 
@@ -370,15 +401,51 @@
                         Файлів завантажено: ${enterpriseDataArray.length}
                     </small>
                 </div>
-            `;        }
-
-        async function compareWithGeojson(edrpou, txtCadastralNumbers) {
+            `;
+            
+            // Показуємо колонки з бейджами тепер, коли є дані підприємства
+            const badgeHeaders = document.querySelectorAll('.badge-column');
+            badgeHeaders.forEach(header => {
+                header.style.display = 'table-cell';
+            });
+            
+            // Оновлюємо існуючі рядки таблиці з новими даними бейджів
+            const tableRows = document.querySelectorAll('#tableBody tr');
+            tableRows.forEach(row => {
+                const councilName = row.cells[0].textContent.trim().replace(/^\s*[^\s]+\s+/, ''); // Видаляємо іконку
+                const missingInDzkCount = councilMissingInDzk.get(councilName) || 0;
+                const missingInRrpCount = councilMissingInRrp.get(councilName) || 0;
+                
+                // Оновлюємо останні дві комірки (бейджі)
+                if (row.cells.length >= 8) {
+                    row.cells[6].innerHTML = `
+                        <span class="badge ${missingInDzkCount > 0 ? 'bg-warning text-dark' : 'bg-success'}" title="${missingInDzkCount > 0 ? missingInDzkCount + ' відсутніх в ДЗК' : 'Всі знайдені в ДЗК'}">
+                            ${missingInDzkCount}
+                        </span>
+                    `;
+                    row.cells[6].style.display = 'table-cell';
+                    
+                    row.cells[7].innerHTML = `
+                        <span class="badge ${missingInRrpCount > 0 ? 'bg-warning text-dark' : 'bg-success'}" title="${missingInRrpCount > 0 ? missingInRrpCount + ' відсутніх в РРП' : 'Всі знайдені в РРП'}">
+                            ${missingInRrpCount}
+                        </span>
+                    `;
+                    row.cells[7].style.display = 'table-cell';
+                }
+            });
+        }async function compareWithGeojson(edrpou, txtCadastralNumbers) {
             const comparison = {
                 foundInGeojson: 0,
-                missingInGeojson: 0,
+                missingInGeojson: 0, // Є в РРП, немає в ДЗК
+                missingInRrp: 0,     // Є в ДЗК, немає в РРП
                 totalCouncilsChecked: 0,
-                missingNumbers: new Set()
+                missingNumbers: new Set(),      // Номери відсутні в ДЗК
+                extraNumbers: new Set()         // Номери відсутні в РРП
             };
+
+            // Очищаємо попередні дані
+            councilMissingInDzk.clear();
+            councilMissingInRrp.clear();
 
             try {
                 // Отримуємо список файлів рад
@@ -389,59 +456,94 @@
                 const response = await fetch(dataPath + 'file_list.json');
                 const data = await response.json();
                 
-                // Збираємо всі кадастрові номери з geojson файлів для нашого ЄДРПОУ
-                const geojsonCadastralNumbers = new Set();
-                
+                // Обробляємо кожну раду окремо
                 for (const file of data.files) {
+                    const councilName = file.replace('.geojson', '');
+                    const councilCadastralNumbers = new Set();
+                    let councilMissingInDzkCount = 0;
+                    let councilMissingInRrpCount = 0;
+                    
                     try {
                         const geojsonResponse = await fetch(dataPath + file);
                         const geojsonData = await geojsonResponse.json();
                         comparison.totalCouncilsChecked++;
                         
-                        // Шукаємо ділянки з нашим ЄДРПОУ орендаря
+                        // Збираємо кадастрові номери цієї ради для нашого ЄДРПОУ
                         geojsonData.features.forEach(feature => {
                             const props = feature.properties;
                             if (props && props['ЄДРПОУ орендаря ділянки'] === edrpou) {
                                 const cadastralNumber = props['Кадастровий номер'];
                                 if (cadastralNumber) {
-                                    geojsonCadastralNumbers.add(cadastralNumber);
+                                    councilCadastralNumbers.add(cadastralNumber);
                                 }
                             }
                         });
+                        
+                        // Визначаємо КОАТУУ цієї ради
+                        let councilKoatuu = null;
+                        const firstFeature = geojsonData.features.find(f => f.properties?.['Кадастровий номер']);
+                        if (firstFeature) {
+                            councilKoatuu = firstFeature.properties['Кадастровий номер'].substring(0, 10);
+                        }
+                        
+                        // 1. Перевіряємо номери з РРП - чи є вони в ДЗК
+                        txtCadastralNumbers.forEach(txtNumber => {
+                            if (councilCadastralNumbers.has(txtNumber)) {
+                                comparison.foundInGeojson++;
+                            } else {
+                                // Перевіряємо чи цей номер належить до цієї ради (за КОАТУУ)
+                                if (txtNumber.length >= 10 && councilKoatuu) {
+                                    const txtKoatuu = txtNumber.substring(0, 10);
+                                    if (txtKoatuu === councilKoatuu) {
+                                        councilMissingInDzkCount++;
+                                        comparison.missingInGeojson++;
+                                        comparison.missingNumbers.add(txtNumber);
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // 2. Перевіряємо номери з ДЗК - чи є вони в РРП
+                        councilCadastralNumbers.forEach(geojsonNumber => {
+                            if (!txtCadastralNumbers.has(geojsonNumber)) {
+                                councilMissingInRrpCount++;
+                                comparison.missingInRrp++;
+                                comparison.extraNumbers.add(geojsonNumber);
+                            }
+                        });
+                        
                     } catch (error) {
                         console.warn(`Помилка завантаження файлу ${file}:`, error);
                     }
+                    
+                    // Зберігаємо дані про розбіжності для цієї ради
+                    councilMissingInDzk.set(councilName, councilMissingInDzkCount);
+                    councilMissingInRrp.set(councilName, councilMissingInRrpCount);
                 }
-
-                // Порівнюємо номери з txt файлів з номерами з geojson файлів
-                txtCadastralNumbers.forEach(txtNumber => {
-                    if (geojsonCadastralNumbers.has(txtNumber)) {
-                        comparison.foundInGeojson++;
-                    } else {
-                        comparison.missingInGeojson++;
-                        comparison.missingNumbers.add(txtNumber);
-                    }
-                });
 
             } catch (error) {
                 console.error('Помилка порівняння з geojson файлами:', error);
             }
 
             return comparison;
-        }
-
-        async function loadAndAnalyzeData(dataPath) {
+        }        async function loadAndAnalyzeData(dataPath, hasEnterpriseData = false) {
             try {
                 const response = await fetch(dataPath + 'file_list.json');
                 const data = await response.json();
                 const grid = document.getElementById('cardsView');
+                
+                // Сховати/показати колонки з бейджами в залежності від наявності даних підприємства
+                const badgeHeaders = document.querySelectorAll('.badge-column');
+                badgeHeaders.forEach(header => {
+                    header.style.display = hasEnterpriseData ? 'table-cell' : 'none';
+                });
                 
                 let totalPlots = 0;
                 const totalCouncils = data.files.length;
                 
                 for (const file of data.files) {
                     const councilData = await analyzeCouncilData(dataPath + file);
-                    const card = createCouncilCard(file.replace('.geojson', ''), councilData);
+                    const card = createCouncilCard(file.replace('.geojson', ''), councilData, hasEnterpriseData);
                     grid.appendChild(card);
                     totalPlots += councilData.totalRecords;
                 }                // Обновляем заголовок сторінки
@@ -521,9 +623,7 @@
             }
 
             return stats;
-        }
-
-        function createCouncilCard(name, stats) {
+        }        function createCouncilCard(name, stats, hasEnterpriseData = false) {
             const div = document.createElement('div');
             div.className = 'col-12';
             
@@ -542,13 +642,13 @@
             } else {
                 statusClass = 'freshness-bad';
                 statusText = 'Застаріло';
-            }
-
-            const latestDate = stats.latestUpdate ? stats.latestUpdate.toLocaleDateString('uk-UA') : 'немає даних';
-            const oldestDate = stats.oldestUpdate ? stats.oldestUpdate.toLocaleDateString('uk-UA') : 'немає даних';
+            }            const latestDate = stats.latestUpdate ? stats.latestUpdate.toLocaleDateString('uk-UA') : 'немає даних';
+            const oldestDate = stats.oldestUpdate ? stats.oldestUpdate.toLocaleDateString('uk-UA') : 'немає даних';            // Отримуємо кількості розбіжностей для цієї ради тільки якщо є дані підприємства
+            const missingInDzkCount = hasEnterpriseData ? (councilMissingInDzk.get(name) || 0) : 0;
+            const missingInRrpCount = hasEnterpriseData ? (councilMissingInRrp.get(name) || 0) : 0;
 
             // Додаємо дані в обидва представлення
-            addTableRow(name, statusClass, statusText, stats, freshPercent, mediumPercent, oldPercent, noDatePercent, latestDate);
+            addTableRow(name, statusClass, statusText, stats, freshPercent, mediumPercent, oldPercent, noDatePercent, latestDate, missingInDzkCount, missingInRrpCount, hasEnterpriseData);
 
             div.innerHTML = `
                 <div class="card council-card">
@@ -644,11 +744,25 @@
             }, 100);
 
             return div;
-        }
-
-        function addTableRow(name, statusClass, statusText, stats, freshPercent, mediumPercent, oldPercent, noDatePercent, latestDate) {
+        }        function addTableRow(name, statusClass, statusText, stats, freshPercent, mediumPercent, oldPercent, noDatePercent, latestDate, missingInDzkCount = 0, missingInRrpCount = 0, hasEnterpriseData = false) {
             const tbody = document.getElementById('tableBody');
             const row = document.createElement('tr');
+            
+            const badgeCells = hasEnterpriseData ? `
+                <td class="badge-column">
+                    <span class="badge ${missingInDzkCount > 0 ? 'bg-warning text-dark' : 'bg-success'}" title="${missingInDzkCount > 0 ? missingInDzkCount + ' відсутніх в ДЗК' : 'Всі знайдені в ДЗК'}">
+                        ${missingInDzkCount}
+                    </span>
+                </td>
+                <td class="badge-column">
+                    <span class="badge ${missingInRrpCount > 0 ? 'bg-warning text-dark' : 'bg-success'}" title="${missingInRrpCount > 0 ? missingInRrpCount + ' відсутніх в РРП' : 'Всі знайдені в РРП'}">
+                        ${missingInRrpCount}
+                    </span>
+                </td>
+            ` : `
+                <td class="badge-column" style="display: none;"></td>
+                <td class="badge-column" style="display: none;"></td>
+            `;
             
             row.innerHTML = `
                 <td>
@@ -675,6 +789,7 @@
                     </div>
                 </td>
                 <td>${latestDate}</td>
+                ${badgeCells}
             `;
             
             tbody.appendChild(row);
