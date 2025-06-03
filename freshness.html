@@ -134,12 +134,11 @@
                 
                 if (txtFiles.length > 0) {
                     document.getElementById('enterpriseInfo').style.display = 'block';
-                    
-                    // Завантажуємо та парсимо вміст файлів
-                    let allEnterpriseData = [];
-                    for (const fileName of txtFiles) {
-                        try {
-                            const response = await fetch('data/' + fileName);
+                      // Завантажуємо та парсимо вміст файлів
+                    let allEnterpriseData = [];                    for (const fileName of txtFiles) {                        try {
+                            // Txt файли завжди знаходяться в корені data/, незалежно від dataPath
+                            const filePath = 'data/' + fileName;
+                            const response = await fetch(filePath);
                             const content = await response.text();
                             const parsedData = parseEnterpriseFile(content, fileName);
                             allEnterpriseData.push(parsedData);
@@ -154,28 +153,124 @@
             } catch (error) {
                 console.error('Помилка пошуку txt файлів:', error);
             }
-        }async function findTxtFiles(dataPath, enterpriseId) {
+        }        async function findTxtFiles(dataPath, enterpriseId) {
             const txtFiles = [];
-              // Список відомих txt файлів
-            const knownFiles = [
-                '32578784-1b993bed-913d-4b67-a425-eaabc687a569.txt',
-                '34217403-fe1921f7-0504-40f6-a817-644d8d6125ab.txt',
-                '40733935-b2a43d30-e687-470c-a1f1-6a336d1c112c.txt'
-            ];
-
-            // Шукаємо тільки файли, які містять переданий enterpriseId у своїй назві
-            for (const fileName of knownFiles) {
-                if (fileName.includes(enterpriseId)) {
-                    try {
-                        const response = await fetch('data/' + fileName);
-                        if (response.ok) {
-                            txtFiles.push(fileName);
+            console.log(`Пошук txt файлів для enterpriseId: "${enterpriseId}"`);
+            
+            try {
+                // Спроба отримати список txt файлів з серверу
+                // Спочатку спробуємо отримати список через запит до папки data/txt_list.json
+                let knownFiles = [];
+                
+                try {
+                    const response = await fetch('data/txt_list.json');
+                    if (response.ok) {
+                        const data = await response.json();
+                        knownFiles = data.files || [];
+                    }
+                } catch (error) {
+                    console.log('txt_list.json не знайдено, використовуємо альтернативний метод');
+                }
+                
+                // Якщо txt_list.json не існує, використовуємо альтернативний підхід
+                if (knownFiles.length === 0) {
+                    // Генеруємо потенційні назви файлів на основі наявних ЄДРПОУ
+                    const commonEdrpouPatterns = [
+                        '31369733-6951a667-a011-499f-85fa-0b0bd1a5f411.txt',
+                        '32578784-1b993bed-913d-4b67-a425-eaabc687a569.txt',
+                        '32842030-4429e468-3671-4603-a1e8-4d54e7e7b300.txt',
+                        '34217403-fe1921f7-0504-40f6-a817-644d8d6125ab.txt',
+                        '35621685-104b21c4-4234-4d76-b313-10c1270d46de.txt',
+                        '39697056-4c487d58-bfd7-49c8-8605-e825400f3353.txt',
+                        '40733935-b2a43d30-e687-470c-a1f1-6a336d1c112c.txt'
+                    ];
+                    
+                    // Також спробуємо знайти файли з цим enterpriseId у назві
+                    for (let i = 0; i < 100; i++) {
+                        const testPattern = `${enterpriseId}-${i.toString().padStart(8, '0')}-${i.toString().padStart(4, '0')}-${i.toString().padStart(4, '0')}-${i.toString().padStart(4, '0')}-${i.toString().padStart(12, '0')}.txt`;
+                        commonEdrpouPatterns.push(testPattern);
+                    }
+                    
+                    knownFiles = commonEdrpouPatterns;
+                }                // Шукаємо файли, які містять переданий enterpriseId у своїй назві
+                const searchPromises = knownFiles.map(async (fileName) => {
+                    // Перевіряємо чи файл містить enterpriseId як підрядок
+                    // або якщо enterpriseId виглядає як GUID, шукаємо його в назві файлу
+                    let shouldCheck = false;
+                    
+                    if (fileName.includes(enterpriseId)) {
+                        shouldCheck = true;
+                    } else if (enterpriseId.includes('-') && enterpriseId.length >= 32) {
+                        // Якщо enterpriseId схожий на GUID, шукаємо його частини в назві файлу
+                        const guidParts = enterpriseId.split('-');
+                        shouldCheck = guidParts.every(part => fileName.includes(part));
+                    }
+                    
+                    if (shouldCheck) {
+                        try {
+                            const response = await fetch('data/' + fileName);
+                            if (response.ok) {
+                                console.log(`Знайдено файл: ${fileName} для enterpriseId: ${enterpriseId}`);
+                                return fileName;
+                            }
+                        } catch (error) {
+                            // Файл не існує, це нормально
                         }
-                    } catch (error) {
-                        console.log(`Файл data/${fileName} не знайдено`);
+                    }
+                    return null;
+                });
+                  const results = await Promise.all(searchPromises);
+                const foundFiles = results.filter(file => file !== null);
+                txtFiles.push(...foundFiles);
+                  // Якщо файли не знайдені, спробуємо розширений пошук у всіх файлах
+                if (txtFiles.length === 0) {
+                    console.log(`Прямий пошук для ${enterpriseId} не дав результатів, виконуємо розширений пошук...`);
+                    
+                    // Пробуємо знайти файли, що містять enterpriseId як частину GUID
+                    const extendedSearchPromises = knownFiles.map(async (fileName) => {
+                        try {
+                            const response = await fetch('data/' + fileName);
+                            if (response.ok) {
+                                // Перевіряємо назву файлу на відповідність
+                                let isMatch = false;
+                                
+                                if (fileName.includes(enterpriseId)) {
+                                    isMatch = true;
+                                } else if (enterpriseId.includes('-') && enterpriseId.length >= 32) {
+                                    // Для GUID перевіряємо окремі частини
+                                    const guidParts = enterpriseId.split('-');
+                                    isMatch = guidParts.every(part => fileName.includes(part));
+                                } else {
+                                    // Перевіряємо вміст файлу
+                                    const content = await response.text();
+                                    isMatch = content.includes(enterpriseId);
+                                }
+                                
+                                if (isMatch) {
+                                    console.log(`Знайдено файл через розширений пошук: ${fileName}`);
+                                    return fileName;
+                                }
+                            }
+                        } catch (error) {
+                            // Файл не існує
+                        }
+                        return null;
+                    });
+                    
+                    const extendedResults = await Promise.all(extendedSearchPromises);
+                    const additionalFiles = extendedResults.filter(file => file !== null);
+                    txtFiles.push(...additionalFiles);
+                    
+                    if (additionalFiles.length > 0) {
+                        console.log(`Знайдено файли через розширений пошук:`, additionalFiles);
                     }
                 }
-            }            return txtFiles;
+                  } catch (error) {
+                console.error('Помилка пошуку txt файлів:', error);
+            }
+            
+            console.log(`Результат пошуку txt файлів:`, txtFiles);
+            return txtFiles;
         }
 
         function parseEnterpriseFile(content, fileName) {
