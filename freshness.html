@@ -100,8 +100,7 @@
                         <th>КОАТУУ</th>                        <th>Статус</th>
                         <th>Ділянок</th>
                         <th>Актуальність даних</th>
-                        <th>Останнє оновлення</th>
-                        <th class="badge-column">Відсутні в ДЗК</th>
+                        <th>Останнє оновлення</th>                        <th class="badge-column">Розбіжності в ДЗК</th>
                         <th class="badge-column">Відсутні в РРП</th>
                     </tr>
                 </thead>
@@ -157,10 +156,10 @@
             }
         }async function findTxtFiles(dataPath, enterpriseId) {
             const txtFiles = [];
-            
-            // Список відомих txt файлів
+              // Список відомих txt файлів
             const knownFiles = [
                 '32578784-1b993bed-913d-4b67-a425-eaabc687a569.txt',
+                '34217403-fe1921f7-0504-40f6-a817-644d8d6125ab.txt',
                 '40733935-b2a43d30-e687-470c-a1f1-6a336d1c112c.txt'
             ];
 
@@ -309,36 +308,59 @@
                         <div class="card-body">
                             ${comparison.missingInGeojson > 0 ? `
                                 <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <div>
-                                        <p class="mb-1">
+                                    <div>                                        <p class="mb-1">
                                             <strong>${comparison.missingInGeojson} з ${totalCadastralNumbers}</strong> кадастрових номерів 
-                                            мають зареєстровані договори оренди в РРП, але відсутні межі ділянок в ДЗК
+                                            мають зареєстровані договори оренди в РРП, але мають розбіжності в ДЗК
                                             <span class="text-danger fw-semibold">(${((comparison.missingInGeojson / totalCadastralNumbers) * 100).toFixed(1)}%)</span>
                                         </p>
                                         <small class="text-muted">
-                                            Необхідність актуалізації меж ділянок або технічні проблеми синхронізації реєстрів
+                                            Ділянки можуть бути відсутні в ДЗК, мати іншого орендаря або не мати активної оренди
                                         </small>
                                     </div>
-                                    <div class="text-end">
-                                        <button class="btn btn-outline-danger btn-sm" type="button" 
+                                    <div class="text-end">                                        <button class="btn btn-outline-danger btn-sm" type="button" 
                                                 data-bs-toggle="collapse" data-bs-target="#missingInDzk" 
                                                 aria-expanded="false">
                                             <i class="bi bi-list me-1"></i>
-                                            Відсутні в ДЗК
+                                            Розбіжності в ДЗК
                                         </button>
                                     </div>
                                 </div>
-                                
-                                <div class="collapse" id="missingInDzk">
-                                    <div class="border-top pt-3 mb-3">
-                                        <h6 class="text-muted mb-2">
+                                  <div class="collapse" id="missingInDzk">
+                                    <div class="border-top pt-3 mb-3">                                        <h6 class="text-muted mb-3">
                                             <i class="bi bi-file-earmark-x me-1"></i>
-                                            Кадастрові номери без меж в ДЗК:
+                                            Детальна інформація про ділянки з розбіжностями в ДЗК:
                                         </h6>
-                                        <div style="max-height: 200px; overflow-y: auto;">
-                                            ${Array.from(comparison.missingNumbers).map(num => 
-                                                `<span class="badge bg-light text-dark border me-1 mb-1 font-monospace">${num}</span>`
-                                            ).join('')}
+                                        <div style="max-height: 400px; overflow-y: auto;">
+                                            ${comparison.missingPlotsDetails.size > 0 ? `
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-striped">                                                        <thead class="table-dark">
+                                                            <tr>
+                                                                <th>Кадастровий номер</th>
+                                                                <th>Поточний орендар в ДЗК</th>
+                                                                <th>Рада</th>
+                                                                <th>Статус</th>
+                                                                <th>Примітка</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            ${Array.from(comparison.missingPlotsDetails.values()).map(plot => `
+                                                                <tr>
+                                                                    <td class="font-monospace">${plot.cadastral}</td>
+                                                                    <td>${plot.tenant}</td>
+                                                                    <td>${plot.council}</td>
+                                                                    <td><span class="badge ${plot.status === 'Відсутня в ДЗК' ? 'bg-danger' : 'bg-warning text-dark'}">${plot.status}</span></td>
+                                                                    <td class="text-muted">${plot.status === 'Відсутня в ДЗК' ? 'Є договір оренди в РРП, але немає меж в ДЗК' : 'Є межі в ДЗК, але інший орендар або немає оренди'}</td>
+                                                                </tr>
+                                                            `).join('')}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            ` : `
+                                                <div class="text-center text-muted py-3">
+                                                    <i class="bi bi-check-circle fs-1"></i>
+                                                    <p class="mt-2">Усі ділянки з РРП знайдені в ДЗК</p>
+                                                </div>
+                                            `}
                                         </div>
                                     </div>
                                 </div>
@@ -362,16 +384,46 @@
                                         </button>
                                     </div>
                                 </div>
-                                
-                                <div class="collapse" id="missingInRrp">
-                                    <div class="border-top pt-3">                                        <h6 class="text-muted mb-2">
+                                  <div class="collapse" id="missingInRrp">
+                                    <div class="border-top pt-3">
+                                        <h6 class="text-muted mb-3">
                                             <i class="bi bi-file-earmark-plus me-1"></i>
-                                            Кадастрові номери з орендою в ДЗК, що відсутні в РРП:
+                                            Детальна інформація про ділянки з ДЗК, відсутні в РРП:
                                         </h6>
-                                        <div style="max-height: 200px; overflow-y: auto;">
-                                            ${Array.from(comparison.extraNumbers).map(num => 
-                                                `<span class="badge bg-light text-dark border me-1 mb-1 font-monospace">${num}</span>`
-                                            ).join('')}
+                                        <div style="max-height: 400px; overflow-y: auto;">
+                                            ${comparison.extraPlotsDetails.size > 0 ? `
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-striped">                                                        <thead class="table-dark">
+                                                            <tr>
+                                                                <th>Кадастровий номер</th>
+                                                                <th>Власник</th>
+                                                                <th>Орендар</th>
+                                                                <th>Площа (га)</th>
+                                                                <th>Дата реєстрації</th>
+                                                                <th>Рада</th>
+                                                                <th>Статус</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>                                                            ${Array.from(comparison.extraPlotsDetails.values()).map(plot => `
+                                                                <tr>
+                                                                    <td class="font-monospace">${plot.cadastral}</td>
+                                                                    <td>${plot.owner}</td>
+                                                                    <td>${plot.tenant}</td>
+                                                                    <td class="text-end">${plot.area}</td>
+                                                                    <td>${plot.registrationDate}</td>
+                                                                    <td>${plot.council}</td>
+                                                                    <td><span class="badge bg-info">${plot.status}</span></td>
+                                                                </tr>
+                                                            `).join('')}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            ` : `
+                                                <div class="text-center text-muted py-3">
+                                                    <i class="bi bi-check-circle fs-1"></i>
+                                                    <p class="mt-2">Усі ділянки з ДЗК присутні в РРП</p>
+                                                </div>
+                                            `}
                                         </div>
                                     </div>
                                 </div>
@@ -417,9 +469,8 @@
                 const missingInRrpCount = councilMissingInRrp.get(councilName) || 0;
                 
                 // Оновлюємо останні дві комірки (бейджі)
-                if (row.cells.length >= 8) {
-                    row.cells[6].innerHTML = `
-                        <span class="badge ${missingInDzkCount > 0 ? 'bg-warning text-dark' : 'bg-success'}" title="${missingInDzkCount > 0 ? missingInDzkCount + ' відсутніх в ДЗК' : 'Всі знайдені в ДЗК'}">
+                if (row.cells.length >= 8) {                    row.cells[6].innerHTML = `
+                        <span class="badge ${missingInDzkCount > 0 ? 'bg-warning text-dark' : 'bg-success'}" title="${missingInDzkCount > 0 ? missingInDzkCount + ' розбіжностей в ДЗК' : 'Всі знайдені в ДЗК з правильним орендарем'}">
                             ${missingInDzkCount}
                         </span>
                     `;
@@ -433,14 +484,16 @@
                     row.cells[7].style.display = 'table-cell';
                 }
             });
-        }async function compareWithGeojson(edrpou, txtCadastralNumbers) {
+        }        async function compareWithGeojson(edrpou, txtCadastralNumbers) {
             const comparison = {
                 foundInGeojson: 0,
                 missingInGeojson: 0, // Є в РРП, немає в ДЗК
                 missingInRrp: 0,     // Є в ДЗК, немає в РРП
                 totalCouncilsChecked: 0,
                 missingNumbers: new Set(),      // Номери відсутні в ДЗК
-                extraNumbers: new Set()         // Номери відсутні в РРП
+                extraNumbers: new Set(),        // Номери відсутні в РРП
+                missingPlotsDetails: new Map(), // Детальна інформація про відсутні в ДЗК
+                extraPlotsDetails: new Map()    // Детальна інформація про відсутні в РРП
             };
 
             // Очищаємо попередні дані
@@ -466,15 +519,48 @@
                     try {
                         const geojsonResponse = await fetch(dataPath + file);
                         const geojsonData = await geojsonResponse.json();
-                        comparison.totalCouncilsChecked++;
+                        comparison.totalCouncilsChecked++;                          // Збираємо кадастрові номери цієї ради для нашого ЄДРПОУ та детальну інформацію
+                        const councilPlotsDetails = new Map(); // Зберігаємо детальну інформацію про ділянки з нашим ЄДРПОУ
+                        const allCouncilPlots = new Map(); // Зберігаємо всі ділянки ради (для перевірки існування)
                         
-                        // Збираємо кадастрові номери цієї ради для нашого ЄДРПОУ
                         geojsonData.features.forEach(feature => {
                             const props = feature.properties;
-                            if (props && props['ЄДРПОУ орендаря ділянки'] === edrpou) {
-                                const cadastralNumber = props['Кадастровий номер'];
-                                if (cadastralNumber) {
+                            const cadastralNumber = props?.['Кадастровий номер'];
+                            
+                            if (cadastralNumber) {
+                                // Зберігаємо інформацію про всі ділянки ради
+                                if (!allCouncilPlots.has(cadastralNumber)) {
+                                    allCouncilPlots.set(cadastralNumber, {
+                                        cadastral: cadastralNumber,
+                                        owner: props['Власник'] || '',
+                                        tenant: props['Орендар'] || props['Орендар частини'] || '',
+                                        tenantEdrpou: props['ЄДРПОУ орендаря ділянки'] || '',
+                                        area: props['Площа розрахована'] || props['Площа частини'] || '',
+                                        registrationDate: props['Дата реєстрації оренди'] || '',
+                                        expiryDate: props['Дата завершення'] || '',
+                                        status: props['Статус'] || '',
+                                        field: props['Назва поля'] || '',
+                                        council: councilName
+                                    });
+                                }
+                                
+                                // Якщо ділянка з нашим ЄДРПОУ
+                                if (props['ЄДРПОУ орендаря ділянки'] === edrpou) {
                                     councilCadastralNumbers.add(cadastralNumber);
+                                    // Зберігаємо детальну інформацію про ділянку з нашим ЄДРПОУ
+                                    if (!councilPlotsDetails.has(cadastralNumber)) {
+                                        councilPlotsDetails.set(cadastralNumber, {
+                                            cadastral: cadastralNumber,
+                                            owner: props['Власник'] || '',
+                                            tenant: props['Орендар'] || props['Орендар частини'] || '',
+                                            area: props['Площа розрахована'] || props['Площа частини'] || '',
+                                            registrationDate: props['Дата реєстрації оренди'] || '',
+                                            expiryDate: props['Дата завершення'] || '',
+                                            status: props['Статус'] || '',
+                                            field: props['Назва поля'] || '',
+                                            council: councilName
+                                        });
+                                    }
                                 }
                             }
                         });
@@ -484,20 +570,57 @@
                         const firstFeature = geojsonData.features.find(f => f.properties?.['Кадастровий номер']);
                         if (firstFeature) {
                             councilKoatuu = firstFeature.properties['Кадастровий номер'].substring(0, 10);
-                        }
-                        
-                        // 1. Перевіряємо номери з РРП - чи є вони в ДЗК
+                        }                          // 1. Перевіряємо номери з РРП - чи є вони в ДЗК з правильним орендарем
                         txtCadastralNumbers.forEach(txtNumber => {
                             if (councilCadastralNumbers.has(txtNumber)) {
+                                // Ділянка знайдена з правильним орендарем
                                 comparison.foundInGeojson++;
                             } else {
                                 // Перевіряємо чи цей номер належить до цієї ради (за КОАТУУ)
                                 if (txtNumber.length >= 10 && councilKoatuu) {
                                     const txtKoatuu = txtNumber.substring(0, 10);
                                     if (txtKoatuu === councilKoatuu) {
-                                        councilMissingInDzkCount++;
-                                        comparison.missingInGeojson++;
-                                        comparison.missingNumbers.add(txtNumber);
+                                        // Перевіряємо чи ділянка існує взагалі в ДЗК
+                                        const existingPlot = allCouncilPlots.get(txtNumber);
+                                        
+                                        if (existingPlot) {
+                                            // Ділянка існує, але з іншим орендарем або без оренди
+                                            councilMissingInDzkCount++;
+                                            comparison.missingInGeojson++;
+                                            comparison.missingNumbers.add(txtNumber);
+                                            
+                                            const currentTenant = existingPlot.tenant || 'Відсутній';
+                                            const currentTenantEdrpou = existingPlot.tenantEdrpou || 'Відсутній';
+                                            
+                                            comparison.missingPlotsDetails.set(txtNumber, {
+                                                cadastral: txtNumber,
+                                                owner: existingPlot.owner,
+                                                tenant: `${currentTenant} (ЄДРПОУ: ${currentTenantEdrpou})`,
+                                                area: existingPlot.area,
+                                                registrationDate: existingPlot.registrationDate,
+                                                expiryDate: existingPlot.expiryDate,
+                                                status: currentTenantEdrpou ? 'Інший орендар в ДЗК' : 'Немає оренди в ДЗК',
+                                                field: existingPlot.field,
+                                                council: councilName
+                                            });
+                                        } else {
+                                            // Ділянка взагалі відсутня в ДЗК
+                                            councilMissingInDzkCount++;
+                                            comparison.missingInGeojson++;
+                                            comparison.missingNumbers.add(txtNumber);
+                                            
+                                            comparison.missingPlotsDetails.set(txtNumber, {
+                                                cadastral: txtNumber,
+                                                owner: 'Невідомо (немає в ДЗК)',
+                                                tenant: 'Невідомо (немає в ДЗК)',
+                                                area: 'Невідомо (немає в ДЗК)',
+                                                registrationDate: 'Невідомо (немає в ДЗК)',
+                                                expiryDate: 'Невідомо (немає в ДЗК)',
+                                                status: 'Відсутня в ДЗК',
+                                                field: 'Невідомо (немає в ДЗК)',
+                                                council: councilName
+                                            });
+                                        }
                                     }
                                 }
                             }
@@ -509,6 +632,13 @@
                                 councilMissingInRrpCount++;
                                 comparison.missingInRrp++;
                                 comparison.extraNumbers.add(geojsonNumber);
+                                
+                                // Додаємо детальну інформацію для відсутніх в РРП (з повними даними з ДЗК)
+                                const plotDetails = councilPlotsDetails.get(geojsonNumber);
+                                if (plotDetails) {
+                                    plotDetails.status = 'Відсутня в РРП';
+                                    comparison.extraPlotsDetails.set(geojsonNumber, plotDetails);
+                                }
                             }
                         });
                         
@@ -717,12 +847,12 @@
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
+                        maintainAspectRatio: false,                        scales: {
                             y: {
                                 beginAtZero: true,
                                 ticks: {
-                                    stepSize: 1
+                                    stepSize: Math.max(1, Math.ceil(Math.max(...updates) / 20)),
+                                    maxTicksLimit: 10
                                 }
                             }
                         },
