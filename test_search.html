@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Тест пошуку файлів</title>
+</head>
+<body>
+    <h1>Тест пошуку файлів</h1>
+    <div id="results"></div>
+
+    <script>
+        async function testSearch() {
+            const enterpriseId = 'd1058f2a-ed98-4754-b6da-abb3cf15d59d';
+            const results = document.getElementById('results');
+            
+            try {
+                // Завантажуємо список файлів
+                const response = await fetch('data/txt_list.json');
+                const data = await response.json();
+                const allFiles = data.files || [];
+                
+                results.innerHTML += `<p>Отримано ${allFiles.length} файлів зі списку</p>`;
+                results.innerHTML += `<p>Шукаємо файли для enterpriseId: "${enterpriseId}"</p>`;
+                
+                // Тестуємо пошук
+                const matchingFiles = allFiles.filter(fileName => {
+                    results.innerHTML += `<p>Перевіряємо файл: ${fileName}</p>`;
+                    
+                    // Прямий пошук
+                    if (fileName.includes(enterpriseId)) {
+                        results.innerHTML += `<p style="color: green;">✓ Знайдено (прямий пошук): ${fileName}</p>`;
+                        return true;
+                    }
+                    
+                    // Пошук за частинами GUID
+                    if (enterpriseId.includes('-') && enterpriseId.length >= 32) {
+                        const guidParts = enterpriseId.split('-');
+                        results.innerHTML += `<p>Перевіряємо частини GUID: ${guidParts.join(', ')}</p>`;
+                        
+                        const allPartsMatch = guidParts.every(part => {
+                            const matches = fileName.includes(part);
+                            results.innerHTML += `<p>  Частина "${part}" в файлі "${fileName}": ${matches}</p>`;
+                            return matches;
+                        });
+                        
+                        if (allPartsMatch) {
+                            results.innerHTML += `<p style="color: green;">✓ Знайдено (пошук за частинами): ${fileName}</p>`;
+                            return true;
+                        }
+                    }
+                    
+                    return false;
+                });
+                
+                results.innerHTML += `<hr><h2>Результат:</h2>`;
+                if (matchingFiles.length > 0) {
+                    results.innerHTML += `<p style="color: green; font-weight: bold;">Знайдено ${matchingFiles.length} файлів:</p>`;
+                    matchingFiles.forEach(file => {
+                        results.innerHTML += `<p>- ${file}</p>`;
+                    });
+                } else {
+                    results.innerHTML += `<p style="color: red; font-weight: bold;">Файли не знайдено</p>`;
+                }
+                
+            } catch (error) {
+                results.innerHTML += `<p style="color: red;">Помилка: ${error.message}</p>`;
+            }
+        }
+        
+        // Запускаємо тест при завантаженні сторінки
+        testSearch();
+    </script>
+</body>
+</html>

@@ -156,116 +156,98 @@
         }        async function findTxtFiles(dataPath, enterpriseId) {
             const txtFiles = [];
             console.log(`Пошук txt файлів для enterpriseId: "${enterpriseId}"`);
-            
+
             try {
-                // Спроба отримати список txt файлів з серверу
-                // Спочатку спробуємо отримати список через запит до папки data/txt_list.json
-                let knownFiles = [];
-                
+                // Спочатку перевіряємо чи існує файл з точною назвою enterpriseId.txt
+                try {
+                    const directResponse = await fetch(`data/${enterpriseId}.txt`);
+                    if (directResponse.ok) {
+                        console.log(`Знайдено прямий файл: ${enterpriseId}.txt`);
+                        txtFiles.push(`${enterpriseId}.txt`);
+                        return txtFiles;
+                    }
+                } catch (error) {
+                    // Файл не існує, продовжуємо пошук
+                }
+
+                // Спробуємо використати статичний список файлів
                 try {
                     const response = await fetch('data/txt_list.json');
                     if (response.ok) {
                         const data = await response.json();
-                        knownFiles = data.files || [];
+                        const allFiles = data.files || [];                        console.log(`Отримано ${allFiles.length} txt файлів зі статичного списку`);
+
+                        // Шукаємо файли які містять enterpriseId в назві
+                        const matchingFiles = allFiles.filter(fileName => {
+                            console.log(`Перевіряємо файл: ${fileName} для enterpriseId: ${enterpriseId}`);
+                            
+                            // Перевіряємо чи містить файл enterpriseId як підрядок
+                            if (fileName.includes(enterpriseId)) {
+                                console.log(`✓ Знайдено співпадіння (прямий пошук): ${fileName}`);
+                                return true;
+                            }
+                            
+                            // Якщо enterpriseId виглядає як GUID, перевіряємо його частини
+                            if (enterpriseId.includes('-') && enterpriseId.length >= 32) {
+                                const guidParts = enterpriseId.split('-');
+                                console.log(`Перевіряємо частини GUID: ${guidParts.join(', ')}`);
+                                const allPartsMatch = guidParts.every(part => {
+                                    const matches = fileName.includes(part);
+                                    console.log(`  Частина "${part}" в файлі "${fileName}": ${matches}`);
+                                    return matches;
+                                });
+                                if (allPartsMatch) {
+                                    console.log(`✓ Знайдено співпадіння (пошук за частинами): ${fileName}`);
+                                    return true;
+                                }
+                            }
+                            
+                            return false;
+                        });
+
+                        if (matchingFiles.length > 0) {
+                            console.log(`Знайдено файли через пошук в статичному списку:`, matchingFiles);
+                            txtFiles.push(...matchingFiles);
+                            return txtFiles;
+                        }
                     }
                 } catch (error) {
-                    console.log('txt_list.json не знайдено, використовуємо альтернативний метод');
+                    console.error('Статичний список недоступний:', error);
                 }
-                
-                // Якщо txt_list.json не існує, використовуємо альтернативний підхід
-                if (knownFiles.length === 0) {
-                    // Генеруємо потенційні назви файлів на основі наявних ЄДРПОУ
-                    const commonEdrpouPatterns = [
-                        '31369733-6951a667-a011-499f-85fa-0b0bd1a5f411.txt',
-                        '32578784-1b993bed-913d-4b67-a425-eaabc687a569.txt',
-                        '32842030-4429e468-3671-4603-a1e8-4d54e7e7b300.txt',
-                        '34217403-fe1921f7-0504-40f6-a817-644d8d6125ab.txt',
-                        '35621685-104b21c4-4234-4d76-b313-10c1270d46de.txt',
-                        '39697056-4c487d58-bfd7-49c8-8605-e825400f3353.txt',
-                        '40733935-b2a43d30-e687-470c-a1f1-6a336d1c112c.txt'
-                    ];
-                    
-                    // Також спробуємо знайти файли з цим enterpriseId у назві
-                    for (let i = 0; i < 100; i++) {
-                        const testPattern = `${enterpriseId}-${i.toString().padStart(8, '0')}-${i.toString().padStart(4, '0')}-${i.toString().padStart(4, '0')}-${i.toString().padStart(4, '0')}-${i.toString().padStart(12, '0')}.txt`;
-                        commonEdrpouPatterns.push(testPattern);
-                    }
-                    
-                    knownFiles = commonEdrpouPatterns;
-                }                // Шукаємо файли, які містять переданий enterpriseId у своїй назві
-                const searchPromises = knownFiles.map(async (fileName) => {
-                    // Перевіряємо чи файл містить enterpriseId як підрядок
-                    // або якщо enterpriseId виглядає як GUID, шукаємо його в назві файлу
-                    let shouldCheck = false;
-                    
-                    if (fileName.includes(enterpriseId)) {
-                        shouldCheck = true;
-                    } else if (enterpriseId.includes('-') && enterpriseId.length >= 32) {
-                        // Якщо enterpriseId схожий на GUID, шукаємо його частини в назві файлу
-                        const guidParts = enterpriseId.split('-');
-                        shouldCheck = guidParts.every(part => fileName.includes(part));
-                    }
-                    
-                    if (shouldCheck) {
-                        try {
-                            const response = await fetch('data/' + fileName);
-                            if (response.ok) {
-                                console.log(`Знайдено файл: ${fileName} для enterpriseId: ${enterpriseId}`);
-                                return fileName;
+
+                // Якщо нічого не знайшли, спробуємо динамічний пошук через PHP (якщо доступний)
+                try {
+                    const response = await fetch('list_txt_files.php');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const allFiles = data.files || [];
+                        console.log(`Отримано ${allFiles.length} txt файлів через PHP скрипт`);
+
+                        // Шукаємо файли які містять enterpriseId в назві
+                        const matchingFiles = allFiles.filter(fileName => {
+                            // Перевіряємо чи містить файл enterpriseId як підрядок
+                            if (fileName.includes(enterpriseId)) {
+                                return true;
                             }
-                        } catch (error) {
-                            // Файл не існує, це нормально
+                            
+                            // Якщо enterpriseId виглядає як GUID, перевіряємо його частини
+                            if (enterpriseId.includes('-') && enterpriseId.length >= 32) {
+                                const guidParts = enterpriseId.split('-');
+                                return guidParts.every(part => fileName.includes(part));
+                            }
+                            
+                            return false;
+                        });
+
+                        if (matchingFiles.length > 0) {
+                            console.log(`Знайдено файли через пошук в динамічному списку:`, matchingFiles);
+                            txtFiles.push(...matchingFiles);
                         }
                     }
-                    return null;
-                });
-                  const results = await Promise.all(searchPromises);
-                const foundFiles = results.filter(file => file !== null);
-                txtFiles.push(...foundFiles);
-                  // Якщо файли не знайдені, спробуємо розширений пошук у всіх файлах
-                if (txtFiles.length === 0) {
-                    console.log(`Прямий пошук для ${enterpriseId} не дав результатів, виконуємо розширений пошук...`);
-                    
-                    // Пробуємо знайти файли, що містять enterpriseId як частину GUID
-                    const extendedSearchPromises = knownFiles.map(async (fileName) => {
-                        try {
-                            const response = await fetch('data/' + fileName);
-                            if (response.ok) {
-                                // Перевіряємо назву файлу на відповідність
-                                let isMatch = false;
-                                
-                                if (fileName.includes(enterpriseId)) {
-                                    isMatch = true;
-                                } else if (enterpriseId.includes('-') && enterpriseId.length >= 32) {
-                                    // Для GUID перевіряємо окремі частини
-                                    const guidParts = enterpriseId.split('-');
-                                    isMatch = guidParts.every(part => fileName.includes(part));
-                                } else {
-                                    // Перевіряємо вміст файлу
-                                    const content = await response.text();
-                                    isMatch = content.includes(enterpriseId);
-                                }
-                                
-                                if (isMatch) {
-                                    console.log(`Знайдено файл через розширений пошук: ${fileName}`);
-                                    return fileName;
-                                }
-                            }
-                        } catch (error) {
-                            // Файл не існує
-                        }
-                        return null;
-                    });
-                    
-                    const extendedResults = await Promise.all(extendedSearchPromises);
-                    const additionalFiles = extendedResults.filter(file => file !== null);
-                    txtFiles.push(...additionalFiles);
-                    
-                    if (additionalFiles.length > 0) {
-                        console.log(`Знайдено файли через розширений пошук:`, additionalFiles);
-                    }
+                } catch (error) {
+                    console.error('PHP скрипт недоступний:', error);
                 }
-                  } catch (error) {
+            } catch (error) {
                 console.error('Помилка пошуку txt файлів:', error);
             }
             
@@ -312,8 +294,7 @@
                 return;
             }
 
-            // Беремо дані з першого файлу
-            const data = enterpriseDataArray[0];
+            // Підрахунок загальної кількості кадастрових номерів з усіх підприємств
             const totalCadastralNumbers = enterpriseDataArray.reduce((sum, item) => sum + item.cadastralNumbers.length, 0);
 
             // Збираємо всі кадастрові номери з txt файлів
@@ -322,11 +303,61 @@
                 item.cadastralNumbers.forEach(number => {
                     txtCadastralNumbers.add(number);
                 });
-            });            // Порівнюємо з geojson файлами
-            const comparison = await compareWithGeojson(data.edrpou, txtCadastralNumbers);
-            const exactMatchPercent = totalCadastralNumbers > 0 ? (comparison.foundInGeojson / totalCadastralNumbers) * 100 : 0;
-            const matchPercent = Math.round(exactMatchPercent);            infoContainer.querySelector('.card-body').innerHTML = `
-                <!-- Компактна інформація про підприємство -->
+            });
+
+            // Створюємо заголовок з інформацією про кількість підприємств
+            const enterpriseNames = enterpriseDataArray.map(item => item.enterpriseName).join(', ');
+            const edrpouNumbers = enterpriseDataArray.map(item => item.edrpou).join(', ');
+            const title = enterpriseDataArray.length > 1 
+                ? `${enterpriseDataArray.length} підприємства з однаковим власником`
+                : enterpriseDataArray[0].enterpriseName;            // Порівнюємо з geojson файлами для кожного підприємства окремо
+            let combinedComparison;
+            let enterpriseComparisons = [];
+            
+            if (enterpriseDataArray.length === 1) {
+                // Одне підприємство - робимо звичайне порівняння
+                combinedComparison = await compareWithGeojson(enterpriseDataArray[0].edrpou, txtCadastralNumbers);
+            } else {
+                // Кілька підприємств - порівнюємо кожне окремо
+                for (const enterprise of enterpriseDataArray) {
+                    const enterpriseCadastralNumbers = new Set(enterprise.cadastralNumbers);
+                    const enterpriseComparison = await compareWithGeojson(enterprise.edrpou, enterpriseCadastralNumbers);
+                    enterpriseComparison.enterpriseInfo = enterprise;
+                    enterpriseComparisons.push(enterpriseComparison);
+                }
+                
+                // Об'єднуємо результати
+                combinedComparison = {
+                    foundInGeojson: enterpriseComparisons.reduce((sum, comp) => sum + comp.foundInGeojson, 0),
+                    missingInGeojson: enterpriseComparisons.reduce((sum, comp) => sum + comp.missingInGeojson, 0),
+                    missingInRrp: enterpriseComparisons.reduce((sum, comp) => sum + comp.missingInRrp, 0),
+                    totalCouncilsChecked: Math.max(...enterpriseComparisons.map(comp => comp.totalCouncilsChecked)),
+                    missingNumbers: new Set(),
+                    extraNumbers: new Set(),
+                    missingPlotsDetails: new Map(),
+                    extraPlotsDetails: new Map()
+                };
+                
+                // Об'єднуємо деталі
+                enterpriseComparisons.forEach(comp => {
+                    comp.missingNumbers.forEach(num => combinedComparison.missingNumbers.add(num));
+                    comp.extraNumbers.forEach(num => combinedComparison.extraNumbers.add(num));
+                    comp.missingPlotsDetails.forEach((details, key) => {
+                        details.enterpriseInfo = comp.enterpriseInfo;
+                        combinedComparison.missingPlotsDetails.set(key, details);
+                    });
+                    comp.extraPlotsDetails.forEach((details, key) => {
+                        details.enterpriseInfo = comp.enterpriseInfo;
+                        combinedComparison.extraPlotsDetails.set(key, details);
+                    });
+                });
+            }
+            
+            const exactMatchPercent = totalCadastralNumbers > 0 ? (combinedComparison.foundInGeojson / totalCadastralNumbers) * 100 : 0;
+            const matchPercent = Math.round(exactMatchPercent);
+
+            infoContainer.querySelector('.card-body').innerHTML = `
+                <!-- Компактна інформація про підприємство(а) -->
                 <div class="row align-items-center mb-2">
                     <div class="col">
                         <div class="d-flex align-items-center justify-content-between">
@@ -335,17 +366,22 @@
                                     <i class="bi bi-building-fill text-primary" style="font-size: 14px;"></i>
                                 </div>
                                 <div>
-                                    <h6 class="mb-0 text-truncate" style="max-width: 300px;">${data.enterpriseName}</h6>
+                                    <h6 class="mb-0 text-truncate" style="max-width: 300px;">${title}</h6>
                                     <div class="d-flex align-items-center gap-2 mt-1">
-                                        <span class="badge bg-primary" style="font-size: 10px;">${data.edrpou}</span>
-                                        <small class="text-muted">
-                                            <i class="bi bi-calendar-check me-1"></i>${data.actualityDate}
-                                        </small>
+                                        ${enterpriseDataArray.length > 1 ? `
+                                            <span class="badge bg-secondary" style="font-size: 10px;">${enterpriseDataArray.length} підприємств</span>
+                                            <small class="text-muted">ЄДРПОУ: ${edrpouNumbers}</small>
+                                        ` : `
+                                            <span class="badge bg-primary" style="font-size: 10px;">${enterpriseDataArray[0].edrpou}</span>
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar-check me-1"></i>${enterpriseDataArray[0].actualityDate}
+                                            </small>
+                                        `}
                                     </div>
                                 </div>
                             </div>
                             <div class="text-end">
-                                <div class="h6 mb-0 text-${comparison.missingInGeojson === 0 ? 'success' : 'warning'}">
+                                <div class="h6 mb-0 text-${combinedComparison.missingInGeojson === 0 ? 'success' : 'warning'}">
                                     ${exactMatchPercent === 100 ? '100' : exactMatchPercent.toFixed(1)}%
                                 </div>
                                 <small class="text-muted">відповідність</small>
@@ -353,6 +389,29 @@
                         </div>
                     </div>
                 </div>
+
+                ${enterpriseDataArray.length > 1 ? `
+                    <!-- Детальна інформація про кожне підприємство -->
+                    <div class="border rounded p-2 mb-3 bg-light">
+                        <h6 class="text-muted mb-2">
+                            <i class="bi bi-buildings me-1"></i>
+                            Підприємства в групі:
+                        </h6>
+                        ${enterpriseDataArray.map(enterprise => `
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light">
+                                <div>
+                                    <strong>${enterprise.enterpriseName}</strong>
+                                    <span class="badge bg-primary ms-2" style="font-size: 10px;">${enterprise.edrpou}</span>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">
+                                        ${enterprise.cadastralNumbers.length} договорів • ${enterprise.actualityDate}
+                                    </small>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
 
                 <!-- Компактна статистика -->
                 <div class="row g-1 mb-2">
@@ -364,13 +423,13 @@
                     </div>
                     <div class="col-4">
                         <div class="bg-success bg-opacity-10 px-2 py-1 rounded text-center">
-                            <div class="fw-semibold text-success mb-0">${comparison.foundInGeojson}</div>
+                            <div class="fw-semibold text-success mb-0">${combinedComparison.foundInGeojson}</div>
                             <small class="text-muted" style="font-size: 10px;">знайдено в ДЗК</small>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="bg-secondary bg-opacity-10 px-2 py-1 rounded text-center">
-                            <div class="fw-semibold text-secondary mb-0">${comparison.totalCouncilsChecked}</div>
+                            <div class="fw-semibold text-secondary mb-0">${combinedComparison.totalCouncilsChecked}</div>
                             <small class="text-muted" style="font-size: 10px;">рад перевірено</small>
                         </div>
                     </div>
@@ -391,7 +450,7 @@
                             ${exactMatchPercent.toFixed(1)}% відповідність
                         </small>
                     </div>
-                </div>                ${comparison.missingInGeojson > 0 || comparison.missingInRrp > 0 ? `
+                </div>                ${combinedComparison.missingInGeojson > 0 || combinedComparison.missingInRrp > 0 ? `
                     <!-- Блок з проблемними ділянками -->
                     <div class="card border-warning">
                         <div class="card-header bg-warning bg-opacity-10">
@@ -401,12 +460,12 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            ${comparison.missingInGeojson > 0 ? `
+                            ${combinedComparison.missingInGeojson > 0 ? `
                                 <div class="d-flex align-items-center justify-content-between mb-3">
                                     <div>                                        <p class="mb-1">
-                                            <strong>${comparison.missingInGeojson} з ${totalCadastralNumbers}</strong> кадастрових номерів 
+                                            <strong>${combinedComparison.missingInGeojson} з ${totalCadastralNumbers}</strong> кадастрових номерів 
                                             мають зареєстровані договори оренди в РРП, але мають розбіжності в ДЗК
-                                            <span class="text-danger fw-semibold">(${((comparison.missingInGeojson / totalCadastralNumbers) * 100).toFixed(1)}%)</span>
+                                            <span class="text-danger fw-semibold">(${((combinedComparison.missingInGeojson / totalCadastralNumbers) * 100).toFixed(1)}%)</span>
                                         </p>
                                         <small class="text-muted">
                                             Ділянки можуть бути відсутні в ДЗК, мати іншого орендаря або не мати активної оренди
@@ -426,11 +485,12 @@
                                             Детальна інформація про ділянки з розбіжностями в ДЗК:
                                         </h6>
                                         <div style="max-height: 400px; overflow-y: auto;">
-                                            ${comparison.missingPlotsDetails.size > 0 ? `
+                                            ${combinedComparison.missingPlotsDetails.size > 0 ? `
                                                 <div class="table-responsive">
                                                     <table class="table table-sm table-striped">                                                        <thead class="table-dark">
                                                             <tr>
                                                                 <th>Кадастровий номер</th>
+                                                                ${enterpriseDataArray.length > 1 ? '<th>Підприємство</th>' : ''}
                                                                 <th>Поточний орендар в ДЗК</th>
                                                                 <th>Рада</th>
                                                                 <th>Статус</th>
@@ -438,9 +498,10 @@
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            ${Array.from(comparison.missingPlotsDetails.values()).map(plot => `
+                                                            ${Array.from(combinedComparison.missingPlotsDetails.values()).map(plot => `
                                                                 <tr>
                                                                     <td class="font-monospace">${plot.cadastral}</td>
+                                                                    ${enterpriseDataArray.length > 1 ? `<td><span class="badge bg-primary">${plot.enterpriseInfo ? plot.enterpriseInfo.edrpou : 'Н/Д'}</span><br><small>${plot.enterpriseInfo ? plot.enterpriseInfo.enterpriseName : ''}</small></td>` : ''}
                                                                     <td>${plot.tenant}</td>
                                                                     <td>${plot.council}</td>
                                                                     <td><span class="badge ${plot.status === 'Відсутня в ДЗК' ? 'bg-danger' : 'bg-warning text-dark'}">${plot.status}</span></td>
@@ -460,10 +521,10 @@
                                     </div>
                                 </div>
                             ` : ''}
-                              ${comparison.missingInRrp > 0 ? `
+                              ${combinedComparison.missingInRrp > 0 ? `
                                 <div class="d-flex align-items-center justify-content-between mb-3">
                                     <div>                                        <p class="mb-1">
-                                            <strong>${comparison.missingInRrp}</strong> кадастрових номерів 
+                                            <strong>${combinedComparison.missingInRrp}</strong> кадастрових номерів 
                                             мають зареєстровану оренду в ДЗК за цим підприємством, але відсутні в РРП
                                         </p>
                                         <small class="text-muted">
@@ -486,11 +547,12 @@
                                             Детальна інформація про ділянки з ДЗК, відсутні в РРП:
                                         </h6>
                                         <div style="max-height: 400px; overflow-y: auto;">
-                                            ${comparison.extraPlotsDetails.size > 0 ? `
+                                            ${combinedComparison.extraPlotsDetails.size > 0 ? `
                                                 <div class="table-responsive">
                                                     <table class="table table-sm table-striped">                                                        <thead class="table-dark">
                                                             <tr>
                                                                 <th>Кадастровий номер</th>
+                                                                ${enterpriseDataArray.length > 1 ? '<th>Підприємство</th>' : ''}
                                                                 <th>Власник</th>
                                                                 <th>Орендар</th>
                                                                 <th>Площа (га)</th>
@@ -499,9 +561,10 @@
                                                                 <th>Статус</th>
                                                             </tr>
                                                         </thead>
-                                                        <tbody>                                                            ${Array.from(comparison.extraPlotsDetails.values()).map(plot => `
+                                                        <tbody>                                                            ${Array.from(combinedComparison.extraPlotsDetails.values()).map(plot => `
                                                                 <tr>
                                                                     <td class="font-monospace">${plot.cadastral}</td>
+                                                                    ${enterpriseDataArray.length > 1 ? `<td><span class="badge bg-primary">${plot.enterpriseInfo ? plot.enterpriseInfo.edrpou : 'Н/Д'}</span><br><small>${plot.enterpriseInfo ? plot.enterpriseInfo.enterpriseName : ''}</small></td>` : ''}
                                                                     <td>${plot.owner}</td>
                                                                     <td>${plot.tenant}</td>
                                                                     <td class="text-end">${plot.area}</td>
@@ -540,11 +603,10 @@
                     </div>
                 `}
 
-                <!-- Додаткова інформація -->                <div class="text-center mt-4 pt-3 border-top">
-                    <small class="text-muted">
+                <!-- Додаткова інформація -->                <div class="text-center mt-4 pt-3 border-top">                    <small class="text-muted">
                         <i class="bi bi-info-circle me-1"></i>
-                        Дані актуальні станом на ${data.actualityDate} • 
-                        Перевірено ${comparison.totalCouncilsChecked} рад(и) • 
+                        Дані актуальні станом на ${enterpriseDataArray[0].actualityDate} • 
+                        Перевірено ${combinedComparison.totalCouncilsChecked} рад(и) • 
                         Файлів завантажено: ${enterpriseDataArray.length}
                     </small>
                 </div>
