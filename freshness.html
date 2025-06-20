@@ -73,12 +73,17 @@
                 </div>
             </div>
         </div>
-    </nav>    <div class="container py-4">        <h1 class="mb-4" id="pageTitle">
-            Моє підприємство
-            <small class="text-muted fs-5 ms-3" id="pageSubtitle">
-                завантаження...
-            </small>
-        </h1><!-- Контейнер для інформації про підприємство -->
+    </nav>    <div class="container py-4">        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0" id="pageTitle">
+                Моє підприємство
+                <small class="text-muted fs-5 ms-3" id="pageSubtitle">
+                    завантаження...
+                </small>
+            </h1>
+            <button type="button" class="btn btn-outline-primary" onclick="copyKoatuuList()" title="Копіювати список КОАТУУ в буфер обміну">
+                <i class="bi bi-clipboard"></i> Копіювати КОАТУУ
+            </button>
+        </div><!-- Контейнер для інформації про підприємство -->
         <div id="enterpriseInfo" class="card border-primary mb-4" style="display: none;">
             <div class="card-header bg-primary text-white">
                 <h4 class="mb-0"><i class="bi bi-building-fill me-2"></i>Інформація про підприємство</h4>
@@ -1112,15 +1117,17 @@
             }
             
             window.location.href = returnUrl;
-        }
-
-        // Додаємо нову функцію для копіювання КОАТУУ
+        }        // Додаємо нову функцію для копіювання КОАТУУ
         function copyKoatuuList() {
             const tableRows = document.querySelectorAll('#tableBody tr');
             const koatuuList = Array.from(tableRows)
                 .map(row => row.children[1].textContent.trim())
                 .filter(koatuu => koatuu !== 'Н/Д')
-                .map(koatuu => `'${koatuu}'`)
+                .map(koatuu => {
+                    // Обрізаємо останній нуль якщо він є
+                    const trimmed = koatuu.endsWith('0') ? koatuu.slice(0, -1) : koatuu;
+                    return `'${trimmed}'`;
+                })
                 .join(',\n');
 
             navigator.clipboard.writeText(koatuuList).then(() => {
