@@ -959,6 +959,11 @@ body {
             display: none !important;
         }
         
+        /* Приховуємо стандартний search control на мобільних */
+        .leaflet-control-search {
+            display: none !important;
+        }
+        
         /* Створюємо мобільне меню внизу */
         .mobile-bottom-menu {
             position: fixed;
@@ -1081,6 +1086,58 @@ body {
             border-radius: 2px;
             vertical-align: middle;
             border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        /* Стилі для мобільного пошуку в overlay */
+        .mobile-search-overlay .leaflet-control-search {
+            display: block !important;
+            position: relative !important;
+            background: white !important;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3) !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 400px !important;
+            overflow: hidden !important;
+        }
+        
+        .mobile-search-overlay .leaflet-control-search input {
+            font-size: 16px !important;
+            padding: 15px 20px !important;
+            border: none !important;
+            border-radius: 12px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            background: white !important;
+            color: #333 !important;
+        }
+        
+        .mobile-search-overlay .leaflet-control-search input:focus {
+            outline: none !important;
+            box-shadow: 0 0 0 2px #007bff !important;
+        }
+        
+        .mobile-search-overlay .leaflet-control-search .search-tooltip {
+            background: white !important;
+            border-radius: 0 0 12px 12px !important;
+            box-shadow: none !important;
+            max-height: 250px !important;
+            overflow-y: auto !important;
+            border-top: 1px solid #eee !important;
+        }
+        
+        .mobile-search-overlay .leaflet-control-search .search-tip {
+            padding: 12px 20px !important;
+            border-bottom: 1px solid #f0f0f0 !important;
+            font-size: 14px !important;
+        }
+        
+        .mobile-search-overlay .leaflet-control-search .search-tip:hover {
+            background-color: #f8f9fa !important;
+        }
+        
+        .mobile-search-overlay .leaflet-control-search .search-tip:last-child {
+            border-bottom: none !important;
         }
     }
     </style>
@@ -1525,7 +1582,7 @@ body {
             }
 
             // Додаємо haptic feedback до кнопок
-            document.querySelectorAll('.btn, .leaflet-bar a').forEach(button => {
+            document.querySelectorAll('.btn, .leaflet-bar a, .mobile-menu-item').forEach(button => {
                 button.addEventListener('touchstart', () => hapticFeedback('light'), { passive: true });
             });
         }
@@ -1715,7 +1772,7 @@ body {
             //         searchNavbarCombined();
             //     });
 
-            // Добавляем восстановление выбора рады
+            // Добавляем восстановление выбора ради
             const urlParams = new URLSearchParams(window.location.search);
             const returnFile = urlParams.get('return_file');
             if (returnFile) {
@@ -1829,9 +1886,8 @@ body {
                 
                 // Кнопка пошуку  
                 document.getElementById('mobileSearchBtn').addEventListener('click', function() {
-                    // Відкриваємо модальне вікно пошуку
-                    const cadastralModal = document.getElementById("cadastralModal");
-                    cadastralModal.style.display = "block";
+                    // Активуємо карточний пошук замість модального вікна
+                    activateSearch();
                 });
                 
                 // Кнопка локації
@@ -1908,7 +1964,237 @@ body {
             }
         }
         
-        // Функція для перемикання панелі шарів
+        // Функція для активації пошуку
+        function activateSearch() {
+            if (searchControl && searchControl._input) {
+                // На десктопі просто фокусуємо
+                if (window.innerWidth > 768) {
+                    searchControl._input.focus();
+                    if (searchControl._container && searchControl._container.classList) {
+                        searchControl._container.classList.add('search-exp');
+                    }
+                    return;
+                }
+                
+                // На мобільному створюємо власний інтерфейс
+                if (window.innerWidth <= 768) {
+                    // Створюємо overlay для мобільного пошуку
+                    const overlay = document.createElement('div');
+                    overlay.className = 'mobile-search-overlay';
+                    overlay.style.cssText = `
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0,0,0,0.5);
+                        z-index: 10000;
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: center;
+                        padding: 20px;
+                        padding-top: calc(60px + env(safe-area-inset-top));
+                    `;
+                    
+                    // Створюємо контейнер для пошуку
+                    const searchContainer = document.createElement('div');
+                    searchContainer.style.cssText = `
+                        background: white;
+                        border-radius: 12px;
+                        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+                        width: 100%;
+                        max-width: 400px;
+                        overflow: hidden;
+                    `;
+                    
+                    // Створюємо поле вводу
+                    const searchInput = document.createElement('input');
+                    searchInput.type = 'text';
+                    searchInput.placeholder = 'Пошук за кадастровим номером або власником';
+                    searchInput.style.cssText = `
+                        font-size: 16px;
+                        padding: 15px 20px;
+                        border: none;
+                        border-radius: 12px;
+                        width: 100%;
+                        box-sizing: border-box;
+                        background: white;
+                        color: #333;
+                        outline: none;
+                    `;
+                    
+                    // Створюємо контейнер для результатів
+                    const resultsContainer = document.createElement('div');
+                    resultsContainer.style.cssText = `
+                        max-height: 250px;
+                        overflow-y: auto;
+                        border-top: 1px solid #eee;
+                        display: none;
+                    `;
+                    
+                    searchContainer.appendChild(searchInput);
+                    searchContainer.appendChild(resultsContainer);
+                    overlay.appendChild(searchContainer);
+                    
+                    // Закриття по кліку на overlay
+                    overlay.addEventListener('click', function(e) {
+                        if (e.target === overlay) {
+                            closeMobileSearch();
+                        }
+                    });
+                    
+                    // ESC для закриття
+                    const escHandler = function(e) {
+                        if (e.key === 'Escape') {
+                            closeMobileSearch();
+                            document.removeEventListener('keydown', escHandler);
+                        }
+                    };
+                    document.addEventListener('keydown', escHandler);
+                    
+                    // Пошук при введенні тексту
+                    let searchTimeout;
+                    searchInput.addEventListener('input', function() {
+                        clearTimeout(searchTimeout);
+                        const query = this.value.trim();
+                        
+                        if (query.length < 2) {
+                            resultsContainer.style.display = 'none';
+                            return;
+                        }
+                        
+                        searchTimeout = setTimeout(() => {
+                            performMobileSearch(query, resultsContainer);
+                        }, 300);
+                    });
+                    
+                    // Зберігаємо посилання
+                    window.mobileSearchOverlay = overlay;
+                    window.mobileSearchEscHandler = escHandler;
+                    
+                    // Додаємо на сторінку
+                    document.body.appendChild(overlay);
+                    
+                    // Фокусуємо після короткої затримки
+                    setTimeout(() => {
+                        searchInput.focus();
+                        // Haptic feedback
+                        if (navigator.vibrate) {
+                            navigator.vibrate(50);
+                        }
+                    }, 100);
+                }
+            } else {
+                // Якщо search control ще не створений, показуємо повідомлення
+                alert('Пошук буде доступний після завантаження даних карти');
+            }
+        }
+        
+        // Функція для закриття мобільного пошуку
+        function closeMobileSearch() {
+            if (window.mobileSearchOverlay) {
+                // Видаляємо overlay
+                document.body.removeChild(window.mobileSearchOverlay);
+                window.mobileSearchOverlay = null;
+                
+                // Видаляємо ESC handler
+                if (window.mobileSearchEscHandler) {
+                    document.removeEventListener('keydown', window.mobileSearchEscHandler);
+                    window.mobileSearchEscHandler = null;
+                }
+            }
+        }
+        
+        // Функція для виконання пошуку на мобільному
+        function performMobileSearch(query, resultsContainer) {
+            resultsContainer.innerHTML = '';
+            resultsContainer.style.display = 'none';
+            
+            if (!searchControl || !searchControl._layer) {
+                return;
+            }
+            
+            const results = [];
+            
+            // Використовуємо логіку з searchControl
+            searchControl._layer.eachLayer(function(layer) {
+                if (layer.feature?.properties) {
+                    const props = layer.feature.properties;
+                    const kadastrovyNomer = props['Кадастровий номер'] || '';
+                    const vlasnyk = props['Власник'] || '';
+                    
+                    const text = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const reg = new RegExp(text, 'i');
+                    
+                    if (reg.test(kadastrovyNomer) || reg.test(vlasnyk)) {
+                        results.push({
+                            layer: layer,
+                            kadNum: kadastrovyNomer,
+                            owner: vlasnyk
+                        });
+                    }
+                }
+            });
+            
+            if (results.length > 0) {
+                results.slice(0, 10).forEach(result => { // Обмежуємо до 10 результатів
+                    const resultItem = document.createElement('div');
+                    resultItem.style.cssText = `
+                        padding: 12px 20px;
+                        border-bottom: 1px solid #f0f0f0;
+                        cursor: pointer;
+                        font-size: 14px;
+                    `;
+                    
+                    resultItem.innerHTML = `
+                        <div style="font-weight: 500;">Кадастровий номер: ${result.kadNum}</div>
+                        <div style="color: #666; font-size: 12px;">Власник: ${result.owner}</div>
+                    `;
+                    
+                    resultItem.addEventListener('click', function() {
+                        // Переходимо до ділянки
+                        if (result.layer.getBounds) {
+                            map.fitBounds(result.layer.getBounds());
+                        } else if (result.layer.getLatLng) {
+                            map.setView(result.layer.getLatLng(), 15);
+                        }
+                        
+                        // Відкриваємо popup
+                        if (result.layer.openPopup) {
+                            result.layer.openPopup();
+                        }
+                        
+                        // Закриваємо пошук
+                        setTimeout(() => {
+                            closeMobileSearch();
+                        }, 500);
+                        
+                        // Haptic feedback
+                        if (navigator.vibrate) {
+                            navigator.vibrate(100);
+                        }
+                    });
+                    
+                    resultItem.addEventListener('mouseenter', function() {
+                        this.style.backgroundColor = '#f8f9fa';
+                    });
+                    
+                    resultItem.addEventListener('mouseleave', function() {
+                        this.style.backgroundColor = '';
+                    });
+                    
+                    resultsContainer.appendChild(resultItem);
+                });
+                
+                // Видаляємо border з останнього елемента
+                const lastItem = resultsContainer.lastChild;
+                if (lastItem) {
+                    lastItem.style.borderBottom = 'none';
+                }
+                
+                resultsContainer.style.display = 'block';
+            }
+        }
         function toggleMobileLayersPanel() {
             const panel = document.getElementById('mobileLayersPanel');
             const button = document.getElementById('mobileLayersBtn');
@@ -3486,6 +3772,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
             if (searchControl) {
                 map.removeControl(searchControl);
             }
+            
             searchControl = new L.Control.Search({
                 layer: layer,
                 propertyName: '_searchField',
@@ -3530,7 +3817,22 @@ function addPolygonToMap(geoJSON, originalProperties) {
                         map.setView(latlng, 15);
                     }
                 }
-            }).addTo(map);
+            });
+            
+            // Додаємо search control тільки на десктопі
+            if (window.innerWidth > 768) {
+                searchControl.addTo(map);
+            }
+            // На мобільних зберігаємо searchControl для використання в мобільному інтерфейсі
+
+            // Додаємо обробник для закриття мобільного пошуку при знаходженні результату
+            searchControl.on('search:locationfound', function() {
+                if (window.innerWidth <= 768) {
+                    setTimeout(() => {
+                        closeMobileSearch();
+                    }, 1000); // Затримка для того щоб користувач побачив результат
+                }
+            });
 
             // Обновляем поисковое поле для каждого объекта
             layer.eachLayer(function(layer) {
