@@ -407,8 +407,13 @@
 
 /* Адаптивність для контактного телефону в navbar */
 @media (max-width: 768px) {
-    .contact-phone {
-        display: none !important;
+    .contact-phone .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .contact-phone .phone-text {
+        display: none;
     }
 }
 
@@ -582,8 +587,9 @@
             <div class="position-absolute start-50 translate-middle-x">
                 <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGQcVSh5EnTCa6eJKT9KYX6HleJnXveBcyrCEgaKvlQgRInQ/viewform" 
                    class="btn btn-success btn-sm pulse-button" 
-                   target="_blank">
-                    <i class="bi bi-gift me-1"></i>Замовити доступ <span class="badge bg-light text-success">безкоштовно</span>
+                   target="_blank"
+                   title="Замовити доступ безкоштовно">
+                    <i class="bi bi-gift me-1"></i>Замовити
                 </a>
             </div>
 
@@ -596,11 +602,11 @@
                 </div>
                 
                 <!-- Контактний телефон -->
-                <div class="contact-phone d-none d-md-flex align-items-center">
+                <div class="contact-phone d-flex align-items-center">
                     <a href="tel:+380638805745" class="btn btn-outline-light btn-sm d-flex align-items-center" 
-                       title="Зателефонувати">
+                       title="Зателефонувати +38 063 880 57 45">
                         <i class="bi bi-telephone me-1"></i>
-                        <span class="d-none d-lg-inline">+38 063 880 57 45</span>
+                        <span class="phone-text d-none d-lg-inline">+38 063 880 57 45</span>
                     </a>
                 </div>
             </div>
