@@ -774,12 +774,501 @@ body {
 
         /* Покращуємо popup для мобільних */
         .leaflet-popup-content-wrapper {
-            border-radius: 12px;
-            max-width: calc(100vw - 40px) !important;
+            border-radius: 16px;
+            max-width: calc(100vw - 32px) !important;
+            min-width: 260px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .leaflet-popup {
+            margin-bottom: calc(90px + env(safe-area-inset-bottom)) !important;
+        }
+        
+        .leaflet-popup-content {
+            margin: 0 !important;
+            max-height: 50vh;
+            overflow-y: auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        /* Стилі заголовків для десктопу */
+        .desktop-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 12px 16px;
+            font-size: 1.1em;
+            font-weight: 600;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+            margin: -10px -15px 15px -15px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        /* Іконки з текстом */
+        .icon-text {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #495057;
+            margin-left: 4px;
+        }
+        
+        .popup-content {
+            padding: 12px !important;
+            font-size: 13px !important;
+            max-height: none !important;
+            line-height: 1.4;
         }
 
         .popup-content table {
-            font-size: 14px;
+            font-size: 13px !important;
+            border-spacing: 0 4px !important;
+            width: 100%;
+        }
+        
+        .popup-content td {
+            padding: 4px 0 !important;
+            line-height: 1.3 !important;
+            vertical-align: top;
+        }
+        
+        .popup-content td.property-name {
+            font-weight: 600 !important;
+            padding-right: 8px !important;
+            color: #555 !important;
+            font-size: 12px !important;
+            min-width: 110px;
+            white-space: nowrap !important;
+            opacity: 0.8;
+        }
+        
+        .popup-content td.property-value {
+            padding-left: 6px !important;
+            color: #333 !important;
+            word-break: break-word;
+            font-size: 13px !important;
+            font-weight: 500;
+        }
+        
+        /* Покращення для довгих значень */
+        .popup-content td.property-value {
+            max-width: 160px;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+        
+        /* Компактний заголовок */
+        .popup-content .mobile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            padding: 8px 12px !important;
+            margin: -12px -12px 8px -12px !important;
+            border-radius: 16px 16px 0 0 !important;
+            font-weight: 600 !important;
+            font-size: 12px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        
+        .popup-content .mobile-header i {
+            margin-right: 6px !important;
+            font-size: 14px !important;
+        }
+        
+        /* Покращення кнопки закриття popup */
+        .leaflet-popup-close-button {
+            color: #666 !important;
+            font-size: 18px !important;
+            font-weight: bold !important;
+            width: 28px !important;
+            height: 28px !important;
+            border-radius: 50% !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            top: 6px !important;
+            right: 6px !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        .leaflet-popup-close-button:hover {
+            background: rgba(255, 255, 255, 1) !important;
+            border-color: rgba(0, 0, 0, 0.2) !important;
+            color: #333 !important;
+        }
+        
+        /* Покращення стрілки popup */
+        .leaflet-popup-tip {
+            border-top-color: white !important;
+            border-radius: 2px !important;
+        }
+        
+        /* Компактні посилання у popup */
+        .popup-link {
+            margin-top: 8px !important;
+            padding-top: 8px !important;
+            border-top: 1px solid #eee !important;
+        }
+        
+        .popup-link a {
+            display: inline-flex !important;
+            align-items: center !important;
+            padding: 8px 12px !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            text-decoration: none !important;
+            border-radius: 8px !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            transition: all 0.2s ease !important;
+            min-height: 36px !important;
+            justify-content: center !important;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+        }
+        
+        .popup-link a:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+        }
+        
+        .popup-link a:active {
+            transform: translateY(0) !important;
+        }
+        
+        .popup-link a i {
+            margin-right: 6px !important;
+            font-size: 14px !important;
+        }
+        
+        /* Адаптація для дуже маленьких екранів */
+        @media (max-width: 380px) {
+            .leaflet-popup-content-wrapper {
+                max-width: calc(100vw - 20px) !important;
+                min-width: 240px;
+            }
+            
+            .popup-content {
+                padding: 10px !important;
+            }
+            
+            .popup-content td.property-name {
+                min-width: 90px;
+                font-size: 11px !important;
+            }
+            
+            .popup-content td.property-value {
+                max-width: 130px;
+                font-size: 12px !important;
+            }
+            
+            .popup-content .mobile-header {
+                font-size: 11px !important;
+                padding: 6px 10px !important;
+            }
+        }
+        
+        /* Покращення для особливих полів */
+        .popup-content tr:has(.property-name:contains("Кадастровий номер")) td.property-value {
+            font-family: 'Monaco', 'Menlo', monospace !important;
+            font-size: 11px !important;
+            background: #f8f9fa !important;
+            padding: 4px 6px !important;
+            border-radius: 4px !important;
+        }
+        
+        .popup-content tr:has(.property-name:contains("Площа")) {
+            background: rgba(102, 126, 234, 0.05) !important;
+        }
+        
+        .popup-content tr:has(.property-name:contains("Площа")) td.property-value {
+            font-weight: 600 !important;
+            color: #667eea !important;
+        }
+        
+        /* Touch покращення для popup */
+        .leaflet-popup-content-wrapper {
+            touch-action: pan-y;
+        }
+        
+        /* Анімації для popup */
+        .leaflet-popup {
+            animation: popupSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes popupSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        /* Спеціальні стилі для мобільного popup */
+        .mobile-popup {
+            z-index: 10001 !important;
+        }
+        
+        .mobile-popup .leaflet-popup-content-wrapper {
+            backdrop-filter: blur(15px) !important;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+            border-radius: 16px !important;
+            margin: 0 8px !important;
+            max-width: calc(100vw - 32px) !important;
+            min-width: 280px !important;
+        }
+        
+        .mobile-popup .leaflet-popup-content {
+            margin: 0 !important;
+            line-height: 1.3 !important;
+        }
+        
+        .mobile-popup .leaflet-popup-close-button {
+            top: 8px !important;
+            right: 8px !important;
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 18px !important;
+            background: rgba(0,0,0,0.1) !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            color: #666 !important;
+        }
+        
+        /* Стилі для мобільного заголовку попапу */
+        .mobile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            padding: 12px 16px !important;
+            margin: -13px -19px 12px -19px !important;
+            border-radius: 16px 16px 0 0 !important;
+            font-weight: 600 !important;
+            font-size: 0.9rem !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+        }
+        
+        .mobile-header i {
+            font-size: 1.3em !important;
+            opacity: 0.9 !important;
+            flex-shrink: 0 !important;
+        }
+        
+        /* Стилі для десктопного заголовку попапу */
+        .desktop-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+            color: white !important;
+            padding: 14px 18px !important;
+            margin: -13px -19px 16px -19px !important;
+            border-radius: 8px 8px 0 0 !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 14px !important;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2) !important;
+        }
+        
+        .desktop-header i {
+            font-size: 1.4em !important;
+            opacity: 0.9 !important;
+            flex-shrink: 0 !important;
+        }
+        
+        .header-info {
+            flex: 1 !important;
+            min-width: 0 !important;
+        }
+        
+        .plot-number {
+            font-size: 1em !important;
+            font-weight: 700 !important;
+            margin-bottom: 2px !important;
+        }
+        
+        .plot-details {
+            font-size: 0.8em !important;
+            opacity: 0.85 !important;
+            font-weight: 400 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+        
+        /* Стилі для тексту біля іконок на мобільних */
+        .icon-text {
+            font-size: 0.7rem !important;
+            font-weight: 500 !important;
+            margin-left: 4px !important;
+            color: #666 !important;
+        }
+        
+        /* Стилі для іконок у попапах */
+        .popup-content .property-name i {
+            margin-right: 8px;
+            color: #0d6efd;
+            font-size: 1em;
+            width: 16px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            /* Компактна таблиця для мобільних */
+            .popup-content table {
+                width: 100%;
+                border-spacing: 0;
+                font-size: 0.8rem;
+            }
+            
+            .popup-content tr {
+                border-bottom: 1px solid rgba(0,0,0,0.08);
+                transition: background-color 0.2s ease;
+            }
+            
+            .popup-content tr:last-child {
+                border-bottom: none;
+            }
+            
+            .popup-content tr:hover {
+                background-color: rgba(0,123,255,0.05);
+            }
+            
+            /* Стовпці з іконками та текстом */
+            .popup-content .property-name {
+                width: 75px;
+                text-align: left;
+                padding: 8px 6px;
+                vertical-align: middle;
+                background: rgba(13,110,253,0.05);
+                border-right: 1px solid rgba(0,0,0,0.08);
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            
+            .popup-content .property-name i {
+                margin: 0;
+                font-size: 1.1em;
+                width: 16px;
+                color: #0d6efd;
+                flex-shrink: 0;
+            }
+            
+            .popup-content .icon-text {
+                font-size: 0.7rem !important;
+                font-weight: 600 !important;
+                color: #495057 !important;
+                margin: 0 !important;
+                white-space: nowrap;
+            }
+            
+            /* Стовпці зі значеннями */
+            .popup-content .property-value {
+                padding: 8px 12px;
+                word-break: break-word;
+                line-height: 1.4;
+                color: #333;
+                font-weight: 500;
+            }
+            
+            /* Спеціальні стилі для різних типів даних */
+            .popup-content .property-value:empty::after {
+                content: "—";
+                color: #999;
+                font-style: italic;
+            }
+            
+            /* Виділення для площ */
+            .popup-content tr:has(.property-name i.bi-bounding-box),
+            .popup-content tr:has(.property-name i.bi-calculator),
+            .popup-content tr:has(.property-name i.bi-square) {
+                background-color: rgba(40,167,69,0.05);
+            }
+            
+            /* Виділення для власників та орендарів */
+            .popup-content tr:has(.property-name i.bi-person-check),
+            .popup-content tr:has(.property-name i.bi-person-workspace) {
+                background-color: rgba(255,193,7,0.05);
+            }
+        }
+        
+        /* Покращення для landscape орієнтації та малих екранів */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .leaflet-popup {
+                margin-bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+            }
+            
+            .mobile-popup .leaflet-popup-content-wrapper {
+                max-height: 60vh !important;
+                max-width: 45vw !important;
+            }
+            
+            .popup-content {
+                max-height: 50vh !important;
+                overflow-y: auto !important;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(0,0,0,0.3) transparent;
+            }
+            
+            .popup-content::-webkit-scrollbar {
+                width: 4px;
+            }
+            
+            .popup-content::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            
+            .popup-content::-webkit-scrollbar-thumb {
+                background: rgba(0,0,0,0.3);
+                border-radius: 2px;
+            }
+        }
+        
+        /* Для дуже маленьких екранів */
+        @media (max-width: 400px) {
+            .mobile-popup .leaflet-popup-content-wrapper {
+                margin: 0 4px !important;
+                max-width: calc(100vw - 16px) !important;
+                min-width: 260px !important;
+            }
+            
+            .popup-content table {
+                font-size: 0.75rem;
+            }
+            
+            .popup-content .property-name {
+                width: 28px;
+                padding: 6px 2px;
+            }
+            
+            .popup-content .property-value {
+                padding: 6px 8px;
+            }
+            
+            .mobile-header {
+                padding: 10px 12px !important;
+                font-size: 0.85rem !important;
+            }
+        }
+        
+        /* Покращення для сенсорного управління */
+        @media (max-width: 768px) {
+            .leaflet-popup-close-button:active {
+                transform: scale(0.95);
+                background: rgba(0,0,0,0.2) !important;
+            }
+            
+            .popup-content tr:active {
+                background-color: rgba(0,123,255,0.1) !important;
+            }
         }
 
         /* Мобільне меню покращення */
@@ -3675,20 +4164,53 @@ function addPolygonToMap(geoJSON, originalProperties) {
 }
 
         function createPopupContent(feature, layer) {
-            let popupContent = '<div class="popup-content"><table>';
+            let popupContent = '<div class="popup-content">';
             
-            // Изменяем порядок отображения свойств
+            // Додаємо розширений заголовок для мобільних та десктопу
+            const cadastralNumber = feature.properties["Кадастровий номер"];
+            if (cadastralNumber) {
+                const area = feature.properties["Площа частини"] || feature.properties["Площа розрахована"];
+                const tenant = feature.properties["Орендар частини"] || feature.properties["Орендар"] || "Вільна";
+                const areaText = area ? ` • ${parseFloat(area).toFixed(2)} га` : '';
+                
+                if (window.innerWidth <= 768) {
+                    popupContent += `<div class="mobile-header">
+                        <i class="bi bi-geo-alt"></i>
+                        <div class="header-info">
+                            <div class="plot-number">Ділянка ${cadastralNumber.slice(-4)}</div>
+                            <div class="plot-details">${tenant}${areaText}</div>
+                        </div>
+                    </div>`;
+                } else {
+                    popupContent += `<div class="desktop-header">
+                        <i class="bi bi-geo-alt"></i>
+                        <div class="header-info">
+                            <div class="plot-number">Земельна ділянка ${cadastralNumber}</div>
+                            <div class="plot-details">${tenant}${areaText}</div>
+                        </div>
+                    </div>`;
+                }
+            }
+            
+            popupContent += '<table>';
+            
+            // Показуємо всі поля і на мобільних і на десктопах - тільки змінюємо вигляд
             const orderedKeys = [
                 "Кадастровий номер",
-                "Площа розрахована", // Общая площадь участка
+                "Номер земельної ділянки", 
+                "Площа земельної ділянки",
+                "Площа розрахована",
+                "Площа частини",
+                "Цільове призначення",
+                "Форма власності",
                 "Власник",
-                "Орендар частини", 
                 "Орендар",
+                "Орендар частини", 
                 "Дата реєстрації оренди",
                 "Дата завершення",
                 "Вид обмеження",
                 "Статус",
-                "Площа частини" // Площадь части с определенным статусом
+                "Назва поля"
             ];
             
             // Обрабатываем каждое поле и добавляем в таблицу
@@ -3701,8 +4223,69 @@ function addPolygonToMap(geoJSON, originalProperties) {
                         value = parseFloat(value).toFixed(4) + " га";
                     }
                     
+                    // Покращуємо відображення дат для мобільних
+                    if ((key === "Дата реєстрації оренди" || key === "Дата завершення") && value) {
+                        // Форматуємо дату якщо це можливо
+                        try {
+                            const date = new Date(value);
+                            if (!isNaN(date.getTime())) {
+                                value = date.toLocaleDateString('uk-UA');
+                            }
+                        } catch (e) {
+                            // Залишаємо оригінальне значення якщо не вдалося форматувати
+                        }
+                    }
+                    
+                    // Скорочуємо довгі значення для мобільних
+                    if (window.innerWidth <= 768 && typeof value === 'string' && value.length > 50) {
+                        value = `<span title="${value}">${value.substring(0, 47)}...</span>`;
+                    }
+                    
+                    // Додаємо іконки та короткі пояснення для всіх полів
+                    let displayKey = key;
+                    if (window.innerWidth <= 768) {
+                        const shortNames = {
+                            "Кадастровий номер": '<i class="bi bi-hash"></i><span class="icon-text">Кад. №</span>',
+                            "Номер земельної ділянки": '<i class="bi bi-123"></i><span class="icon-text">№ діл.</span>',
+                            "Площа земельної ділянки": '<i class="bi bi-square"></i><span class="icon-text">Площа</span>',
+                            "Площа розрахована": '<i class="bi bi-calculator"></i><span class="icon-text">Розрах.</span>',
+                            "Площа частини": '<i class="bi bi-bounding-box"></i><span class="icon-text">Част.</span>',
+                            "Цільове призначення": '<i class="bi bi-bullseye"></i><span class="icon-text">Мета</span>',
+                            "Форма власності": '<i class="bi bi-building"></i><span class="icon-text">Влас.</span>',
+                            "Власник": '<i class="bi bi-person-check"></i><span class="icon-text">Власн.</span>',
+                            "Орендар": '<i class="bi bi-person-workspace"></i><span class="icon-text">Орен.</span>',
+                            "Орендар частини": '<i class="bi bi-person-workspace"></i><span class="icon-text">Орен.ч.</span>',
+                            "Дата реєстрації оренди": '<i class="bi bi-calendar-check"></i><span class="icon-text">Реєстр.</span>',
+                            "Дата завершення": '<i class="bi bi-calendar-x"></i><span class="icon-text">Заверш.</span>',
+                            "Вид обмеження": '<i class="bi bi-shield-exclamation"></i><span class="icon-text">Обмеж.</span>',
+                            "Статус": '<i class="bi bi-info-circle"></i><span class="icon-text">Статус</span>',
+                            "Назва поля": '<i class="bi bi-geo"></i><span class="icon-text">Поле</span>'
+                        };
+                        displayKey = shortNames[key] || key;
+                    } else {
+                        // Повні назви з іконками для десктопу
+                        const iconNames = {
+                            "Кадастровий номер": '<i class="bi bi-hash"></i> Кадастровий номер',
+                            "Номер земельної ділянки": '<i class="bi bi-123"></i> Номер земельної ділянки',
+                            "Площа земельної ділянки": '<i class="bi bi-square"></i> Площа земельної ділянки',
+                            "Площа розрахована": '<i class="bi bi-calculator"></i> Площа розрахована',
+                            "Площа частини": '<i class="bi bi-bounding-box"></i> Площа частини',
+                            "Цільове призначення": '<i class="bi bi-bullseye"></i> Цільове призначення',
+                            "Форма власності": '<i class="bi bi-building"></i> Форма власності',
+                            "Власник": '<i class="bi bi-person-check"></i> Власник',
+                            "Орендар": '<i class="bi bi-person-workspace"></i> Орендар',
+                            "Орендар частини": '<i class="bi bi-person-workspace"></i> Орендар частини',
+                            "Дата реєстрації оренди": '<i class="bi bi-calendar-check"></i> Дата реєстрації',
+                            "Дата завершення": '<i class="bi bi-calendar-x"></i> Дата завершення',
+                            "Вид обмеження": '<i class="bi bi-shield-exclamation"></i> Обмеження',
+                            "Статус": '<i class="bi bi-info-circle"></i> Статус',
+                            "Назва поля": '<i class="bi bi-geo"></i> Назва поля'
+                        };
+                        displayKey = iconNames[key] || key;
+                    }
+                    
                     popupContent += `<tr>
-                        <td class="property-name">${key}:</td>
+                        <td class="property-name">${displayKey}:</td>
                         <td class="property-value">${value}</td>
                     </tr>`;
                 }
@@ -3710,8 +4293,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
             
             popupContent += '</table>';
             
-            // Получаем кадастровый номер один раз
-            const cadastralNumber = feature.properties["Кадастровий номер"];
+            // Используем кадастровый номер который уже объявлен в начале функции
             if (cadastralNumber) {
                 // И используем его здесь
                 const publicUrl = 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber;
@@ -3719,7 +4301,13 @@ function addPolygonToMap(geoJSON, originalProperties) {
             }
             
             popupContent += '</div>';
-            layer.bindPopup(popupContent, {maxWidth: 300});
+            
+            // Адаптивні налаштування popup
+            const popupOptions = window.innerWidth <= 768 ? 
+                { maxWidth: 280, className: 'mobile-popup' } : 
+                { maxWidth: 350 };
+                
+            layer.bindPopup(popupContent, popupOptions);
         }
         
         // Добавляем дополнительные стили для подсказок в popup
@@ -5447,20 +6035,53 @@ function analyzeExchange() {
 
         // Модифицированная функция createPopupContent для правильного отображения площадей без лишних пояснений
         function createPopupContent(feature, layer) {
-            let popupContent = '<div class="popup-content"><table>';
+            let popupContent = '<div class="popup-content">';
             
-            // Изменяем порядок отображения свойств
+            // Додаємо розширений заголовок для мобільних та десктопу
+            const cadastralNumber = feature.properties["Кадастровий номер"];
+            if (cadastralNumber) {
+                const area = feature.properties["Площа частини"] || feature.properties["Площа розрахована"];
+                const tenant = feature.properties["Орендар частини"] || feature.properties["Орендар"] || "Вільна";
+                const areaText = area ? ` • ${parseFloat(area).toFixed(2)} га` : '';
+                
+                if (window.innerWidth <= 768) {
+                    popupContent += `<div class="mobile-header">
+                        <i class="bi bi-geo-alt"></i>
+                        <div class="header-info">
+                            <div class="plot-number">Ділянка ${cadastralNumber.slice(-4)}</div>
+                            <div class="plot-details">${tenant}${areaText}</div>
+                        </div>
+                    </div>`;
+                } else {
+                    popupContent += `<div class="desktop-header">
+                        <i class="bi bi-geo-alt"></i>
+                        <div class="header-info">
+                            <div class="plot-number">Земельна ділянка ${cadastralNumber}</div>
+                            <div class="plot-details">${tenant}${areaText}</div>
+                        </div>
+                    </div>`;
+                }
+            }
+            
+            popupContent += '<table>';
+            
+            // Показуємо всі поля і на мобільних і на десктопах - тільки змінюємо вигляд
             const orderedKeys = [
                 "Кадастровий номер",
-                "Площа розрахована", // Общая площадь участка
+                "Номер земельної ділянки", 
+                "Площа земельної ділянки",
+                "Площа розрахована",
+                "Площа частини",
+                "Цільове призначення",
+                "Форма власності",
                 "Власник",
-                "Орендар частини", 
                 "Орендар",
+                "Орендар частини", 
                 "Дата реєстрації оренди",
                 "Дата завершення",
                 "Вид обмеження",
                 "Статус",
-                "Площа частини" // Площадь части с определенным статусом
+                "Назва поля"
             ];
             
             // Обрабатываем каждое поле и добавляем в таблицу
@@ -5473,8 +6094,51 @@ function analyzeExchange() {
                         value = parseFloat(value).toFixed(4) + " га";
                     }
                     
+                    // Додаємо іконки та короткі пояснення для всіх полів у другій функції також
+                    let displayKey = key;
+                    if (window.innerWidth <= 768) {
+                        const shortNames = {
+                            "Кадастровий номер": '<i class="bi bi-hash"></i><span class="icon-text">Кад. №</span>',
+                            "Номер земельної ділянки": '<i class="bi bi-123"></i><span class="icon-text">№ діл.</span>',
+                            "Площа земельної ділянки": '<i class="bi bi-square"></i><span class="icon-text">Площа</span>',
+                            "Площа розрахована": '<i class="bi bi-calculator"></i><span class="icon-text">Розрах.</span>',
+                            "Площа частини": '<i class="bi bi-bounding-box"></i><span class="icon-text">Част.</span>',
+                            "Цільове призначення": '<i class="bi bi-bullseye"></i><span class="icon-text">Мета</span>',
+                            "Форма власності": '<i class="bi bi-building"></i><span class="icon-text">Влас.</span>',
+                            "Власник": '<i class="bi bi-person-check"></i><span class="icon-text">Власн.</span>',
+                            "Орендар": '<i class="bi bi-person-workspace"></i><span class="icon-text">Орен.</span>',
+                            "Орендар частини": '<i class="bi bi-person-workspace"></i><span class="icon-text">Орен.ч.</span>',
+                            "Дата реєстрації оренди": '<i class="bi bi-calendar-check"></i><span class="icon-text">Реєстр.</span>',
+                            "Дата завершення": '<i class="bi bi-calendar-x"></i><span class="icon-text">Заверш.</span>',
+                            "Вид обмеження": '<i class="bi bi-shield-exclamation"></i><span class="icon-text">Обмеж.</span>',
+                            "Статус": '<i class="bi bi-info-circle"></i><span class="icon-text">Статус</span>',
+                            "Назва поля": '<i class="bi bi-geo"></i><span class="icon-text">Поле</span>'
+                        };
+                        displayKey = shortNames[key] || key;
+                    } else {
+                        // Повні назви з іконками для десктопу
+                        const iconNames = {
+                            "Кадастровий номер": '<i class="bi bi-hash"></i> Кадастровий номер',
+                            "Номер земельної ділянки": '<i class="bi bi-123"></i> Номер земельної ділянки',
+                            "Площа земельної ділянки": '<i class="bi bi-square"></i> Площа земельної ділянки',
+                            "Площа розрахована": '<i class="bi bi-calculator"></i> Площа розрахована',
+                            "Площа частини": '<i class="bi bi-bounding-box"></i> Площа частини',
+                            "Цільове призначення": '<i class="bi bi-bullseye"></i> Цільове призначення',
+                            "Форма власності": '<i class="bi bi-building"></i> Форма власності',
+                            "Власник": '<i class="bi bi-person-check"></i> Власник',
+                            "Орендар": '<i class="bi bi-person-workspace"></i> Орендар',
+                            "Орендар частини": '<i class="bi bi-person-workspace"></i> Орендар частини',
+                            "Дата реєстрації оренди": '<i class="bi bi-calendar-check"></i> Дата реєстрації',
+                            "Дата завершення": '<i class="bi bi-calendar-x"></i> Дата завершення',
+                            "Вид обмеження": '<i class="bi bi-shield-exclamation"></i> Обмеження',
+                            "Статус": '<i class="bi bi-info-circle"></i> Статус',
+                            "Назва поля": '<i class="bi bi-geo"></i> Назва поля'
+                        };
+                        displayKey = iconNames[key] || key;
+                    }
+                    
                     popupContent += `<tr>
-                        <td class="property-name">${key}:</td>
+                        <td class="property-name">${displayKey}:</td>
                         <td class="property-value">${value}</td>
                     </tr>`;
                 }
@@ -5482,8 +6146,7 @@ function analyzeExchange() {
             
             popupContent += '</table>';
             
-            // Получаем кадастровый номер один раз
-            const cadastralNumber = feature.properties["Кадастровий номер"];
+            // Використовуємо кадастровий номер який вже оголошений на початку функції
             if (cadastralNumber) {
                 // И используем его здесь
                 const publicUrl = 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber;
@@ -5491,7 +6154,13 @@ function analyzeExchange() {
             }
             
             popupContent += '</div>';
-            layer.bindPopup(popupContent, {maxWidth: 300});
+            
+            // Адаптивні налаштування popup
+            const popupOptions = window.innerWidth <= 768 ? 
+                { maxWidth: 280, className: 'mobile-popup' } : 
+                { maxWidth: 350 };
+                
+            layer.bindPopup(popupContent, popupOptions);
         }
         
         // Модифицированная функция updateSelectionInfo для отображения более детальной информации
