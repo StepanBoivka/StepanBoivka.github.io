@@ -393,6 +393,34 @@
     background-color: var(--bs-dark);
     color: var(--bs-light);
 }
+
+/* Стилі для контактного телефону */
+.contact-phone a {
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.contact-phone a:hover {
+    background-color: rgba(255,255,255,0.1);
+    transform: scale(1.05);
+}
+
+/* Адаптивність для контактного телефону в navbar */
+@media (max-width: 768px) {
+    .contact-phone {
+        display: none !important;
+    }
+}
+
+/* Стилі для контактної інформації в боковому меню */
+.offcanvas-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.offcanvas-body .mt-auto {
+    margin-top: auto !important;
+}
     /* Оновлений CSS для текстових полів у модальному вікні */
 .modal textarea {
     width: 100%;
@@ -559,10 +587,22 @@
                 </a>
             </div>
 
-            <!-- Індикатор актуальності даних -->
-            <div class="data-freshness-indicator d-flex align-items-center ms-2">
-                <i class="bi bi-clock-history text-light me-1"></i>
-                <small class="text-light" id="dataFreshnessText"></small>
+            <!-- Контейнер для правої частини navbar -->
+            <div class="d-flex align-items-center">
+                <!-- Індикатор актуальності даних -->
+                <div class="data-freshness-indicator d-flex align-items-center me-3">
+                    <i class="bi bi-clock-history text-light me-1"></i>
+                    <small class="text-light" id="dataFreshnessText"></small>
+                </div>
+                
+                <!-- Контактний телефон -->
+                <div class="contact-phone d-none d-md-flex align-items-center">
+                    <a href="tel:+380638805745" class="btn btn-outline-light btn-sm d-flex align-items-center" 
+                       title="Зателефонувати">
+                        <i class="bi bi-telephone me-1"></i>
+                        <span class="d-none d-lg-inline">+38 063 880 57 45</span>
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
@@ -637,6 +677,17 @@
                             Експортувати виділені
                         </button>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Контактна інформація -->
+            <div class="mt-auto pt-3 border-top border-secondary">
+                <div class="text-center">
+                    <small class="text-muted d-block mb-2">Контактна інформація</small>
+                    <a href="tel:+380638805745" class="btn btn-outline-light btn-sm w-100">
+                        <i class="bi bi-telephone me-2"></i>
+                        +38 063 880 57 45
+                    </a>
                 </div>
             </div>
         </div>
