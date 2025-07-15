@@ -22,10 +22,7 @@
             border-bottom: unset!important;
             border-top: unset!important;
         }
-        .leaflet-popup-content{
-            max-height: 70vh;
-            max-width: 70vw;
-        }
+        /* Removed conflicting .leaflet-popup-content styles to prevent interference with main popup styling */
         .leaflet-popup-content.media{
             width: auto!important;
             height: auto!important;
