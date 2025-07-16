@@ -2493,34 +2493,8 @@ body {
                             let label = cells[0].replace(/<[^>]*>/g, '').trim();
                             let value = cells[1].replace(/<[^>]*>/g, '').trim();
                             
-                            // Розшируємо скорочені назви полів до повних
-                            const fieldNames = {
-                                'Частн:': 'Частка в орендi:',
-                                'Орендар:': 'Орендар:',
-                                'Орендар частини:': 'Орендар частини:',
-                                'Кадастровий номер:': 'Кадастровий номер:',
-                                'Власник:': 'Власник:',
-                                'Площа:': 'Площа ділянки:',
-                                'Площа ділянки:': 'Площа ділянки:',
-                                'Цільове призначення:': 'Цільове призначення:',
-                                'Статус:': 'Статус оренди:',
-                                'Вид права:': 'Вид права:',
-                                'Дата державної реєстрації:': 'Дата державної реєстрації:',
-                                'Номер запису:': 'Номер запису:',
-                                'Територіальна громада:': 'Територіальна громада:',
-                                'Адреса:': 'Адреса ділянки:',
-                                'Координати:': 'Координати:',
-                                'Примітки:': 'Примітки:'
-                            };
-                            
-                            // Перевіряємо чи є це скорочена назва і розширюємо
-                            if (fieldNames[label]) {
-                                label = fieldNames[label];
-                            } else if (label.endsWith(':')) {
-                                // Якщо назва закінчується на ":", але не знайдена в мапі, залишаємо як є
-                                label = label;
-                            } else {
-                                // Додаємо двокрапку якщо її немає
+                            // Додаємо двокрапку якщо її немає
+                            if (!label.endsWith(':')) {
                                 label = label + ':';
                             }
                             
@@ -4650,24 +4624,8 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     // Додаємо іконки та короткі пояснення для всіх полів
                     let displayKey = key;
                     if (window.innerWidth <= 768) {
-                        const shortNames = {
-                            "Кадастровий номер": '<i class="bi bi-hash"></i><span class="icon-text">Кад. №</span>',
-                            "Номер земельної ділянки": '<i class="bi bi-123"></i><span class="icon-text">№ діл.</span>',
-                            "Площа земельної ділянки": '<i class="bi bi-square"></i><span class="icon-text">Площа</span>',
-                            "Площа розрахована": '<i class="bi bi-calculator"></i><span class="icon-text">Розрах.</span>',
-                            "Площа частини": '<i class="bi bi-bounding-box"></i><span class="icon-text">Част.</span>',
-                            "Цільове призначення": '<i class="bi bi-bullseye"></i><span class="icon-text">Мета</span>',
-                            "Форма власності": '<i class="bi bi-building"></i><span class="icon-text">Влас.</span>',
-                            "Власник": '<i class="bi bi-person-check"></i><span class="icon-text">Власн.</span>',
-                            "Орендар": '<i class="bi bi-person-workspace"></i><span class="icon-text">Орен.</span>',
-                            "Орендар частини": '<i class="bi bi-person-workspace"></i><span class="icon-text">Орен.ч.</span>',
-                            "Дата реєстрації оренди": '<i class="bi bi-calendar-check"></i><span class="icon-text">Реєстр.</span>',
-                            "Дата завершення": '<i class="bi bi-calendar-x"></i><span class="icon-text">Заверш.</span>',
-                            "Вид обмеження": '<i class="bi bi-shield-exclamation"></i><span class="icon-text">Обмеж.</span>',
-                            "Статус": '<i class="bi bi-info-circle"></i><span class="icon-text">Статус</span>',
-                            "Назва поля": '<i class="bi bi-geo"></i><span class="icon-text">Поле</span>'
-                        };
-                        displayKey = shortNames[key] || key;
+                        // Для мобільних використовуємо повні назви без скорочень
+                        displayKey = key;
                     } else {
                         // Повні назви з іконками для десктопу
                         const iconNames = {
