@@ -3,6 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- Додаткові viewport налаштування для iPad -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" media="(orientation: landscape) and (min-device-width: 768px)">
     <title>АГРО-ПРОСТІР</title>
     
     <!-- PWA Meta Tags -->
@@ -15,21 +17,49 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="format-detection" content="telephone=no">
     <meta name="msapplication-tap-highlight" content="no">
+    <meta name="msapplication-TileColor" content="#198754">
+    <meta name="msapplication-config" content="browserconfig.xml">
+    
+    <!-- Additional mobile optimization -->
+    <meta name="HandheldFriendly" content="true">
+    <meta name="MobileOptimized" content="width">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-orientations" content="portrait">
+    <meta name="screen-orientation" content="portrait">
+    <meta name="x5-orientation" content="portrait">
+    <meta name="full-screen" content="yes">
+    <meta name="x5-fullscreen" content="true">
+    <meta name="browsermode" content="application">
+    <meta name="x5-page-mode" content="app">
+    
+    <!-- PWA display mode -->
+    <meta name="display-mode" content="standalone">
+    <link rel="manifest" crossorigin="use-credentials" href="manifest.json">
+    
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     
     <!-- Версія для очищення кешу -->
-    <meta name="cache-version" content="2025-01-15-020-final-mobile-modal-fix">
+    <meta name="cache-version" content="2025-07-16-enhanced-install-button">
     
     <!-- Додатковий примусовий час для кешу -->
-    <meta name="cache-bust" content="1737064200">
+    <meta name="cache-bust" content="1721088800">
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
+    <!-- Manifest link moved up to PWA Meta Tags section -->
     
     <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" sizes="192x192" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiMxOTg3NTQiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzguMTMgMiA1IDUuMTMgNSA5YzAgNS4yNSA3IDEzIDcgMTNzNy03Ljc1IDctMTNjMC0zLjg3LTMuMTMtNy03LTd6bTAgOS41Yy0xLjM4IDAtMi41LTEuMTItMi41LTIuNXMxLjEyLTIuNSAyLjUtMi41IDIuNSAxLjEyIDIuNSAyLjUtMS4xMiAyLjUtMi41IDIuNXoiLz4KPC9zdmc+Cjwvc3ZnPgo=">
+    <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiByeD0iMjIiIGZpbGw9IiMxOTg3NTQiLz4KPHN2ZyB4PSI0NSIgeT0iNDUiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzguMTMgMiA1IDUuMTMgNSA5YzAgNS4yNSA3IDEzIDcgMTNzNy03Ljc1IDctMTNjMC0zLjg3LTMuMTMtNy03LTd6bTAgOS41Yy0xLjM4IDAtMi41LTEuMTItMi41LTIuNXMxLjEyLTIuNSAyLjUtMi41IDIuNSAxLjEyIDIuNSAyLjUtMS4xMiAyLjUtMi41IDIuNXoiLz4KPC9zdmc+Cjwvc3ZnPgo=">
+    <link rel="apple-touch-icon" sizes="152x152" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUyIiBoZWlnaHQ9IjE1MiIgdmlld0JveD0iMCAwIDE1MiAxNTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxNTIiIGhlaWdodD0iMTUyIiByeD0iMTkiIGZpbGw9IiMxOTg3NTQiLz4KPHN2ZyB4PSIzOCIgeT0iMzgiIHdpZHRoPSI3NiIgaGVpZ2h0PSI3NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzguMTMgMiA1IDUuMTMgNSA5YzAgNS4yNSA3IDEzIDcgMTNzNy03Ljc1IDctMTNjMC0zLjg3LTMuMTMtNy03LTd6bTAgOS41Yy0xLjM4IDAtMi41LTEuMTItMi41LTIuNXMxLjEyLTIuNSAyLjUtMi41IDIuNSAxLjEyIDIuNSAyLjUtMS4xMiAyLjUtMi41IDIuNXoiLz4KPC9zdmc+Cjwvc3ZnPgo=">
+    <link rel="apple-touch-icon" sizes="144x144" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQ0IiBoZWlnaHQ9IjE0NCIgdmlld0JveD0iMCAwIDE0NCAxNDQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxNDQiIGhlaWdodD0iMTQ0IiByeD0iMTgiIGZpbGw9IiMxOTg3NTQiLz4KPHN2ZyB4PSIzNiIgeT0iMzYiIHdpZHRoPSI3MiIgaGVpZ2h0PSI3MiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzguMTMgMiA1IDUuMTMgNSA5YzAgNS4yNSA3IDEzIDcgMTNzNy03Ljc1IDctMTNjMC0zLjg3LTMuMTMtNy03LTd6bTAgOS41Yy0xLjM4IDAtMi41LTEuMTItMi41LTIuNXMxLjEyLTIuNSAyLjUtMi41IDIuNSAxLjEyIDIuNSAyLjUtMS4xMiAyLjUtMi41IDIuNXoiLz4KPC9zdmc+Cjwvc3ZnPgo=">
+    <link rel="apple-touch-icon" sizes="120x120" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiByeD0iMTUiIGZpbGw9IiMxOTg3NTQiLz4KPHN2ZyB4PSIzMCIgeT0iMzAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzguMTMgMiA1IDUuMTMgNSA5YzAgNS4yNSA3IDEzIDcgMTNzNy03Ljc1IDctMTNjMC0zLjg3LTMuMTMtNy03LTd6bTAgOS41Yy0xLjM4IDAtMi41LTEuMTItMi41LTIuNXMxLjEyLTIuNSAyLjUtMi41IDIuNSAxLjEyIDIuNSAyLjUtMS4xMiAyLjUtMi41IDIuNXoiLz4KPC9zdmc+Cjwvc3ZnPgo=">
+    <link rel="apple-touch-icon" sizes="114x114" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTE0IiBoZWlnaHQ9IjExNCIgdmlld0JveD0iMCAwIDExNCAxMTQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMTQiIGhlaWdodD0iMTE0IiByeD0iMTQiIGZpbGw9IiMxOTg3NTQiLz4KPHN2ZyB4PSIyOCIgeT0iMjgiIHdpZHRoPSI1OCIgaGVpZ2h0PSI1OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzguMTMgMiA1IDUuMTMgNSA5YzAgNS4yNSA3IDEzIDcgMTNzNy03Ljc1IDctMTNjMC0zLjg3LTMuMTMtNy03LTd6bTAgOS41Yy0xLjM4IDAtMi41LTEuMTItMi41LTIuNXMxLjEyLTIuNSAyLjUtMi41IDIuNSAxLjEyIDIuNSAyLjUtMS4xMiAyLjUtMi41IDIuNXoiLz4KPC9zdmc+Cjwvc3ZnPgo=">
+    <link rel="apple-touch-icon" sizes="76x76" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzYiIGhlaWdodD0iNzYiIHZpZXdCb3g9IjAgMCA3NiA3NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijc2IiBoZWlnaHQ9Ijc2IiByeD0iMTAiIGZpbGw9IiMxOTg3NTQiLz4KPHN2ZyB4PSIxOSIgeT0iMTkiIHdpZHRoPSIzOCIgaGVpZ2h0PSIzOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzguMTMgMiA1IDUuMTMgNSA5YzAgNS4yNSA3IDEzIDcgMTNzNy03Ljc1IDctMTNjMC0zLjg3LTMuMTMtNy03LTd6bTAgOS41Yy0xLjM4IDAtMi41LTEuMTItMi41LTIuNXMxLjEyLTIuNSAyLjUtMi41IDIuNSAxLjEyIDIuNSAyLjUtMS4xMiAyLjUtMi41IDIuNXoiLz4KPC9zdmc+Cjwvc3ZnPgo=">
+    <link rel="apple-touch-icon" sizes="72x72" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzIiIGhlaWdodD0iNzIiIHZpZXdCb3g9IjAgMCA3MiA3MiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjcyIiBoZWlnaHQ9IjcyIiByeD0iOSIgZmlsbD0iIzE5ODc1NCIvPgo8c3ZnIHg9IjE4IiB5PSIxOCIgd2lkdGg9IjM2IiBoZWlnaHQ9IjM2IiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IndoaXRlIj4KPHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDljMCA1LjI1IDcgMTMgNyAxM3M3LTcuNzUgNy0xM2MwLTMuODctMy4xMy03LTctN3ptMCA5LjVjLTEuMzggMC0yLjUtMS4xMi0yLjUtMi41czEuMTItMi41IDIuNS0yLjUgMi41IDEuMTIgMi41IDIuNS0xLjEyIDIuNS0yLjUgMi41eiIvPgo8L3N2Zz4KPC9zdmc+Cg==">
+    <link rel="apple-touch-icon" sizes="60x60" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiByeD0iNyIgZmlsbD0iIzE5ODc1NCIvPgo8c3ZnIHg9IjE1IiB5PSIxNSIgd2lkdGg9IjMwIiBoZWlnaHQ9IjMwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IndoaXRlIj4KPHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDljMCA1LjI1IDcgMTMgNyAxM3M3LTcuNzUgNy0xM2MwLTMuODctMy4xMy03LTctN3ptMCA5LjVjLTEuMzggMC0yLjUtMS4xMi0yLjUtMi41czEuMTItMi41IDIuNS0yLjUgMi41IDEuMTIgMi41IDIuNS0xLjEyIDIuNS0yLjUgMi41eiIvPgo8L3N2Zz4KPC9zdmc+Cg==">
+    <link rel="apple-touch-icon" sizes="57x57" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTciIGhlaWdodD0iNTciIHZpZXdCb3g9IjAgMCA1NyA1NyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjU3IiBoZWlnaHQ9IjU3IiByeD0iNyIgZmlsbD0iIzE5ODc1NCIvPgo8c3ZnIHg9IjE0IiB5PSIxNCIgd2lkdGg9IjI5IiBoZWlnaHQ9IjI5IiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IndoaXRlIj4KPHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDljMCA1LjI1IDcgMTMgNyAxM3M3LTcuNzUgNy0xM2MwLTMuODctMy4xMy03LTctN3ptMCA5LjVjLTEuMzggMC0yLjUtMS4xMi0yLjUtMi41czEuMTItMi41IDIuNS0yLjUgMi41IDEuMTIgMi41IDIuNS0xLjEyIDIuNS0yLjUgMi41eiIvPgo8L3N2Zz4KPC9zdmc+Cg==">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiMxOTg3NTQiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzguMTMgMiA1IDUuMTMgNSA5YzAgNS4yNSA3IDEzIDcgMTNzNy03Ljc1IDctMTNjMC0zLjg3LTMuMTMtNy03LTd6bTAgOS41Yy0xLjM4IDAtMi41LTEuMTItMi41LTIuNXMxLjEyLTIuNSAyLjUtMi41IDIuNSAxLjEyIDIuNSAyLjUtMS4xMiAyLjUtMi41IDIuNXoiLz4KPC9zdmc+Cjwvc3ZnPgo=">
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzE5ODc1NCIvPgo8c3ZnIHg9IjQiIHk9IjQiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzguMTMgMiA1IDUuMTMgNSA5YzAgNS4yNSA3IDEzIDcgMTNzNy03Ljc1IDctMTNjMC0zLjg3LTMuMTMtNy03LTd6bTAgOS41Yy0xLjM4IDAtMi41LTEuMTItMi41LTIuNXMxLjEyLTIuNSAyLjUtMi41IDIuNSAxLjEyIDIuNSAyLjUtMS4xMiAyLjUtMi41IDIuNXoiLz4KPC9zdmc+Cjwvc3ZnPgo=">
@@ -156,28 +186,156 @@ body {
     bottom: calc(20px + env(safe-area-inset-bottom));
     right: 20px;
     z-index: 1001;
-    background: #198754;
+    background: linear-gradient(45deg, #198754, #20c997);
     color: white;
     border: none;
     border-radius: 50px;
-    padding: 12px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    box-shadow: 0 4px 20px rgba(25, 135, 84, 0.4);
+    padding: 15px 25px;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 8px 30px rgba(25, 135, 84, 0.6);
     display: none;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     transition: all 0.3s ease;
+    cursor: pointer;
+    animation: pulseInstall 2s infinite;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .pwa-install:hover {
-    background: #157347;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(25, 135, 84, 0.5);
+    background: linear-gradient(45deg, #157347, #1abc9c);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 12px 40px rgba(25, 135, 84, 0.8);
+    animation: none;
 }
 
 .pwa-install.show {
     display: flex;
+    animation: slideInRight 0.5s ease-out, pulseInstall 2s infinite 1s;
+}
+
+/* Анімації для кнопки встановлення */
+@keyframes pulseInstall {
+    0% {
+        box-shadow: 0 8px 30px rgba(25, 135, 84, 0.6);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 12px 40px rgba(25, 135, 84, 0.9);
+        transform: scale(1.02);
+    }
+    100% {
+        box-shadow: 0 8px 30px rgba(25, 135, 84, 0.6);
+        transform: scale(1);
+    }
+}
+
+@keyframes slideInRight {
+    0% {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Додаткові ефекти для Desktop */
+@media (min-width: 1024px) {
+    .pwa-install {
+        padding: 18px 30px;
+        font-size: 18px;
+        bottom: 30px;
+        right: 30px;
+        box-shadow: 0 10px 40px rgba(25, 135, 84, 0.7);
+    }
+    
+    .pwa-install:hover {
+        box-shadow: 0 15px 50px rgba(25, 135, 84, 0.9);
+    }
+    
+    .pwa-install::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+        border-radius: 50px;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        animation: rainbow 3s linear infinite;
+    }
+    
+    .pwa-install:hover::before {
+        opacity: 0.7;
+    }
+}
+
+@keyframes rainbow {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+
+/* Tooltip для кнопки встановлення */
+.pwa-install .install-tooltip {
+    position: absolute;
+    top: -50px;
+    right: 0;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1002;
+}
+
+.pwa-install .install-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 20px;
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+.pwa-install:hover .install-tooltip {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.pwa-install .install-text {
+    display: inline;
+}
+
+/* Покращення для малих екранів */
+@media (max-width: 480px) {
+    .pwa-install .install-text {
+        display: none;
+    }
+    
+    .pwa-install {
+        padding: 12px !important;
+        border-radius: 50% !important;
+        width: 50px !important;
+        height: 50px !important;
+    }
+    
+    .pwa-install .install-tooltip {
+        right: -10px;
+        top: -45px;
+    }
 }
 
 /* Loading Splash Screen */
@@ -479,6 +637,70 @@ body {
     }
     .data-freshness-indicator i {
         font-size: 1rem;
+    }
+    
+    /* Мобільні стилі для запобігання перекриттю елементів */
+    @media (max-width: 768px) {
+        /* Забезпечуємо правильну структуру navbar на мобільних */
+        .navbar-nav {
+            flex-direction: row !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            width: 100% !important;
+        }
+        
+        .navbar-nav .pulse-button {
+            margin-right: 5px !important;
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.8rem !important;
+        }
+        
+        .data-freshness-indicator {
+            font-size: 0.7rem !important;
+            margin-right: 0.5rem !important;
+        }
+        
+        .data-freshness-indicator i {
+            font-size: 0.8rem !important;
+        }
+        
+        /* Зменшуємо відступи для контактного телефону */
+        .contact-phone .btn {
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.8rem !important;
+        }
+        
+        /* Забезпечуємо достатньо місця між елементами */
+        .navbar-nav .d-flex.align-items-center > div {
+            margin-right: 0.25rem !important;
+        }
+        
+        /* Контейнер для правої частини має достатньо місця */
+        .navbar-nav .d-flex.align-items-center:last-child {
+            min-width: auto !important;
+            flex-shrink: 0 !important;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        /* На дуже маленьких екранах приховуємо текст актуальності, залишаємо тільки іконку */
+        .data-freshness-indicator small {
+            display: none !important;
+        }
+        
+        .data-freshness-indicator {
+            margin-right: 0.25rem !important;
+        }
+        
+        /* Ще більше зменшуємо кнопку замовлення */
+        .navbar-nav .pulse-button {
+            padding: 0.2rem 0.4rem !important;
+            font-size: 0.75rem !important;
+        }
+        
+        .pulse-button i {
+            font-size: 0.7rem !important;
+        }
     }
     .freshness-good {
         color: #28a745 !important;
@@ -931,6 +1153,9 @@ body {
         .mobile-popup .leaflet-popup-content {
             margin: 0 !important;
             line-height: 1.3 !important;
+            max-height: 60vh !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
         }
         
         .mobile-popup .leaflet-popup-close-button {
@@ -1831,6 +2056,236 @@ body {
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+        
+        /* Додаткові мобільні оптимізації */
+        .mobile-optimized {
+            overflow-x: hidden;
+        }
+        
+        /* Покращення для touch-екранів */
+        .leaflet-control-layers-toggle {
+            width: 44px !important;
+            height: 44px !important;
+        }
+        
+        .leaflet-control-zoom a {
+            width: 44px !important;
+            height: 44px !important;
+            line-height: 44px !important;
+        }
+        
+        /* Покращення для малих екранів */
+        @media (max-width: 480px) {
+            .navbar-brand {
+                font-size: 0.9rem;
+            }
+            
+            .navbar-nav .nav-link {
+                padding: 0.5rem 0.75rem;
+            }
+            
+            .offcanvas {
+                width: 90vw !important;
+            }
+        }
+        
+        /* Покращення для середніх мобільних екранів */
+        @media (max-width: 576px) {
+            #map {
+                top: calc(50px + env(safe-area-inset-top));
+            }
+            
+            .navbar {
+                height: 50px;
+            }
+        }
+        
+        /* Виправлення для tablet екранів (включаючи iPad в portrait) */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            #map {
+                top: 56px !important;
+                bottom: 0 !important;
+                height: calc(100vh - 56px) !important;
+            }
+            
+            .navbar {
+                height: 56px !important;
+                top: 0 !important;
+            }
+            
+            /* Забезпечуємо що карта займає весь доступний простір */
+            body, html {
+                height: 100% !important;
+                overflow: hidden !important;
+            }
+        }
+        
+        /* PWA повноекранний режим */
+        @media (display-mode: standalone) {
+            body {
+                padding-top: env(safe-area-inset-top);
+            }
+            
+            .navbar {
+                top: env(safe-area-inset-top);
+            }
+            
+            /* Виправлення для iOS PWA popup прокручування */
+            .leaflet-popup-content-wrapper {
+                max-height: 65vh !important;
+                overflow: hidden !important;
+            }
+            
+            .leaflet-popup-content {
+                max-height: 60vh !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                scrollbar-width: thin !important;
+                scrollbar-color: #198754 transparent !important;
+            }
+            
+            /* Кастомний скролбар для iOS */
+            .leaflet-popup-content::-webkit-scrollbar {
+                width: 4px !important;
+            }
+            
+            .leaflet-popup-content::-webkit-scrollbar-track {
+                background: transparent !important;
+            }
+            
+            .leaflet-popup-content::-webkit-scrollbar-thumb {
+                background: #198754 !important;
+                border-radius: 2px !important;
+            }
+            
+            .leaflet-popup-content::-webkit-scrollbar-thumb:hover {
+                background: #157347 !important;
+            }
+        }
+        
+        /* Приховування адресної строки на мобільних */
+        @media (max-height: 500px) and (orientation: landscape) {
+            #map {
+                top: calc(45px + env(safe-area-inset-top));
+            }
+            
+            .navbar {
+                height: 45px;
+            }
+        }
+        
+        /* Додаткові виправлення для iOS Safari та PWA */
+        @media screen and (-webkit-min-device-pixel-ratio: 2) {
+            .leaflet-popup-content {
+                -webkit-overflow-scrolling: touch !important;
+                transform: translateZ(0) !important;
+                will-change: scroll-position !important;
+            }
+            
+            /* Виправлення для мобільного модального вікна */
+            #mobileModal .modal-body {
+                max-height: 70vh !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                transform: translateZ(0) !important;
+            }
+        }
+        
+        /* Спеціальні виправлення для всіх touch пристроїв */
+        @media (any-hover: none) and (any-pointer: coarse) {
+            .leaflet-popup {
+                -webkit-transform: translateZ(0) !important;
+                transform: translateZ(0) !important;
+            }
+            
+            .leaflet-popup-content-wrapper {
+                -webkit-transform: translateZ(0) !important;
+                transform: translateZ(0) !important;
+                position: relative !important;
+            }
+            
+            .leaflet-popup-content {
+                touch-action: pan-y !important;
+                overscroll-behavior: contain !important;
+                -webkit-overflow-scrolling: touch !important;
+                position: relative !important;
+                z-index: 1 !important;
+            }
+        }
+        
+        /* Виправлення для iPad - всі розміри та орієнтації */
+        @media only screen 
+        and (min-device-width: 768px) 
+        and (max-device-width: 1024px) {
+            #map {
+                top: 56px !important;
+                bottom: 0 !important;
+                height: calc(100vh - 56px) !important;
+            }
+            
+            .navbar {
+                height: 56px !important;
+                top: 0 !important;
+            }
+            
+            /* Приховуємо або адаптуємо PWA кнопку для iPad */
+            .pwa-install {
+                bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+                right: 20px !important;
+            }
+        }
+        
+        /* Додаткові виправлення для iPad Pro */
+        @media only screen 
+        and (min-device-width: 1024px) 
+        and (max-device-width: 1366px) {
+            #map {
+                top: 56px !important;
+                bottom: 0 !important;
+                height: calc(100vh - 56px) !important;
+            }
+            
+            .navbar {
+                height: 56px !important;
+                top: 0 !important;
+            }
+        }
+        
+        /* Виправлення для iPad в landscape режимі */
+        @media only screen 
+        and (min-device-width: 768px) 
+        and (max-device-width: 1024px) 
+        and (orientation: landscape) {
+            #map {
+                top: 56px !important;
+                bottom: 0 !important;
+                height: calc(100vh - 56px) !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100vw !important;
+            }
+            
+            .navbar {
+                height: 56px !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100vw !important;
+            }
+            
+            /* Забезпечуємо що немає додаткових відступів */
+            body {
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: hidden !important;
+            }
+            
+            html {
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: hidden !important;
+            }
+        }
     }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
@@ -1850,9 +2305,13 @@ body {
     </div>
 
     <!-- PWA Install Button -->
-    <button class="pwa-install" id="pwaInstall">
+    <button class="pwa-install" id="pwaInstall" title="Встановіть додаток для швидшого доступу">
         <i class="bi bi-download"></i>
-        Встановити
+        <span class="install-text">Встановити додаток</span>
+        <div class="install-tooltip">
+            <i class="bi bi-info-circle"></i>
+            Швидший доступ без браузера!
+        </div>
     </button>
 
     <!-- Оставляем тільки один navbar -->
@@ -1869,7 +2328,7 @@ body {
             </button>
 
             <!-- Кнопка замовлення доступу по центру -->
-            <div class="position-absolute start-50 translate-middle-x">
+            <div class="d-flex justify-content-center flex-grow-1">
                 <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGQcVSh5EnTCa6eJKT9KYX6HleJnXveBcyrCEgaKvlQgRInQ/viewform" 
                    class="btn btn-success btn-sm pulse-button" 
                    target="_blank"
@@ -2556,9 +3015,161 @@ body {
             e.preventDefault();
             deferredPrompt = e;
             if (!isStandalone) {
-                document.getElementById('pwaInstall').classList.add('show');
+                const installBtn = document.getElementById('pwaInstall');
+                installBtn.classList.add('show');
+                
+                // Додаткове повідомлення для Windows користувачів
+                if (navigator.userAgent.includes('Windows')) {
+                    setTimeout(() => {
+                        showInstallNotification();
+                    }, 3000); // Показуємо через 3 секунди
+                }
             }
         });
+        
+        // Функція для показу повідомлення про встановлення
+        function showInstallNotification() {
+            // Перевіряємо чи повідомлення вже не показувалось
+            if (localStorage.getItem('installNotificationShown')) {
+                return;
+            }
+            
+            const notification = document.createElement('div');
+            notification.id = 'installNotification';
+            notification.innerHTML = `
+                <div class="install-notification">
+                    <div class="notification-content">
+                        <i class="bi bi-download notification-icon"></i>
+                        <div class="notification-text">
+                            <strong>Встановіть АГРО-ПРОСТІР як додаток!</strong>
+                            <p>Швидший доступ, працює офлайн, без браузера</p>
+                        </div>
+                        <button class="btn btn-light btn-sm install-now-btn">
+                            <i class="bi bi-download"></i> Встановити
+                        </button>
+                        <button class="btn btn-outline-light btn-sm close-notification">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Додаємо стилі для повідомлення
+            const notificationStyles = document.createElement('style');
+            notificationStyles.textContent = `
+                .install-notification {
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: linear-gradient(45deg, #198754, #20c997);
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 15px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    z-index: 10000;
+                    max-width: 90vw;
+                    width: 450px;
+                    animation: slideInDown 0.5s ease-out;
+                }
+                
+                .notification-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                }
+                
+                .notification-icon {
+                    font-size: 24px;
+                    animation: bounce 2s infinite;
+                }
+                
+                .notification-text {
+                    flex: 1;
+                }
+                
+                .notification-text strong {
+                    display: block;
+                    margin-bottom: 5px;
+                }
+                
+                .notification-text p {
+                    margin: 0;
+                    font-size: 14px;
+                    opacity: 0.9;
+                }
+                
+                .install-now-btn, .close-notification {
+                    white-space: nowrap;
+                }
+                
+                @keyframes slideInDown {
+                    0% {
+                        opacity: 0;
+                        transform: translateX(-50%) translateY(-50px);
+                    }
+                    100% {
+                        opacity: 1;
+                        transform: translateX(-50%) translateY(0);
+                    }
+                }
+                
+                @keyframes bounce {
+                    0%, 20%, 50%, 80%, 100% {
+                        transform: translateY(0);
+                    }
+                    40% {
+                        transform: translateY(-10px);
+                    }
+                    60% {
+                        transform: translateY(-5px);
+                    }
+                }
+                
+                @media (max-width: 768px) {
+                    .install-notification {
+                        width: 95vw;
+                        left: 2.5vw;
+                        transform: none;
+                    }
+                    
+                    .notification-content {
+                        flex-direction: column;
+                        text-align: center;
+                        gap: 10px;
+                    }
+                }
+            `;
+            document.head.appendChild(notificationStyles);
+            
+            // Обробники подій
+            notification.querySelector('.install-now-btn').addEventListener('click', () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                }
+                closeNotification();
+            });
+            
+            notification.querySelector('.close-notification').addEventListener('click', closeNotification);
+            
+            // Автоматично приховуємо через 10 секунд
+            setTimeout(closeNotification, 10000);
+            
+            function closeNotification() {
+                notification.style.animation = 'slideInDown 0.3s ease-out reverse';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                    if (notificationStyles.parentNode) {
+                        notificationStyles.parentNode.removeChild(notificationStyles);
+                    }
+                }, 300);
+                localStorage.setItem('installNotificationShown', 'true');
+            }
+        }
 
         // PWA Install Button Click
         document.getElementById('pwaInstall').addEventListener('click', async () => {
