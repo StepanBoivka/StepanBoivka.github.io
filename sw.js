@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zemlya-ua-v1.10-green-header-fix';
+const CACHE_NAME = 'agro-prostir-v2.2-ipad-layout-fix';
 const urlsToCache = [
   '/',
   '/index.html',
