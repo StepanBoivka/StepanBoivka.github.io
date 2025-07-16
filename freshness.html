@@ -114,19 +114,46 @@
                 </tbody>
             </table>
         </div>
-    </div>    <script>        // Глобальні змінні для зберігання даних про розбіжності по радах
+    </div>    <script>        
+        // Глобальні змінні для зберігання даних про розбіжності по радах
         let councilMissingInDzk = new Map(); // Відсутні в ДЗК (є в РРП, немає в ДЗК)
         let councilMissingInRrp = new Map(); // Відсутні в РРП (є в ДЗК, немає в РРП)
-          document.addEventListener('DOMContentLoaded', function() {
+        
+        // Глобальні змінні для client ID та dataPath
+        let globalId = null;
+        let globalDataPath = null;
+        
+        // Функція для отримання client ID з URL або localStorage
+        function getClientId() {
             const urlParams = new URLSearchParams(window.location.search);
-            const id = urlParams.get('id');
-            const dataPath = id ? `data/${id}/` : 'data/';
+            let id = urlParams.get('id');
+            
+            // Якщо id немає в URL, спробуємо отримати з localStorage
+            if (!id) {
+                const storedId = localStorage.getItem('client_id');
+                if (storedId) {
+                    id = storedId;
+                    console.log('Client ID відновлено з localStorage в freshness.html:', id);
+                    
+                    // Оновлюємо URL без перезавантаження сторінки
+                    const currentUrl = new URL(window.location);
+                    currentUrl.searchParams.set('id', id);
+                    window.history.replaceState({}, '', currentUrl);
+                }
+            }
+            
+            return id;
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            globalId = getClientId();
+            globalDataPath = globalId ? `data/${globalId}/` : 'data/';
 
             // Спочатку шукаємо txt файли для підприємства
-            loadEnterpriseData(dataPath, id);
+            loadEnterpriseData(globalDataPath, globalId);
             
             // Потім завантажуємо дані рад
-            loadAndAnalyzeData(dataPath, !!id);
+            loadAndAnalyzeData(globalDataPath, !!globalId);
         });async function loadEnterpriseData(dataPath, enterpriseId) {
             if (!enterpriseId) {
                 // Якщо немає ID підприємства, ховаємо блок
@@ -663,10 +690,8 @@
             councilMissingInRrp.clear();
 
             try {
-                // Отримуємо список файлів рад
-                const urlParams = new URLSearchParams(window.location.search);
-                const id = urlParams.get('id');
-                const dataPath = id ? `data/${id}/` : 'data/';
+                // Використовуємо глобальні змінні
+                const dataPath = globalDataPath;
                 
                 const response = await fetch(dataPath + 'file_list.json');
                 const data = await response.json();
@@ -1106,13 +1131,12 @@
         // Добавляем функцию для возврата
         function goBack() {
             const urlParams = new URLSearchParams(window.location.search);
-            const id = urlParams.get('id');
             const selectedFile = urlParams.get('file');
             
             let returnUrl = 'index.html';
-            if (id) returnUrl += `?id=${id}`;
+            if (globalId) returnUrl += `?id=${globalId}`;
             if (selectedFile) {
-                returnUrl += id ? '&' : '?';
+                returnUrl += globalId ? '&' : '?';
                 returnUrl += `return_file=${encodeURIComponent(selectedFile)}`;
             }
             

@@ -2429,6 +2429,10 @@ body {
                         <i class="bi bi-arrow-left-right me-2"></i>
                         Пропозиція обміну
                     </button>
+                    <button class="btn btn-outline-warning text-start" id="resetClientIdButton" style="display: none;">
+                        <i class="bi bi-arrow-clockwise me-2"></i>
+                        Скинути клієнтський ID
+                    </button>
                     <div id="selectionTools" style="display: none;">
                         <button class="btn btn-outline-warning text-start w-100 mb-2" data-action="clear-selection">
                             <i class="bi bi-trash3 me-2"></i>
@@ -3174,11 +3178,25 @@ body {
         // PWA Install Button Click
         document.getElementById('pwaInstall').addEventListener('click', async () => {
             if (deferredPrompt) {
+                // Перед встановленням переконуємося, що client ID збережено
+                const currentId = new URLSearchParams(window.location.search).get('id');
+                if (currentId) {
+                    localStorage.setItem('client_id', currentId);
+                    console.log('Client ID збережено перед встановленням PWA:', currentId);
+                }
+                
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
                 if (outcome === 'accepted') {
                     console.log('User accepted the install prompt');
                     document.getElementById('pwaInstall').classList.remove('show');
+                    
+                    // Показуємо повідомлення про успішне збереження client ID
+                    if (currentId) {
+                        setTimeout(() => {
+                            alert('Додаток встановлено! Ваш клієнтський ідентифікатор збережено для майбутніх запусків.');
+                        }, 1000);
+                    }
                 }
                 deferredPrompt = null;
             }
@@ -3419,10 +3437,79 @@ body {
             return data;
         }
 
-        // Получение параметров из URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
+        // Отримання параметрів з URL і збереження для PWA
+        function getClientId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let id = urlParams.get('id');
+            
+            // Якщо id є в URL, зберігаємо його в localStorage для PWA
+            if (id) {
+                localStorage.setItem('client_id', id);
+                console.log('Client ID збережено:', id);
+            } else {
+                // Якщо id немає в URL (наприклад, при запуску PWA), спробуємо отримати з localStorage
+                const storedId = localStorage.getItem('client_id');
+                if (storedId) {
+                    id = storedId;
+                    console.log('Client ID відновлено з localStorage:', id);
+                    
+                    // Оновлюємо URL без перезавантаження сторінки
+                    const currentUrl = new URL(window.location);
+                    currentUrl.searchParams.set('id', id);
+                    window.history.replaceState({}, '', currentUrl);
+                }
+            }
+            
+            return id;
+        }
+
+        // Показати повідомлення про збережений client ID при запуску PWA
+        function showClientIdInfo() {
+            const storedId = localStorage.getItem('client_id');
+            if (storedId && window.matchMedia('(display-mode: standalone)').matches) {
+                // Показуємо кнопку скидання client ID
+                const resetButton = document.getElementById('resetClientIdButton');
+                if (resetButton) {
+                    resetButton.style.display = 'block';
+                }
+                
+                // Перевіряємо, чи не показували це повідомлення сьогодні
+                const today = new Date().toDateString();
+                const lastShown = localStorage.getItem('clientIdInfoShown');
+                
+                if (lastShown !== today) {
+                    setTimeout(() => {
+                        const toast = document.createElement('div');
+                        toast.className = 'position-fixed top-0 start-50 translate-middle-x mt-3';
+                        toast.style.zIndex = '9999';
+                        toast.innerHTML = `
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <strong>Клієнтський ID активний:</strong> ${storedId}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        `;
+                        document.body.appendChild(toast);
+                        
+                        // Автоматично приховати через 5 секунд
+                        setTimeout(() => {
+                            if (toast.parentNode) {
+                                toast.remove();
+                            }
+                        }, 5000);
+                        
+                        localStorage.setItem('clientIdInfoShown', today);
+                    }, 2000);
+                }
+            }
+        }
+
+        // Використовуємо функцію для отримання client ID
+        const id = getClientId();
         const dataPath = id ? `data/${id}/` : 'data/';
+        
+        // Показуємо інформацію про client ID якщо PWA
+        showClientIdInfo();
         // Ждем полной загрузки страницы и всех скриптов
         document.addEventListener('DOMContentLoaded', function() {
             // Додати обробники клавіш тут, на верхньому рівні
@@ -3458,8 +3545,7 @@ body {
             document.getElementById('statisticsButton').addEventListener('click', function() {
                 var selectedFile = document.getElementById('fileSelect').value;
                 if (selectedFile && selectedFile !== 'Виберіть раду') {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const id = urlParams.get('id');
+                    // Використовуємо глобальну змінну id, яка вже враховує localStorage
                     const statisticsUrl = `statistics.html?file=${encodeURIComponent(selectedFile)}${id ? `&id=${id}` : ''}`;
                     window.location.href = statisticsUrl;
                 } else {
@@ -3508,8 +3594,7 @@ body {
 
             // Добавляем сохранение выбора для перехода на freshness
             document.getElementById('freshnessButton').addEventListener('click', function() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const id = urlParams.get('id');
+                // Використовуємо глобальну змінну id, яка вже враховує localStorage
                 const selectedFile = document.getElementById('fileSelect').value;
                 
                 let freshnessUrl = `freshness.html`;
@@ -6638,6 +6723,25 @@ document.getElementById('exchangeButton').addEventListener('click', function() {
         // Отображаем модальное окно
         document.getElementById('exchangeModal').style.display = "block";
     }, 300);
+});
+
+// Обробник для кнопки скидання client ID
+document.getElementById('resetClientIdButton').addEventListener('click', function() {
+    if (confirm('Ви впевнені, що хочете скинути збережений клієнтський ID? Після цього вам знадобиться знову перейти за параметризованим посиланням.')) {
+        localStorage.removeItem('client_id');
+        localStorage.removeItem('clientIdInfoShown');
+        
+        // Показуємо повідомлення про успішне скидання
+        alert('Клієнтський ID скинуто. Перезавантажте сторінку та перейдіть за вашим параметризованим посиланням.');
+        
+        // Приховуємо кнопку
+        document.getElementById('resetClientIdButton').style.display = 'none';
+        
+        // Перезавантажуємо сторінку
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    }
 });
 
 // Закриття модального вікна
