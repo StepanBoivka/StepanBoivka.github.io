@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zemlya-ua-v1.8-modal-redesign';
+const CACHE_NAME = 'zemlya-ua-v1.10-green-header-fix';
 const urlsToCache = [
   '/',
   '/index.html',

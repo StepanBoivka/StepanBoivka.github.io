@@ -2262,13 +2262,14 @@ body {
                 // Хедер з кнопкою закриття
                 const header = document.createElement('div');
                 header.style.cssText = `
-                    background: #f8f9fa;
+                    background: linear-gradient(135deg, #28a745, #1e7e34);
                     padding: 16px 20px;
                     border-bottom: 1px solid #dee2e6;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                     min-height: 60px;
+                    position: relative;
                 `;
                 
                 const title = document.createElement('h5');
@@ -2277,7 +2278,8 @@ body {
                     margin: 0;
                     font-size: 18px;
                     font-weight: 600;
-                    color: #212529;
+                    color: #ffffff;
+                    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
                 `;
                 
                 // Індикатор для драгу (як у нативних додатках)
@@ -2285,7 +2287,7 @@ body {
                 dragIndicator.style.cssText = `
                     width: 40px;
                     height: 4px;
-                    background: #dee2e6;
+                    background: rgba(255, 255, 255, 0.7);
                     border-radius: 2px;
                     position: absolute;
                     top: 8px;
@@ -2296,10 +2298,10 @@ body {
                 const closeBtn = document.createElement('button');
                 closeBtn.innerHTML = '✕';
                 closeBtn.style.cssText = `
-                    background: none;
+                    background: rgba(255, 255, 255, 0.2);
                     border: none;
                     font-size: 24px;
-                    color: #6c757d;
+                    color: #ffffff;
                     cursor: pointer;
                     padding: 0;
                     width: 32px;
@@ -2312,11 +2314,11 @@ body {
                 `;
                 
                 closeBtn.addEventListener('mousedown', function() {
-                    this.style.backgroundColor = '#e9ecef';
+                    this.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
                 });
                 
                 closeBtn.addEventListener('mouseup', function() {
-                    this.style.backgroundColor = 'transparent';
+                    this.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
                 });
                 
                 // Контент
@@ -2474,6 +2476,9 @@ body {
                 // Покращуємо структуру для мобільного відображення
                 let processed = content;
                 
+                // Видаляємо зайві блоки з зеленим фоном (div з style, що містить background)
+                processed = processed.replace(/<div[^>]*style="[^"]*background[^"]*"[^>]*>.*?<\/div>/gs, '');
+                
                 // Замінюємо таблиці на більш мобільно-дружні блоки
                 processed = processed.replace(/<table[^>]*>(.*?)<\/table>/gs, function(match, tableContent) {
                     // Витягуємо рядки з таблиці
@@ -2484,8 +2489,40 @@ body {
                     rows.forEach(row => {
                         const cells = row.match(/<td[^>]*>(.*?)<\/td>/gs) || [];
                         if (cells.length >= 2) {
-                            const label = cells[0].replace(/<[^>]*>/g, '').trim();
-                            const value = cells[1].replace(/<[^>]*>/g, '').trim();
+                            // Витягуємо та очищуємо назву поля та значення
+                            let label = cells[0].replace(/<[^>]*>/g, '').trim();
+                            let value = cells[1].replace(/<[^>]*>/g, '').trim();
+                            
+                            // Розшируємо скорочені назви полів до повних
+                            const fieldNames = {
+                                'Частн:': 'Частка в орендi:',
+                                'Орендар:': 'Орендар:',
+                                'Орендар частини:': 'Орендар частини:',
+                                'Кадастровий номер:': 'Кадастровий номер:',
+                                'Власник:': 'Власник:',
+                                'Площа:': 'Площа ділянки:',
+                                'Площа ділянки:': 'Площа ділянки:',
+                                'Цільове призначення:': 'Цільове призначення:',
+                                'Статус:': 'Статус оренди:',
+                                'Вид права:': 'Вид права:',
+                                'Дата державної реєстрації:': 'Дата державної реєстрації:',
+                                'Номер запису:': 'Номер запису:',
+                                'Територіальна громада:': 'Територіальна громада:',
+                                'Адреса:': 'Адреса ділянки:',
+                                'Координати:': 'Координати:',
+                                'Примітки:': 'Примітки:'
+                            };
+                            
+                            // Перевіряємо чи є це скорочена назва і розширюємо
+                            if (fieldNames[label]) {
+                                label = fieldNames[label];
+                            } else if (label.endsWith(':')) {
+                                // Якщо назва закінчується на ":", але не знайдена в мапі, залишаємо як є
+                                label = label;
+                            } else {
+                                // Додаємо двокрапку якщо її немає
+                                label = label + ':';
+                            }
                             
                             if (label && value) {
                                 mobileContent += `
