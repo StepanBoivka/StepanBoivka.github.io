@@ -4545,32 +4545,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
         function createPopupContent(feature, layer) {
             let popupContent = '<div class="popup-content">';
             
-            // Додаємо розширений заголовок для мобільних та десктопу
-            const cadastralNumber = feature.properties["Кадастровий номер"];
-            if (cadastralNumber) {
-                const area = feature.properties["Площа частини"] || feature.properties["Площа розрахована"];
-                const tenant = feature.properties["Орендар частини"] || feature.properties["Орендар"] || "Вільна";
-                const areaText = area ? ` • ${parseFloat(area).toFixed(2)} га` : '';
-                
-                if (window.innerWidth <= 768) {
-                    popupContent += `<div class="mobile-header">
-                        <i class="bi bi-geo-alt"></i>
-                        <div class="header-info">
-                            <div class="plot-number">Ділянка ${cadastralNumber.slice(-4)}</div>
-                            <div class="plot-details">${tenant}${areaText}</div>
-                        </div>
-                    </div>`;
-                } else {
-                    popupContent += `<div class="desktop-header">
-                        <i class="bi bi-geo-alt"></i>
-                        <div class="header-info">
-                            <div class="plot-number">${cadastralNumber}</div>
-                            <div class="plot-details">${tenant}${areaText}</div>
-                        </div>
-                    </div>`;
-                }
-            }
-            
             popupContent += '<table style="width: 100%; border-collapse: separate; border-spacing: 0; margin: 0; background: transparent; border: none; border-radius: 0; overflow: visible;">';
             
             // Показуємо всі поля і на мобільних і на десктопах - тільки змінюємо вигляд
@@ -4660,8 +4634,8 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 let propertyNameStyle = "background: rgba(25,135,84,0.05) !important; color: #333 !important; border: none !important; border-right: 1px solid rgba(0,0,0,0.08) !important; padding: 8px 12px !important; font-weight: 600 !important; text-align: left !important; vertical-align: middle !important; margin: 0 !important;";
                 let propertyValueStyle = "border: none !important; padding: 8px 12px !important; background: white !important; vertical-align: middle !important; margin: 0 !important;";
                 
-                // Для мобільних пристроїв не додаємо верхні заокруглені кути, тому що є заголовок
-                if (isFirst && window.innerWidth > 768) {
+                // Додаємо верхні заокруглені кути до першого рядка (тепер немає заголовка)
+                if (isFirst) {
                     propertyNameStyle += " border-top-left-radius: 8px !important;";
                     propertyValueStyle += " border-top-right-radius: 8px !important;";
                 }
@@ -4681,9 +4655,9 @@ function addPolygonToMap(geoJSON, originalProperties) {
             
             popupContent += '</table>';
             
-            // Используем кадастровый номер который уже объявлен в начале функции
+            // Отримуємо кадастровий номер для посилань
+            const cadastralNumber = feature.properties["Кадастровий номер"];
             if (cadastralNumber) {
-                // И используем его здесь
                 const publicUrl = 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber;
                 popupContent += createPopupLinks(publicUrl, feature.properties["Дата оновлення"]);
             }
