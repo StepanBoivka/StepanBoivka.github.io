@@ -41,10 +41,10 @@
     <meta http-equiv="Expires" content="0">
     
     <!-- Версія для очищення кешу -->
-    <meta name="cache-version" content="2025-07-16-ipad-layout-fix">
+    <meta name="cache-version" content="2025-07-16-enhanced-install-button">
     
     <!-- Додатковий примусовий час для кешу -->
-    <meta name="cache-bust" content="1721088600">
+    <meta name="cache-bust" content="1721088800">
     
     <!-- PWA Manifest -->
     <!-- Manifest link moved up to PWA Meta Tags section -->
@@ -186,28 +186,156 @@ body {
     bottom: calc(20px + env(safe-area-inset-bottom));
     right: 20px;
     z-index: 1001;
-    background: #198754;
+    background: linear-gradient(45deg, #198754, #20c997);
     color: white;
     border: none;
     border-radius: 50px;
-    padding: 12px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    box-shadow: 0 4px 20px rgba(25, 135, 84, 0.4);
+    padding: 15px 25px;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 8px 30px rgba(25, 135, 84, 0.6);
     display: none;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     transition: all 0.3s ease;
+    cursor: pointer;
+    animation: pulseInstall 2s infinite;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .pwa-install:hover {
-    background: #157347;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(25, 135, 84, 0.5);
+    background: linear-gradient(45deg, #157347, #1abc9c);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 12px 40px rgba(25, 135, 84, 0.8);
+    animation: none;
 }
 
 .pwa-install.show {
     display: flex;
+    animation: slideInRight 0.5s ease-out, pulseInstall 2s infinite 1s;
+}
+
+/* Анімації для кнопки встановлення */
+@keyframes pulseInstall {
+    0% {
+        box-shadow: 0 8px 30px rgba(25, 135, 84, 0.6);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 12px 40px rgba(25, 135, 84, 0.9);
+        transform: scale(1.02);
+    }
+    100% {
+        box-shadow: 0 8px 30px rgba(25, 135, 84, 0.6);
+        transform: scale(1);
+    }
+}
+
+@keyframes slideInRight {
+    0% {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Додаткові ефекти для Desktop */
+@media (min-width: 1024px) {
+    .pwa-install {
+        padding: 18px 30px;
+        font-size: 18px;
+        bottom: 30px;
+        right: 30px;
+        box-shadow: 0 10px 40px rgba(25, 135, 84, 0.7);
+    }
+    
+    .pwa-install:hover {
+        box-shadow: 0 15px 50px rgba(25, 135, 84, 0.9);
+    }
+    
+    .pwa-install::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+        border-radius: 50px;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        animation: rainbow 3s linear infinite;
+    }
+    
+    .pwa-install:hover::before {
+        opacity: 0.7;
+    }
+}
+
+@keyframes rainbow {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+
+/* Tooltip для кнопки встановлення */
+.pwa-install .install-tooltip {
+    position: absolute;
+    top: -50px;
+    right: 0;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1002;
+}
+
+.pwa-install .install-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 20px;
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+.pwa-install:hover .install-tooltip {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.pwa-install .install-text {
+    display: inline;
+}
+
+/* Покращення для малих екранів */
+@media (max-width: 480px) {
+    .pwa-install .install-text {
+        display: none;
+    }
+    
+    .pwa-install {
+        padding: 12px !important;
+        border-radius: 50% !important;
+        width: 50px !important;
+        height: 50px !important;
+    }
+    
+    .pwa-install .install-tooltip {
+        right: -10px;
+        top: -45px;
+    }
 }
 
 /* Loading Splash Screen */
@@ -509,6 +637,70 @@ body {
     }
     .data-freshness-indicator i {
         font-size: 1rem;
+    }
+    
+    /* Мобільні стилі для запобігання перекриттю елементів */
+    @media (max-width: 768px) {
+        /* Забезпечуємо правильну структуру navbar на мобільних */
+        .navbar-nav {
+            flex-direction: row !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            width: 100% !important;
+        }
+        
+        .navbar-nav .pulse-button {
+            margin-right: 5px !important;
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.8rem !important;
+        }
+        
+        .data-freshness-indicator {
+            font-size: 0.7rem !important;
+            margin-right: 0.5rem !important;
+        }
+        
+        .data-freshness-indicator i {
+            font-size: 0.8rem !important;
+        }
+        
+        /* Зменшуємо відступи для контактного телефону */
+        .contact-phone .btn {
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.8rem !important;
+        }
+        
+        /* Забезпечуємо достатньо місця між елементами */
+        .navbar-nav .d-flex.align-items-center > div {
+            margin-right: 0.25rem !important;
+        }
+        
+        /* Контейнер для правої частини має достатньо місця */
+        .navbar-nav .d-flex.align-items-center:last-child {
+            min-width: auto !important;
+            flex-shrink: 0 !important;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        /* На дуже маленьких екранах приховуємо текст актуальності, залишаємо тільки іконку */
+        .data-freshness-indicator small {
+            display: none !important;
+        }
+        
+        .data-freshness-indicator {
+            margin-right: 0.25rem !important;
+        }
+        
+        /* Ще більше зменшуємо кнопку замовлення */
+        .navbar-nav .pulse-button {
+            padding: 0.2rem 0.4rem !important;
+            font-size: 0.75rem !important;
+        }
+        
+        .pulse-button i {
+            font-size: 0.7rem !important;
+        }
     }
     .freshness-good {
         color: #28a745 !important;
@@ -2113,9 +2305,13 @@ body {
     </div>
 
     <!-- PWA Install Button -->
-    <button class="pwa-install" id="pwaInstall">
+    <button class="pwa-install" id="pwaInstall" title="Встановіть додаток для швидшого доступу">
         <i class="bi bi-download"></i>
-        Встановити
+        <span class="install-text">Встановити додаток</span>
+        <div class="install-tooltip">
+            <i class="bi bi-info-circle"></i>
+            Швидший доступ без браузера!
+        </div>
     </button>
 
     <!-- Оставляем тільки один navbar -->
@@ -2132,7 +2328,7 @@ body {
             </button>
 
             <!-- Кнопка замовлення доступу по центру -->
-            <div class="position-absolute start-50 translate-middle-x">
+            <div class="d-flex justify-content-center flex-grow-1">
                 <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGQcVSh5EnTCa6eJKT9KYX6HleJnXveBcyrCEgaKvlQgRInQ/viewform" 
                    class="btn btn-success btn-sm pulse-button" 
                    target="_blank"
@@ -2819,9 +3015,161 @@ body {
             e.preventDefault();
             deferredPrompt = e;
             if (!isStandalone) {
-                document.getElementById('pwaInstall').classList.add('show');
+                const installBtn = document.getElementById('pwaInstall');
+                installBtn.classList.add('show');
+                
+                // Додаткове повідомлення для Windows користувачів
+                if (navigator.userAgent.includes('Windows')) {
+                    setTimeout(() => {
+                        showInstallNotification();
+                    }, 3000); // Показуємо через 3 секунди
+                }
             }
         });
+        
+        // Функція для показу повідомлення про встановлення
+        function showInstallNotification() {
+            // Перевіряємо чи повідомлення вже не показувалось
+            if (localStorage.getItem('installNotificationShown')) {
+                return;
+            }
+            
+            const notification = document.createElement('div');
+            notification.id = 'installNotification';
+            notification.innerHTML = `
+                <div class="install-notification">
+                    <div class="notification-content">
+                        <i class="bi bi-download notification-icon"></i>
+                        <div class="notification-text">
+                            <strong>Встановіть АГРО-ПРОСТІР як додаток!</strong>
+                            <p>Швидший доступ, працює офлайн, без браузера</p>
+                        </div>
+                        <button class="btn btn-light btn-sm install-now-btn">
+                            <i class="bi bi-download"></i> Встановити
+                        </button>
+                        <button class="btn btn-outline-light btn-sm close-notification">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Додаємо стилі для повідомлення
+            const notificationStyles = document.createElement('style');
+            notificationStyles.textContent = `
+                .install-notification {
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: linear-gradient(45deg, #198754, #20c997);
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 15px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    z-index: 10000;
+                    max-width: 90vw;
+                    width: 450px;
+                    animation: slideInDown 0.5s ease-out;
+                }
+                
+                .notification-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                }
+                
+                .notification-icon {
+                    font-size: 24px;
+                    animation: bounce 2s infinite;
+                }
+                
+                .notification-text {
+                    flex: 1;
+                }
+                
+                .notification-text strong {
+                    display: block;
+                    margin-bottom: 5px;
+                }
+                
+                .notification-text p {
+                    margin: 0;
+                    font-size: 14px;
+                    opacity: 0.9;
+                }
+                
+                .install-now-btn, .close-notification {
+                    white-space: nowrap;
+                }
+                
+                @keyframes slideInDown {
+                    0% {
+                        opacity: 0;
+                        transform: translateX(-50%) translateY(-50px);
+                    }
+                    100% {
+                        opacity: 1;
+                        transform: translateX(-50%) translateY(0);
+                    }
+                }
+                
+                @keyframes bounce {
+                    0%, 20%, 50%, 80%, 100% {
+                        transform: translateY(0);
+                    }
+                    40% {
+                        transform: translateY(-10px);
+                    }
+                    60% {
+                        transform: translateY(-5px);
+                    }
+                }
+                
+                @media (max-width: 768px) {
+                    .install-notification {
+                        width: 95vw;
+                        left: 2.5vw;
+                        transform: none;
+                    }
+                    
+                    .notification-content {
+                        flex-direction: column;
+                        text-align: center;
+                        gap: 10px;
+                    }
+                }
+            `;
+            document.head.appendChild(notificationStyles);
+            
+            // Обробники подій
+            notification.querySelector('.install-now-btn').addEventListener('click', () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                }
+                closeNotification();
+            });
+            
+            notification.querySelector('.close-notification').addEventListener('click', closeNotification);
+            
+            // Автоматично приховуємо через 10 секунд
+            setTimeout(closeNotification, 10000);
+            
+            function closeNotification() {
+                notification.style.animation = 'slideInDown 0.3s ease-out reverse';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                    if (notificationStyles.parentNode) {
+                        notificationStyles.parentNode.removeChild(notificationStyles);
+                    }
+                }, 300);
+                localStorage.setItem('installNotificationShown', 'true');
+            }
+        }
 
         // PWA Install Button Click
         document.getElementById('pwaInstall').addEventListener('click', async () => {
