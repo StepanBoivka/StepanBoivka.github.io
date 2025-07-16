@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zemlya-ua-v1.4-urgent-fix';
+const CACHE_NAME = 'zemlya-ua-v1.8-modal-redesign';
 const urlsToCache = [
   '/',
   '/index.html',

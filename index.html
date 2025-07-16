@@ -20,10 +20,10 @@
     <meta http-equiv="Expires" content="0">
     
     <!-- Версія для очищення кешу -->
-    <meta name="cache-version" content="2025-01-15-012-original-colors-fix">
+    <meta name="cache-version" content="2025-01-15-020-final-mobile-modal-fix">
     
     <!-- Додатковий примусовий час для кешу -->
-    <meta name="cache-bust" content="1737059400">
+    <meta name="cache-bust" content="1737064200">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
@@ -1049,6 +1049,11 @@ body {
             }
             
             /* Компактні стилі для мобільних попапів */
+            .popup-content table {
+                border-radius: 0 0 8px 8px !important;
+                overflow: hidden !important;
+            }
+            
             .popup-content .property-name {
                 width: 35% !important;
                 min-width: 80px !important;
@@ -1067,6 +1072,29 @@ body {
                 overflow: hidden;
                 text-overflow: ellipsis;
                 font-size: 10px !important;
+                border-radius: 0 !important;
+            }
+            
+            /* Заокруглені кути для мобільних - перший рядок (після header) */
+            .popup-content table tr:first-child .property-name,
+            .popup-content table tr:first-child td.property-name {
+                border-top-left-radius: 0 !important;
+            }
+            
+            .popup-content table tr:first-child .property-value,
+            .popup-content table tr:first-child td.property-value {
+                border-top-right-radius: 0 !important;
+            }
+            
+            /* Заокруглені кути для мобільних - останній рядок */
+            .popup-content table tr:last-child .property-name,
+            .popup-content table tr:last-child td.property-name {
+                border-bottom-left-radius: 8px !important;
+            }
+            
+            .popup-content table tr:last-child .property-value,
+            .popup-content table tr:last-child td.property-value {
+                border-bottom-right-radius: 8px !important;
             }
             
             .popup-content .property-value {
@@ -1079,6 +1107,7 @@ body {
                 font-size: 10px !important;
                 overflow: hidden;
                 max-height: 2.4em;
+                border-radius: 0 !important;
             }
             
             .popup-content .property-name i {
@@ -1167,9 +1196,12 @@ body {
             .popup-content table {
                 font-size: 9px !important;
                 table-layout: fixed !important;
+                border-radius: 0 0 8px 8px !important;
+                overflow: hidden !important;
             }
             
-            .popup-content .property-name {
+            .popup-content .property-name,
+            .popup-content td.property-name {
                 width: 30% !important;
                 min-width: 60px !important;
                 padding: 4px 3px !important;
@@ -1178,21 +1210,40 @@ body {
                 white-space: nowrap !important;
                 overflow: hidden !important;
                 text-overflow: ellipsis !important;
+                border-radius: 0 !important;
             }
             
-            .popup-content .property-value {
+            /* Заокруглені кути для дуже маленьких екранів - перший рядок (після header) */
+            .popup-content table tr:first-child .property-name,
+            .popup-content table tr:first-child td.property-name {
+                border-top-left-radius: 0 !important;
+            }
+            
+            .popup-content table tr:first-child .property-value,
+            .popup-content table tr:first-child td.property-value {
+                border-top-right-radius: 0 !important;
+            }
+            
+            /* Заокруглені кути для дуже маленьких екранів - останній рядок */
+            .popup-content table tr:last-child .property-name,
+            .popup-content table tr:last-child td.property-name {
+                border-bottom-left-radius: 8px !important;
+            }
+            
+            .popup-content table tr:last-child .property-value,
+            .popup-content table tr:last-child td.property-value {
+                border-bottom-right-radius: 8px !important;
+            }
+            
+            .popup-content .property-value,
+            .popup-content td.property-value {
                 width: 70% !important;
                 padding: 4px 3px !important;
                 font-size: 9px !important;
                 line-height: 1.1 !important;
                 max-height: 1.5em !important;
                 overflow: hidden !important;
-            }
-            
-            .popup-content .property-value {
-                width: 50% !important;
-                padding: 6px 5px;
-                font-size: 0.75rem;
+                border-radius: 0 !important;
             }
             
             .mobile-header {
@@ -1723,6 +1774,64 @@ body {
             border-bottom: none !important;
         }
     }
+    
+    /* Стилі для мобільного модального вікна */
+    @media (max-width: 768px) {
+        /* Приховуємо порожні попапи на мобільних */
+        .hidden-popup {
+            display: none !important;
+        }
+        
+        /* Стилі для мобільного модального вікна */
+        #mobileModal .modal-body {
+            padding: 0;
+            background: #f8f9fa;
+        }
+        
+        #mobileModal .popup-content {
+            padding: 20px;
+            background: white;
+            margin: 0;
+            border-radius: 0;
+            max-height: none;
+            overflow: visible;
+        }
+        
+        #mobileModal .popup-content table {
+            font-size: 14px !important;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        #mobileModal .property-name {
+            font-size: 13px !important;
+            padding: 12px 16px !important;
+            width: auto !important;
+            min-width: auto !important;
+            white-space: normal !important;
+        }
+        
+        #mobileModal .property-value {
+            font-size: 14px !important;
+            padding: 12px 16px !important;
+            line-height: 1.4 !important;
+            max-height: none !important;
+            white-space: normal !important;
+        }
+        
+        #mobileModal .mobile-header {
+            display: none; /* Приховуємо в модалі, бо є заголовок модалю */
+        }
+        
+        #mobileModal .popup-link {
+            margin: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+    }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
@@ -2091,6 +2200,315 @@ body {
     </script>
     <!-- Основной скрипт -->
     <script>
+        // Безпечна функція для тактильного відгуку (оголошуємо першою)
+        let hasUserInteracted = false;
+        
+        // Відстежуємо першу взаємодію користувача
+        function trackUserInteraction() {
+            hasUserInteracted = true;
+            document.removeEventListener('touchstart', trackUserInteraction);
+            document.removeEventListener('click', trackUserInteraction);
+        }
+        
+        document.addEventListener('touchstart', trackUserInteraction, { once: true });
+        document.addEventListener('click', trackUserInteraction, { once: true });
+        
+        function safeVibrate(duration = 50) {
+            // Перевіряємо підтримку API та взаємодію користувача
+            if (navigator.vibrate && hasUserInteracted && window.innerWidth <= 768) {
+                try {
+                    navigator.vibrate(duration);
+                } catch (e) {
+                    console.log('Vibration failed:', e);
+                }
+            }
+        }
+        
+        // Функція для відображення мобільного модального вікна
+        function showMobileModal(content) {
+            // Створюємо модальне вікно тільки для мобільних пристроїв
+            if (window.innerWidth <= 768) {
+                const modal = document.createElement('div');
+                modal.className = 'mobile-modal-overlay';
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.8);
+                    z-index: 10000;
+                    display: flex;
+                    align-items: flex-end;
+                    justify-content: center;
+                    animation: modalFadeIn 0.3s ease-out;
+                `;
+                
+                const modalContent = document.createElement('div');
+                modalContent.className = 'mobile-modal-content';
+                modalContent.style.cssText = `
+                    background: white;
+                    width: 100%;
+                    max-height: 85vh;
+                    border-radius: 20px 20px 0 0;
+                    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3);
+                    overflow: hidden;
+                    transform: translateY(100%);
+                    animation: modalSlideUp 0.3s ease-out forwards;
+                    display: flex;
+                    flex-direction: column;
+                `;
+                
+                // Хедер з кнопкою закриття
+                const header = document.createElement('div');
+                header.style.cssText = `
+                    background: #f8f9fa;
+                    padding: 16px 20px;
+                    border-bottom: 1px solid #dee2e6;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    min-height: 60px;
+                `;
+                
+                const title = document.createElement('h5');
+                title.textContent = 'Інформація про ділянку';
+                title.style.cssText = `
+                    margin: 0;
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: #212529;
+                `;
+                
+                // Індикатор для драгу (як у нативних додатках)
+                const dragIndicator = document.createElement('div');
+                dragIndicator.style.cssText = `
+                    width: 40px;
+                    height: 4px;
+                    background: #dee2e6;
+                    border-radius: 2px;
+                    position: absolute;
+                    top: 8px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                `;
+                
+                const closeBtn = document.createElement('button');
+                closeBtn.innerHTML = '✕';
+                closeBtn.style.cssText = `
+                    background: none;
+                    border: none;
+                    font-size: 24px;
+                    color: #6c757d;
+                    cursor: pointer;
+                    padding: 0;
+                    width: 32px;
+                    height: 32px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    transition: background-color 0.2s;
+                `;
+                
+                closeBtn.addEventListener('mousedown', function() {
+                    this.style.backgroundColor = '#e9ecef';
+                });
+                
+                closeBtn.addEventListener('mouseup', function() {
+                    this.style.backgroundColor = 'transparent';
+                });
+                
+                // Контент
+                const body = document.createElement('div');
+                body.style.cssText = `
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 20px;
+                    background: white;
+                    -webkit-overflow-scrolling: touch;
+                `;
+                
+                // Обробляємо контент для кращого відображення
+                const processedContent = processModalContent(content);
+                body.innerHTML = processedContent;
+                
+                // Збираємо все разом
+                header.appendChild(dragIndicator);
+                header.appendChild(title);
+                header.appendChild(closeBtn);
+                
+                modalContent.appendChild(header);
+                modalContent.appendChild(body);
+                modal.appendChild(modalContent);
+                
+                // Додаємо CSS анімації
+                if (!document.getElementById('mobile-modal-styles')) {
+                    const styles = document.createElement('style');
+                    styles.id = 'mobile-modal-styles';
+                    styles.textContent = `
+                        @keyframes modalFadeIn {
+                            from { opacity: 0; }
+                            to { opacity: 1; }
+                        }
+                        
+                        @keyframes modalSlideUp {
+                            from { transform: translateY(100%); }
+                            to { transform: translateY(0); }
+                        }
+                        
+                        @keyframes modalSlideDown {
+                            from { transform: translateY(0); }
+                            to { transform: translateY(100%); }
+                        }
+                        
+                        .mobile-modal-content h3,
+                        .mobile-modal-content h4,
+                        .mobile-modal-content h5 {
+                            color: #212529 !important;
+                            margin-bottom: 16px !important;
+                            font-weight: 600 !important;
+                        }
+                        
+                        .mobile-modal-content p,
+                        .mobile-modal-content span,
+                        .mobile-modal-content div {
+                            color: #495057 !important;
+                            line-height: 1.6 !important;
+                        }
+                        
+                        .mobile-modal-content .info-row {
+                            display: flex;
+                            justify-content: space-between;
+                            padding: 12px 0;
+                            border-bottom: 1px solid #f1f3f4;
+                        }
+                        
+                        .mobile-modal-content .info-row:last-child {
+                            border-bottom: none;
+                        }
+                        
+                        .mobile-modal-content .info-label {
+                            font-weight: 500 !important;
+                            color: #6c757d !important;
+                            flex-shrink: 0;
+                        }
+                        
+                        .mobile-modal-content .info-value {
+                            font-weight: 400 !important;
+                            color: #212529 !important;
+                            text-align: right;
+                            word-break: break-word;
+                        }
+                    `;
+                    document.head.appendChild(styles);
+                }
+                
+                // Обробники подій
+                const closeModal = () => {
+                    modalContent.style.animation = 'modalSlideDown 0.3s ease-out forwards';
+                    setTimeout(() => {
+                        if (document.body.contains(modal)) {
+                            document.body.removeChild(modal);
+                        }
+                    }, 300);
+                };
+                
+                closeBtn.addEventListener('click', closeModal);
+                
+                // Закриття по кліку на фон
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeModal();
+                    }
+                });
+                
+                // Підтримка жестів (swipe down для закриття)
+                let startY = 0;
+                let currentY = 0;
+                let isDragging = false;
+                
+                modalContent.addEventListener('touchstart', function(e) {
+                    startY = e.touches[0].clientY;
+                    isDragging = true;
+                }, { passive: true });
+                
+                modalContent.addEventListener('touchmove', function(e) {
+                    if (!isDragging) return;
+                    
+                    currentY = e.touches[0].clientY;
+                    const deltaY = currentY - startY;
+                    
+                    if (deltaY > 0) { // Тільки вниз
+                        modalContent.style.transform = `translateY(${deltaY}px)`;
+                    }
+                }, { passive: true });
+                
+                modalContent.addEventListener('touchend', function(e) {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    
+                    const deltaY = currentY - startY;
+                    
+                    if (deltaY > 100) { // Якщо потягнули більше ніж на 100px
+                        closeModal();
+                    } else {
+                        // Повертаємо назад
+                        modalContent.style.transform = 'translateY(0)';
+                    }
+                }, { passive: true });
+                
+                // Haptic feedback при відкритті
+                safeVibrate(50);
+                
+                document.body.appendChild(modal);
+                return modal;
+            }
+            return null;
+        }
+        
+        // Функція для обробки контенту модального вікна
+        function processModalContent(content) {
+            // Якщо контент вже є HTML
+            if (typeof content === 'string' && content.includes('<')) {
+                // Покращуємо структуру для мобільного відображення
+                let processed = content;
+                
+                // Замінюємо таблиці на більш мобільно-дружні блоки
+                processed = processed.replace(/<table[^>]*>(.*?)<\/table>/gs, function(match, tableContent) {
+                    // Витягуємо рядки з таблиці
+                    const rows = tableContent.match(/<tr[^>]*>(.*?)<\/tr>/gs) || [];
+                    
+                    let mobileContent = '<div class="mobile-info-table">';
+                    
+                    rows.forEach(row => {
+                        const cells = row.match(/<td[^>]*>(.*?)<\/td>/gs) || [];
+                        if (cells.length >= 2) {
+                            const label = cells[0].replace(/<[^>]*>/g, '').trim();
+                            const value = cells[1].replace(/<[^>]*>/g, '').trim();
+                            
+                            if (label && value) {
+                                mobileContent += `
+                                    <div class="info-row">
+                                        <div class="info-label">${label}</div>
+                                        <div class="info-value">${value}</div>
+                                    </div>
+                                `;
+                            }
+                        }
+                    });
+                    
+                    mobileContent += '</div>';
+                    return mobileContent;
+                });
+                
+                return processed;
+            }
+            
+            // Якщо це простий текст
+            return `<div style="font-size: 16px; line-height: 1.6;">${content}</div>`;
+        }
+
         // PWA Variables
         let deferredPrompt;
         let isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
@@ -2179,13 +2597,11 @@ body {
 
             // Додаємо haptic feedback для iOS
             function hapticFeedback(type = 'light') {
-                if (window.navigator.vibrate) {
-                    window.navigator.vibrate([50]);
-                }
+                safeVibrate(50);
                 if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') {
                     // iOS haptic feedback
                     try {
-                        navigator.vibrate(type === 'light' ? [25] : [50]);
+                        safeVibrate(type === 'light' ? 25 : 50);
                     } catch (e) {
                         console.log('Haptic feedback not supported');
                     }
@@ -2551,9 +2967,7 @@ body {
                 // Кнопка меню
                 document.getElementById('mobileMenuBtn').addEventListener('click', function() {
                     // Haptic feedback
-                    if (navigator.vibrate) {
-                        navigator.vibrate(50);
-                    }
+                    safeVibrate(50);
                     
                     // Відкриваємо бокове меню
                     const mainMenu = document.getElementById('mainMenu');
@@ -2695,9 +3109,7 @@ body {
                     setTimeout(() => {
                         searchInput.focus();
                         // Haptic feedback
-                        if (navigator.vibrate) {
-                            navigator.vibrate(50);
-                        }
+                        safeVibrate(50);
                     }, 100);
                 }
             } else {
@@ -2786,9 +3198,7 @@ body {
                         }, 500);
                         
                         // Haptic feedback
-                        if (navigator.vibrate) {
-                            navigator.vibrate(100);
-                        }
+                        safeVibrate(100);
                     });
                     
                     resultItem.addEventListener('mouseenter', function() {
@@ -4255,7 +4665,8 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 let propertyNameStyle = "background: rgba(25,135,84,0.05) !important; color: #333 !important; border: none !important; border-right: 1px solid rgba(0,0,0,0.08) !important; padding: 8px 12px !important; font-weight: 600 !important; text-align: left !important; vertical-align: middle !important; margin: 0 !important;";
                 let propertyValueStyle = "border: none !important; padding: 8px 12px !important; background: white !important; vertical-align: middle !important; margin: 0 !important;";
                 
-                if (isFirst) {
+                // Для мобільних пристроїв не додаємо верхні заокруглені кути, тому що є заголовок
+                if (isFirst && window.innerWidth > 768) {
                     propertyNameStyle += " border-top-left-radius: 8px !important;";
                     propertyValueStyle += " border-top-right-radius: 8px !important;";
                 }
@@ -4285,11 +4696,19 @@ function addPolygonToMap(geoJSON, originalProperties) {
             popupContent += '</div>';
             
             // Адаптивні налаштування popup
-            const popupOptions = window.innerWidth <= 768 ? 
-                { maxWidth: 280, className: 'mobile-popup' } : 
-                { maxWidth: 350 };
+            if (window.innerWidth <= 768) {
+                // Для мобільних - показуємо модальне вікно на весь екран
+                layer.on('click', function(e) {
+                    showMobileModal(popupContent, feature.properties);
+                });
                 
-            layer.bindPopup(popupContent, popupOptions);
+                // Прив'язуємо порожній попап щоб не було помилок
+                layer.bindPopup('', { maxWidth: 1, className: 'hidden-popup' });
+            } else {
+                // Для десктопу - звичайний попап
+                const popupOptions = { maxWidth: 350 };
+                layer.bindPopup(popupContent, popupOptions);
+            }
         }
         
         // Добавляем дополнительные стили для подсказок в popup
@@ -6449,9 +6868,7 @@ function analyzeExchange() {
         const offcanvasButtons = document.querySelectorAll('.offcanvas .btn');
         offcanvasButtons.forEach(button => {
             button.addEventListener('click', function() {
-                if (navigator.vibrate && window.innerWidth <= 768) {
-                    navigator.vibrate(30); // Короткий тактильний відгук
-                }
+                safeVibrate(30); // Короткий тактильний відгук
             });
         });
         
@@ -6459,9 +6876,7 @@ function analyzeExchange() {
         const offcanvasSelects = document.querySelectorAll('.offcanvas .form-select');
         offcanvasSelects.forEach(select => {
             select.addEventListener('change', function() {
-                if (navigator.vibrate && window.innerWidth <= 768) {
-                    navigator.vibrate(20); // Дуже короткий відгук для зміни вибору
-                }
+                safeVibrate(20); // Дуже короткий відгук для зміни вибору
             });
         });
         
@@ -6470,16 +6885,12 @@ function analyzeExchange() {
         if (offcanvasElement) {
             offcanvasElement.addEventListener('shown.bs.offcanvas', function() {
                 // Haptic feedback при відкритті меню
-                if (navigator.vibrate && window.innerWidth <= 768) {
-                    navigator.vibrate(50);
-                }
+                safeVibrate(50);
             });
             
             offcanvasElement.addEventListener('hidden.bs.offcanvas', function() {
                 // Лекгий haptic feedback при закритті меню
-                if (navigator.vibrate && window.innerWidth <= 768) {
-                    navigator.vibrate(25);
-                }
+                safeVibrate(25);
             });
         }
         
@@ -6764,5 +7175,28 @@ document.getElementById('registrationYearSelect').addEventListener('change', fun
     }
 });
 </script>
+
+<!-- Мобільне модальне вікно для детальної інформації -->
+<div class="modal fade" id="mobileModal" tabindex="-1" aria-labelledby="mobileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title d-flex align-items-center" id="mobileModalTitle">
+                    <!-- Заголовок буде заповнено JavaScript -->
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрити"></button>
+            </div>
+            <div class="modal-body" id="mobileModalBody">
+                <!-- Контент буде заповнено JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i>Закрити
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
