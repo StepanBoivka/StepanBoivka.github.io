@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agro-prostir-v2.8-ios-debug';
+const CACHE_NAME = 'agro-prostir-v3.1-manifest-fix';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -35,8 +35,9 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Перехоплення запитів
+// Fetch подій (обробка запитів)
 self.addEventListener('fetch', event => {
+  // Для всіх запитів - стандартна логіка кешування
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -78,4 +79,22 @@ self.addEventListener('push', event => {
   event.waitUntil(
     self.registration.showNotification('АГРО-ПРОСТІР', options)
   );
+});
+
+// Обробка кліків по повідомленнях
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+
+  if (event.action === 'explore') {
+    event.waitUntil(
+      clients.openWindow('/')
+    );
+  }
+});
+
+// Обробка повідомлень від клієнтів
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

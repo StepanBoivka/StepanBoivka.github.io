@@ -34,7 +34,10 @@
     
     <!-- PWA display mode -->
     <meta name="display-mode" content="standalone">
-    <link rel="manifest" crossorigin="use-credentials" href="manifest.json">
+    <link rel="manifest" crossorigin="use-credentials" id="manifestLink" href="manifest.json">
+    
+    <!-- JavaScript генератор динамічного маніфеста -->
+    <script src="js/manifest-generator.js"></script>
     
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
@@ -97,6 +100,100 @@
                 link.href = href + (href.indexOf('?') >= 0 ? '&' : '?') + 'v=' + Date.now();
             }
         }
+        
+        // Ранення перевірка для PWA - перенаправлення з client ID
+        function checkPWARedirect() {
+            const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone === true;
+            
+            if (isPWA) {
+                console.log('PWA detected, checking for stored client ID...');
+                
+                try {
+                    const storedId = localStorage.getItem('client_id');
+                    const currentParams = new URLSearchParams(window.location.search);
+                    const currentId = currentParams.get('id');
+                    
+                    console.log('Stored ID:', storedId);
+                    console.log('Current ID:', currentId);
+                    
+                    // Якщо є збережений ID, але немає в поточному URL
+                    if (storedId && !currentId) {
+                        console.log('Redirecting to stored client ID:', storedId);
+                        
+                        const newUrl = new URL(window.location);
+                        newUrl.searchParams.set('id', storedId);
+                        
+                        // Перенаправляємо на URL з client ID
+                        window.location.replace(newUrl.href);
+                        return; // Зупиняємо виконання
+                    }
+                } catch (e) {
+                    console.error('Error checking PWA redirect:', e);
+                }
+            }
+        }
+        
+        // Викликаємо перевірку якомога раніше
+        checkPWARedirect();
+        
+        // Оновлюємо manifest link з client ID якщо він є
+        function updateManifestLink() {
+            console.log('🔄 Оновлення посилання на маніфест');
+            
+            // Отримуємо client ID напряму з URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id');
+            
+            if (clientId) {
+                console.log('🎯 Client ID знайдено:', clientId);
+                const manifestLink = document.getElementById('manifestLink');
+                if (manifestLink) {
+                    // Спробуємо спочатку PHP версію (якщо доступна)
+                    const phpManifestUrl = `dynamic_manifest.php?id=${encodeURIComponent(clientId)}`;
+                    
+                    fetch(phpManifestUrl)
+                        .then(response => {
+                            if (response.ok && response.headers.get('content-type')?.includes('application/manifest+json')) {
+                                manifestLink.href = phpManifestUrl;
+                                console.log('✅ Використовуємо PHP маніфест:', phpManifestUrl);
+                            } else {
+                                throw new Error('PHP маніфест недоступний або неправильний тип');
+                            }
+                        })
+                        .catch(error => {
+                            console.warn('⚠️ PHP недоступний, використовуємо JavaScript версію:', error.message);
+                                  // Використовуємо JavaScript генератор маніфеста
+                        if (typeof window.createManifestBlobUrl === 'function') {
+                            const blobUrl = window.createManifestBlobUrl(clientId);
+                            manifestLink.href = blobUrl;
+                            console.log('✅ Маніфест оновлено з JavaScript генератора:', blobUrl);
+                            
+                            // Додаткове логування для debug
+                            if (typeof window.generateDynamicManifest === 'function') {
+                                const manifest = window.generateDynamicManifest(clientId);
+                                console.log('📋 Згенерований маніфест:', {
+                                    start_url: manifest.start_url,
+                                    scope: manifest.scope,
+                                    name: manifest.name
+                                });
+                            }
+                        } else {
+                            console.warn('⚠️ JavaScript генератор недоступний, використовуємо статичний маніфест');
+                            manifestLink.href = 'manifest.json';
+                        }
+                        });
+                }
+            } else {
+                console.log('📄 Використовуємо статичний маніфест');
+                const manifestLink = document.getElementById('manifestLink');
+                if (manifestLink) {
+                    manifestLink.href = 'manifest.json';
+                }
+            }
+        }
+        
+        updateManifestLink();
         
         // Примусове оновлення Service Worker
         if ('serviceWorker' in navigator) {

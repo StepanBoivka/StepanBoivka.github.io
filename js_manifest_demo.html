@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 JavaScript Маніфест Демо</title>
+    <link rel="manifest" href="manifest.json" id="manifestLink">
+    <script src="js/manifest-generator.js"></script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .success { 
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            margin: 15px 0;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        .info { 
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            margin: 15px 0;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+        .code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+        h1 { color: #333; text-align: center; }
+        h2 { color: #555; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 JavaScript Маніфест Демо</h1>
+        
+        <div class="success">
+            <h2>✅ Вирішення проблеми</h2>
+            <p>JavaScript версія динамічного маніфеста працює навіть без PHP сервера!</p>
+        </div>
+
+        <div class="info">
+            <h2>📱 Поточний статус</h2>
+            <p><strong>Client ID:</strong> <span id="currentClientId">-</span></p>
+            <p><strong>Маніфест:</strong> <span id="currentManifest">-</span></p>
+            <p><strong>Тип:</strong> <span id="manifestType">-</span></p>
+        </div>
+
+        <h2>🧪 Тестування</h2>
+        <button onclick="testJSManifest()">📱 Тест JS Маніфеста</button>
+        <button onclick="updateManifest()">🔄 Оновити Маніфест</button>
+        <button onclick="downloadManifest()">💾 Завантажити Маніфест</button>
+        <button onclick="addClientId()">🆔 Додати Client ID</button>
+
+        <h2>📄 Згенерований маніфест</h2>
+        <div id="manifestContent" class="code">Натисніть "Тест JS Маніфеста" для генерації...</div>
+
+        <div class="success">
+            <h2>🎉 Результат</h2>
+            <p>Тепер PWA працює з Client ID на будь-якому сервері, навіть без PHP!</p>
+        </div>
+    </div>
+
+    <script>
+        // Отримуємо Client ID при завантаженні
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurrentStatus();
+            
+            // Автоматично тестуємо, якщо є Client ID
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('id')) {
+                setTimeout(testJSManifest, 1000);
+            }
+        });
+
+        function updateCurrentStatus() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id') || 'Відсутній';
+            
+            document.getElementById('currentClientId').textContent = clientId;
+            
+            const manifestLink = document.querySelector('link[rel="manifest"]');
+            const manifestHref = manifestLink ? manifestLink.href : 'Не знайдено';
+            const isBlob = manifestHref.startsWith('blob:');
+            const isDynamic = manifestHref.includes('dynamic_manifest.php') || isBlob;
+            
+            document.getElementById('currentManifest').textContent = 
+                isBlob ? 'Blob URL (JavaScript)' : manifestHref;
+            document.getElementById('manifestType').textContent = 
+                isDynamic ? 'Динамічний' : 'Статичний';
+        }
+
+        function testJSManifest() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id') || '53f5172d-786f-4978-9607-4f699ecb7b7c';
+            
+            if (typeof window.generateDynamicManifest === 'function') {
+                const manifest = window.generateDynamicManifest(clientId);
+                document.getElementById('manifestContent').textContent = 
+                    JSON.stringify(manifest, null, 2);
+                
+                console.log('✅ JavaScript маніфест згенеровано:', manifest);
+                alert(`✅ JavaScript маніфест успішно згенеровано!\nstart_url: ${manifest.start_url}`);
+            } else {
+                alert('❌ JavaScript генератор маніфеста не завантажений');
+            }
+        }
+
+        function updateManifest() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id');
+            
+            if (clientId && typeof window.createManifestBlobUrl === 'function') {
+                const manifestLink = document.querySelector('link[rel="manifest"]');
+                const blobUrl = window.createManifestBlobUrl(clientId);
+                manifestLink.href = blobUrl;
+                
+                console.log('✅ Маніфест оновлено:', blobUrl);
+                updateCurrentStatus();
+                alert('✅ Маніфест успішно оновлено з JavaScript версією!');
+            } else if (!clientId) {
+                alert('❌ Потрібен Client ID для оновлення маніфеста');
+            } else {
+                alert('❌ JavaScript генератор недоступний');
+            }
+        }
+
+        function downloadManifest() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id') || '53f5172d-786f-4978-9607-4f699ecb7b7c';
+            
+            if (typeof window.generateDynamicManifest === 'function') {
+                const manifest = window.generateDynamicManifest(clientId);
+                const manifestJson = JSON.stringify(manifest, null, 2);
+                
+                const blob = new Blob([manifestJson], { type: 'application/manifest+json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `manifest-${clientId.substring(0, 8)}.json`;
+                a.click();
+                
+                URL.revokeObjectURL(url);
+                alert('✅ Маніфест завантажено!');
+            } else {
+                alert('❌ JavaScript генератор недоступний');
+            }
+        }
+
+        function addClientId() {
+            const testClientId = '53f5172d-786f-4978-9607-4f699ecb7b7c';
+            window.location.href = `${window.location.pathname}?id=${testClientId}`;
+        }
+    </script>
+</body>
+</html>

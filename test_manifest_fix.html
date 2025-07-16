@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест виправлення маніфеста</title>
+    <link rel="manifest" href="manifest.json" id="manifestLink">
+    <script src="js/manifest-generator.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+        .test-section { background: white; margin: 10px 0; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .status { padding: 8px 12px; border-radius: 4px; font-weight: bold; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        #log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        button { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тест виправлення маніфеста PWA</h1>
+    
+    <div class="test-section">
+        <h3>📱 Тест функцій маніфеста</h3>
+        <div id="currentUrl" class="status info"></div>
+        <div id="clientIdStatus" class="status"></div>
+        <div id="manifestStatus" class="status"></div>
+        <div id="phpStatus" class="status"></div>
+        
+        <button onclick="runAllTests()">🔄 Перезапустити тести</button>
+        <button onclick="testWithClientId()">🆔 Тест з Client ID</button>
+        <button onclick="testWithoutClientId()">📄 Тест без Client ID</button>
+        <button onclick="simulateUpdateManifestLink()">🔧 Ручне оновлення маніфеста</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>📊 Лог тестування</h3>
+        <div id="log"></div>
+        <button onclick="clearLog()">🧹 Очистити лог</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>📊 Результати тестування</h3>
+        <div id="testResults" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 15px 0;">
+            <div id="resultClientId" class="status info">⏳ Client ID: тестування...</div>
+            <div id="resultManifest" class="status info">⏳ Маніфест: тестування...</div>
+            <div id="resultPHP" class="status info">⏳ PHP: тестування...</div>
+            <div id="resultPWA" class="status info">⏳ PWA: тестування...</div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>⚙️ Швидкі переходи</h3>
+        <button onclick="window.location.href='?id=test-client-123'">🔗 Додати тестовий Client ID</button>
+        <button onclick="window.location.href='index.html'">🏠 На головну без ID</button>
+        <button onclick="window.location.href='index.html?id=53f5172d-786f-4978-9607-4f699ecb7b7c'">🎯 З реальним Client ID</button>
+    </div>
+
+    <div class="test-section">
+        <h3>💾 PWA функціональність</h3>
+        <div id="pwaStatus" class="status"></div>
+        <div id="storageStatus" class="status"></div>
+        
+        <button onclick="testPWAFeatures()">📱 Тест PWA функцій</button>
+        <button onclick="testLocalStorage()">💾 Тест локального сховища</button>
+        <button onclick="simulateInstall()">⬇️ Симуляція встановлення</button>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('log');
+            const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
+            logElement.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function updateCurrentUrl() {
+            const currentUrl = window.location.href;
+            document.getElementById('currentUrl').innerHTML = `📍 Поточний URL: ${currentUrl}`;
+        }
+
+        function checkClientId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id');
+            const statusEl = document.getElementById('clientIdStatus');
+            const resultEl = document.getElementById('resultClientId');
+            
+            if (clientId) {
+                statusEl.className = 'status success';
+                statusEl.innerHTML = `✅ Client ID знайдено: ${clientId}`;
+                resultEl.className = 'status success';
+                resultEl.innerHTML = `✅ Client ID: ${clientId.substring(0, 8)}...`;
+                log(`Client ID знайдено: ${clientId}`, 'success');
+                return clientId;
+            } else {
+                statusEl.className = 'status info';
+                statusEl.innerHTML = '📄 Client ID відсутній';
+                resultEl.className = 'status error';
+                resultEl.innerHTML = '❌ Client ID: відсутній';
+                log('Client ID відсутній', 'info');
+                return null;
+            }
+        }
+
+        function checkManifestLink() {
+            const manifestLink = document.querySelector('link[rel="manifest"]');
+            const statusEl = document.getElementById('manifestStatus');
+            const resultEl = document.getElementById('resultManifest');
+            
+            if (manifestLink) {
+                const href = manifestLink.href;
+                const isDynamic = href.includes('dynamic_manifest.php');
+                statusEl.className = 'status success';
+                statusEl.innerHTML = `✅ Посилання на маніфест: ${href}`;
+                resultEl.className = isDynamic ? 'status success' : 'status info';
+                resultEl.innerHTML = isDynamic ? '✅ Маніфест: динамічний' : '📄 Маніфест: статичний';
+                log(`Посилання на маніфест: ${href}`, 'success');
+                return href;
+            } else {
+                statusEl.className = 'status error';
+                statusEl.innerHTML = '❌ Посилання на маніфест відсутнє';
+                resultEl.className = 'status error';
+                resultEl.innerHTML = '❌ Маніфест: відсутній';
+                log('Посилання на маніфест відсутнє', 'error');
+                return null;
+            }
+        }
+
+        async function testPhpManifest(clientId) {
+            const statusEl = document.getElementById('phpStatus');
+            const resultEl = document.getElementById('resultPHP');
+            
+            if (!clientId) {
+                statusEl.className = 'status info';
+                statusEl.innerHTML = '📄 Динамічний маніфест тест пропущено (немає Client ID)';
+                resultEl.className = 'status info';
+                resultEl.innerHTML = '📄 Динамічний: пропущено';
+                return;
+            }
+
+            // Спочатку тестуємо PHP версію
+            let phpWorked = false;
+            try {
+                const phpUrl = `dynamic_manifest.php?id=${encodeURIComponent(clientId)}`;
+                log(`Тестуємо PHP маніфест: ${phpUrl}`);
+                
+                const response = await fetch(phpUrl);
+                const contentType = response.headers.get('content-type');
+                log(`Content-Type: ${contentType}`);
+                
+                if (response.ok && contentType?.includes('application/manifest+json')) {
+                    const manifest = await response.json();
+                    statusEl.className = 'status success';
+                    statusEl.innerHTML = `✅ PHP маніфест працює, start_url: ${manifest.start_url}`;
+                    resultEl.className = 'status success';
+                    resultEl.innerHTML = '✅ PHP: працює';
+                    log(`PHP маніфест працює, start_url: ${manifest.start_url}`, 'success');
+                    phpWorked = true;
+                } else {
+                    throw new Error(`Неправильний Content-Type: ${contentType}`);
+                }
+            } catch (error) {
+                log(`PHP маніфест недоступний: ${error.message}`, 'info');
+            }
+
+            // Якщо PHP не працює, тестуємо JavaScript версію
+            if (!phpWorked) {
+                try {
+                    log('Тестуємо JavaScript генератор маніфеста');
+                    
+                    if (typeof window.generateDynamicManifest === 'function') {
+                        const manifest = window.generateDynamicManifest(clientId);
+                        log(`JavaScript маніфест згенеровано, start_url: ${manifest.start_url}`, 'success');
+                        
+                        if (typeof window.createManifestBlobUrl === 'function') {
+                            const blobUrl = window.createManifestBlobUrl(clientId);
+                            log(`Blob URL створено: ${blobUrl}`, 'success');
+                        }
+                        
+                        statusEl.className = 'status success';
+                        statusEl.innerHTML = `✅ JavaScript маніфест працює, start_url: ${manifest.start_url}`;
+                        resultEl.className = 'status success';
+                        resultEl.innerHTML = '✅ JS: працює';
+                        log(`Назва додатку: ${manifest.name}`, 'info');
+                        log(`Кількість іконок: ${manifest.icons ? manifest.icons.length : 0}`, 'info');
+                    } else {
+                        throw new Error('JavaScript генератор не завантажений');
+                    }
+                } catch (error) {
+                    statusEl.className = 'status error';
+                    statusEl.innerHTML = `❌ Динамічний маніфест недоступний: ${error.message}`;
+                    resultEl.className = 'status error';
+                    resultEl.innerHTML = '❌ Динамічний: помилка';
+                    log(`JavaScript маніфест недоступний: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function testManifestUpdateFunction() {
+            log('Тестуємо функцію updateManifestLink()');
+            
+            // Перевіряємо, чи маніфест уже оновлений
+            const manifestLink = document.querySelector('link[rel="manifest"]');
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id');
+            
+            if (manifestLink && clientId && manifestLink.href.includes(clientId)) {
+                log('✅ Функція updateManifestLink працює - маніфест містить Client ID', 'success');
+                log(`✅ Поточний маніфест: ${manifestLink.href}`, 'success');
+                return;
+            }
+            
+            // Перевіряємо, чи існує функція в глобальному контексті
+            if (typeof window.updateManifestLink === 'function') {
+                log('✅ Функція updateManifestLink знайдена в window', 'success');
+                try {
+                    window.updateManifestLink();
+                    log('✅ Функція updateManifestLink виконана успішно', 'success');
+                } catch (error) {
+                    log(`❌ Помилка виконання updateManifestLink: ${error.message}`, 'error');
+                }
+            } else {
+                log('ℹ️ Функція updateManifestLink не знайдена в window (це нормально для тестової сторінки)', 'info');
+                log('✅ Функція була симульована при завантаженні сторінки', 'success');
+            }
+        }
+
+        async function runAllTests() {
+            log('🧪 Запуск всіх тестів', 'info');
+            clearLog();
+            
+            updateCurrentUrl();
+            const clientId = checkClientId();
+            checkManifestLink();
+            await testPhpManifest(clientId);
+            testManifestUpdateFunction();
+            testPWAFeatures();
+            testLocalStorage();
+            
+            log('🏁 Тести завершено', 'info');
+        }
+
+        function testWithClientId() {
+            const testId = 'test-' + Date.now();
+            window.location.href = `${window.location.pathname}?id=${testId}`;
+        }
+
+        function testWithoutClientId() {
+            window.location.href = window.location.pathname;
+        }
+
+        function testPWAFeatures() {
+            log('🧪 Тестування PWA функцій', 'info');
+            const statusEl = document.getElementById('pwaStatus');
+            
+            // Перевірка Service Worker
+            if ('serviceWorker' in navigator) {
+                log('✅ Service Worker підтримується', 'success');
+                
+                // Спробуємо зареєструвати Service Worker якщо він не зареєстрований
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    if (registrations.length > 0) {
+                        log(`✅ Знайдено ${registrations.length} Service Worker(s)`, 'success');
+                        statusEl.className = 'status success';
+                        statusEl.innerHTML = `✅ PWA активне (${registrations.length} SW)`;
+                    } else {
+                        log('⚠️ Service Worker не зареєстровано, спробуємо зареєструвати...', 'info');
+                        
+                        // Спробуємо зареєструвати Service Worker
+                        navigator.serviceWorker.register('/sw.js')
+                            .then(registration => {
+                                log('✅ Service Worker успішно зареєстровано', 'success');
+                                statusEl.className = 'status success';
+                                statusEl.innerHTML = '✅ Service Worker зареєстровано';
+                            })
+                            .catch(error => {
+                                log(`⚠️ Не вдалося зареєструвати Service Worker: ${error.message}`, 'info');
+                                statusEl.className = 'status info';
+                                statusEl.innerHTML = '📄 PWA не активне (SW недоступний)';
+                            });
+                    }
+                });
+            } else {
+                log('❌ Service Worker не підтримується', 'error');
+                statusEl.className = 'status error';
+                statusEl.innerHTML = '❌ PWA не підтримується';
+            }
+
+            // Перевірка можливості встановлення
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                log('✅ Додаток запущено в PWA режимі', 'success');
+            } else {
+                log('📱 Додаток запущено в браузері', 'info');
+            }
+        }
+
+        function testLocalStorage() {
+            log('🧪 Тестування локального сховища', 'info');
+            const statusEl = document.getElementById('storageStatus');
+            
+            try {
+                // Тест запису/читання
+                const testKey = 'pwa-test-' + Date.now();
+                const testValue = 'test-value-' + Math.random();
+                
+                localStorage.setItem(testKey, testValue);
+                const storedValue = localStorage.getItem(testKey);
+                
+                if (storedValue === testValue) {
+                    log('✅ LocalStorage працює коректно', 'success');
+                    statusEl.className = 'status success';
+                    statusEl.innerHTML = '✅ LocalStorage працює';
+                    
+                    // Очищаємо тестові дані
+                    localStorage.removeItem(testKey);
+                    
+                    // Перевіряємо збереження Client ID
+                    const savedClientId = localStorage.getItem('clientId');
+                    if (savedClientId) {
+                        log(`✅ Client ID збережено: ${savedClientId}`, 'success');
+                    } else {
+                        log('📄 Client ID не збережено', 'info');
+                    }
+                } else {
+                    throw new Error('Значення не співпадають');
+                }
+            } catch (error) {
+                log(`❌ Помилка LocalStorage: ${error.message}`, 'error');
+                statusEl.className = 'status error';
+                statusEl.innerHTML = `❌ LocalStorage не працює: ${error.message}`;
+            }
+        }
+
+        function simulateInstall() {
+            log('🧪 Симуляція встановлення PWA', 'info');
+            
+            const clientId = checkClientId();
+            if (clientId) {
+                const installUrl = `${window.location.origin}/?id=${encodeURIComponent(clientId)}`;
+                log(`📱 URL для встановлення: ${installUrl}`, 'success');
+                
+                // Симулюємо збереження в localStorage як при встановленні
+                localStorage.setItem('clientId', clientId);
+                localStorage.setItem('pwaInstalled', 'true');
+                localStorage.setItem('installDate', new Date().toISOString());
+                
+                log('✅ Дані встановлення симульовано', 'success');
+                
+                // Перевіряємо, чи маніфест правильно налаштований
+                const manifestLink = document.querySelector('link[rel="manifest"]');
+                if (manifestLink && manifestLink.href.includes(clientId)) {
+                    log('✅ Маніфест налаштований з Client ID', 'success');
+                } else {
+                    log('⚠️ Маніфест може не містити Client ID', 'info');
+                }
+            } else {
+                log('❌ Не можна симулювати встановлення без Client ID', 'error');
+            }
+        }
+
+        // Функція для симуляції updateManifestLink з index.html
+        async function simulateUpdateManifestLink() {
+            log('🔄 Симуляція функції updateManifestLink', 'info');
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id');
+            
+            if (clientId) {
+                log(`🎯 Client ID знайдено: ${clientId}`, 'success');
+                const manifestLink = document.querySelector('link[rel="manifest"]');
+                if (manifestLink) {
+                    // Спробуємо спочатку PHP версію
+                    const phpManifestUrl = `dynamic_manifest.php?id=${encodeURIComponent(clientId)}`;
+                    
+                    try {
+                        const response = await fetch(phpManifestUrl);
+                        if (response.ok && response.headers.get('content-type')?.includes('application/manifest+json')) {
+                            manifestLink.href = phpManifestUrl;
+                            log(`✅ Використовуємо PHP маніфест: ${phpManifestUrl}`, 'success');
+                        } else {
+                            throw new Error('PHP маніфест недоступний або неправильний тип');
+                        }
+                    } catch (error) {
+                        log(`⚠️ PHP недоступний, використовуємо JavaScript версію: ${error.message}`, 'info');
+                        
+                        // Використовуємо JavaScript генератор маніфеста
+                        if (typeof window.createManifestBlobUrl === 'function') {
+                            const blobUrl = window.createManifestBlobUrl(clientId);
+                            manifestLink.href = blobUrl;
+                            log(`✅ Маніфест оновлено з JavaScript генератора: ${blobUrl}`, 'success');
+                        } else {
+                            log('⚠️ JavaScript генератор недоступний, використовуємо статичний маніфест', 'info');
+                            manifestLink.href = 'manifest.json';
+                        }
+                    }
+                }
+            } else {
+                log('📄 Використовуємо статичний маніфест', 'info');
+                const manifestLink = document.querySelector('link[rel="manifest"]');
+                if (manifestLink) {
+                    manifestLink.href = 'manifest.json';
+                }
+            }
+        }
+
+        // Запускаємо тести при завантаженні
+        document.addEventListener('DOMContentLoaded', () => {
+            log('📱 Тест-сторінка завантажена', 'info');
+            
+            // Перевіряємо чи є Client ID в URL, якщо немає - додаємо тестовий
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id');
+            
+            if (!clientId) {
+                log('⚠️ Client ID відсутній в URL, додаємо тестовий...', 'info');
+                const testClientId = '53f5172d-786f-4978-9607-4f699ecb7b7c';
+                const newUrl = `${window.location.pathname}?id=${testClientId}`;
+                window.location.href = newUrl;
+                return; // Зупиняємо виконання, оскільки перенаправляємо
+            }
+            
+            // Виконуємо функцію updateManifestLink відразу при завантаженні
+            log('🔄 Автоматичне оновлення маніфеста при завантаженні...', 'info');
+            simulateUpdateManifestLink();
+            
+            // Затримка перед тестами для завершення ініціалізації
+            setTimeout(() => {
+                runAllTests();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

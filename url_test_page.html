@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Тест URL в маніфесті</title>
+    <link rel="manifest" href="manifest.json" id="manifestLink">
+    <script src="js/manifest-generator.js"></script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 20px; 
+            background: #f8f9fa; 
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .code { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 15px; 
+            border-radius: 8px; 
+            font-family: 'Courier New', monospace; 
+            font-size: 14px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            margin: 8px; 
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        h1, h2 { color: #333; }
+        .url-test { 
+            display: grid; 
+            grid-template-columns: 200px 1fr 100px; 
+            gap: 10px; 
+            align-items: center; 
+            padding: 10px; 
+            border: 1px solid #dee2e6; 
+            border-radius: 6px; 
+            margin: 5px 0; 
+        }
+        .url-label { font-weight: bold; }
+        .url-value { font-family: monospace; font-size: 14px; }
+        .url-status { text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Тест URL в PWA маніфесті</h1>
+        
+        <div class="info">
+            <h2>📍 Поточні URL</h2>
+            <div id="currentUrls"></div>
+        </div>
+
+        <div class="success" id="manifestInfo">
+            <h2>📱 Інформація про маніфест</h2>
+            <div id="manifestDetails"></div>
+        </div>
+
+        <div class="code" id="manifestContent">
+            Натисніть "Згенерувати маніфест" для показу...
+        </div>
+
+        <div style="text-align: center;">
+            <button onclick="generateAndTest()">📱 Згенерувати маніфест</button>
+            <button onclick="testUrls()">🔍 Тест URL</button>
+            <button onclick="updateManifest()">🔄 Оновити маніфест</button>
+            <button onclick="window.location.href='?id=test-client-' + Date.now()">🆔 Новий Client ID</button>
+        </div>
+
+        <div id="urlTests"></div>
+    </div>
+
+    <script>
+        let currentManifest = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            showCurrentUrls();
+            generateAndTest();
+        });
+
+        function showCurrentUrls() {
+            const currentUrls = document.getElementById('currentUrls');
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id') || 'відсутній';
+            
+            currentUrls.innerHTML = `
+                <div class="url-test">
+                    <div class="url-label">Origin:</div>
+                    <div class="url-value">${window.location.origin}</div>
+                    <div class="url-status">ℹ️</div>
+                </div>
+                <div class="url-test">
+                    <div class="url-label">Pathname:</div>
+                    <div class="url-value">${window.location.pathname}</div>
+                    <div class="url-status">ℹ️</div>
+                </div>
+                <div class="url-test">
+                    <div class="url-label">Client ID:</div>
+                    <div class="url-value">${clientId}</div>
+                    <div class="url-status">${clientId !== 'відсутній' ? '✅' : '❌'}</div>
+                </div>
+            `;
+        }
+
+        function generateAndTest() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id') || '53f5172d-786f-4978-9607-4f699ecb7b7c';
+            
+            if (typeof window.generateDynamicManifest === 'function') {
+                currentManifest = window.generateDynamicManifest(clientId);
+                
+                // Показуємо маніфест
+                document.getElementById('manifestContent').textContent = 
+                    JSON.stringify(currentManifest, null, 2);
+                
+                // Показуємо деталі
+                const manifestDetails = document.getElementById('manifestDetails');
+                manifestDetails.innerHTML = `
+                    <div class="url-test">
+                        <div class="url-label">Name:</div>
+                        <div class="url-value">${currentManifest.name}</div>
+                        <div class="url-status">✅</div>
+                    </div>
+                    <div class="url-test">
+                        <div class="url-label">Start URL:</div>
+                        <div class="url-value">${currentManifest.start_url}</div>
+                        <div class="url-status" id="startUrlStatus">🔍</div>
+                    </div>
+                    <div class="url-test">
+                        <div class="url-label">Scope:</div>
+                        <div class="url-value">${currentManifest.scope}</div>
+                        <div class="url-status" id="scopeStatus">🔍</div>
+                    </div>
+                `;
+                
+                console.log('📱 Маніфест згенеровано:', currentManifest);
+                testUrls();
+            } else {
+                alert('❌ JavaScript генератор маніфеста не завантажений');
+            }
+        }
+
+        function testUrls() {
+            if (!currentManifest) {
+                generateAndTest();
+                return;
+            }
+
+            // Тестуємо start_url
+            testUrl(currentManifest.start_url, 'startUrlStatus', 'Start URL');
+            
+            // Тестуємо scope
+            testUrl(currentManifest.scope, 'scopeStatus', 'Scope');
+            
+            // Показуємо результати тестів
+            const urlTests = document.getElementById('urlTests');
+            urlTests.innerHTML = `
+                <div class="info">
+                    <h2>🧪 Результати тестування URL</h2>
+                    <div id="testResults">Тестування URL...</div>
+                </div>
+            `;
+        }
+
+        function testUrl(url, statusElementId, label) {
+            try {
+                const testUrl = new URL(url, window.location.origin);
+                document.getElementById(statusElementId).textContent = '✅';
+                document.getElementById(statusElementId).title = `${label} валідний: ${testUrl.href}`;
+                console.log(`✅ ${label} валідний:`, testUrl.href);
+            } catch (error) {
+                document.getElementById(statusElementId).textContent = '❌';
+                document.getElementById(statusElementId).title = `${label} невалідний: ${error.message}`;
+                console.error(`❌ ${label} невалідний:`, error.message);
+            }
+        }
+
+        function updateManifest() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id');
+            
+            if (clientId && typeof window.createManifestBlobUrl === 'function') {
+                const manifestLink = document.querySelector('link[rel="manifest"]');
+                const blobUrl = window.createManifestBlobUrl(clientId);
+                manifestLink.href = blobUrl;
+                
+                console.log('✅ Маніфест оновлено:', blobUrl);
+                alert('✅ Маніфест успішно оновлено з JavaScript версією!');
+            } else if (!clientId) {
+                alert('❌ Потрібен Client ID для оновлення маніфеста');
+            } else {
+                alert('❌ JavaScript генератор недоступний');
+            }
+        }
+    </script>
+</body>
+</html>
