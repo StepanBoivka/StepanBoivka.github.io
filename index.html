@@ -3006,12 +3006,14 @@ body {
         
         // Функція для активації пошуку
         function activateSearch() {
-            if (searchControl && searchControl._input) {
+            if (searchControl && searchControl._layer) {
                 // На десктопі просто фокусуємо
                 if (window.innerWidth > 768) {
-                    searchControl._input.focus();
-                    if (searchControl._container && searchControl._container.classList) {
-                        searchControl._container.classList.add('search-exp');
+                    if (searchControl._input) {
+                        searchControl._input.focus();
+                        if (searchControl._container && searchControl._container.classList) {
+                            searchControl._container.classList.add('search-exp');
+                        }
                     }
                     return;
                 }
@@ -3141,6 +3143,9 @@ body {
                     window.mobileSearchEscHandler = null;
                 }
             }
+            
+            // НЕ видаляємо підсвічування пошуку тут - воно має залишатися як у десктопній версії
+            // Підсвічування буде видалено автоматично через таймер або при новому пошуку
         }
         
         // Функція для виконання пошуку на мобільному
@@ -3195,6 +3200,41 @@ body {
                             map.fitBounds(result.layer.getBounds());
                         } else if (result.layer.getLatLng) {
                             map.setView(result.layer.getLatLng(), 15);
+                        }
+                        
+                        // Створюємо тимчасове підсвічування для мобільного пошуку
+                        if (result.layer.getBounds) {
+                            // Видаляємо попереднє підсвічування якщо є
+                            if (window.mobileSearchHighlight) {
+                                map.removeLayer(window.mobileSearchHighlight);
+                            }
+                            
+                            // Створюємо кільце навколо знайденої ділянки (як у десктопній версії)
+                            const bounds = result.layer.getBounds();
+                            const center = bounds.getCenter();
+                            // Зменшуємо радіус як у стандартному Leaflet search
+                            const radius = Math.max(
+                                bounds.getNorthEast().distanceTo(bounds.getSouthWest()) / 8,
+                                25 // мінімальний радіус
+                            );
+                            
+                            window.mobileSearchHighlight = L.circle(center, {
+                                radius: radius,
+                                color: '#ff7800',
+                                weight: 3,
+                                opacity: 0.8,
+                                fillColor: '#ff7800',
+                                fillOpacity: 0.15,
+                                className: 'mobile-search-highlight'
+                            }).addTo(map);
+                            
+                            // Автоматично видаляємо підсвічування через 5 секунд (як у десктопній версії)
+                            setTimeout(() => {
+                                if (window.mobileSearchHighlight) {
+                                    map.removeLayer(window.mobileSearchHighlight);
+                                    window.mobileSearchHighlight = null;
+                                }
+                            }, 5000);
                         }
                         
                         // Відкриваємо popup
