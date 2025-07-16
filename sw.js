@@ -76,6 +76,6 @@ self.addEventListener('push', event => {
   };
 
   event.waitUntil(
-    self.registration.showNotification('Земля UA', options)
+    self.registration.showNotification('АГРО-ПРОСТІР', options)
   );
 });
