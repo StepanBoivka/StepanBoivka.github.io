@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>iOS PWA Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .error { background: #f8d7da; color: #721c24; }
+        .button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🍎 iOS PWA Client ID Test</h1>
+    
+    <div id="status"></div>
+    
+    <h2>🔧 Управління</h2>
+    <button class="button" onclick="testClientId()">Тест Client ID</button>
+    <button class="button" onclick="simulatePWA()">Симулювати PWA</button>
+    <button class="button" onclick="clearStorage()">Очистити Storage</button>
+    <button class="button" onclick="setTestId()">Встановити Тест ID</button>
+    <button class="button" onclick="redirectToMain()">Перейти на Головну</button>
+    
+    <h2>📋 Інформація</h2>
+    <div id="info"></div>
+    
+    <script>
+        function updateStatus() {
+            const statusDiv = document.getElementById('status');
+            const infoDiv = document.getElementById('info');
+            
+            // Перевірки
+            const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isIOSPWA = isIOSSafari && window.navigator.standalone === true;
+            const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            const storedId = localStorage.getItem('client_id');
+            const currentParams = new URLSearchParams(window.location.search);
+            const currentId = currentParams.get('id');
+            
+            // Статус
+            let statusClass = 'info';
+            let statusText = '';
+            
+            if (isIOSPWA) {
+                if (storedId && currentId) {
+                    statusClass = 'success';
+                    statusText = '✅ iOS PWA: Client ID працює правильно!';
+                } else if (storedId && !currentId) {
+                    statusClass = 'warning';
+                    statusText = '⚠️ iOS PWA: Client ID збережено, але відсутній в URL. Потрібне перенаправлення.';
+                } else {
+                    statusClass = 'error';
+                    statusText = '❌ iOS PWA: Client ID не знайдено.';
+                }
+            } else if (isIOSSafari) {
+                statusClass = 'info';
+                statusText = '📱 iOS Safari: Додайте на початковий екран для тестування PWA.';
+            } else {
+                statusClass = 'info';
+                statusText = '💻 Не iOS: Для повного тестування використовуйте iPhone/iPad.';
+            }
+            
+            statusDiv.innerHTML = `<div class="status ${statusClass}">${statusText}</div>`;
+            
+            // Детальна інформація
+            infoDiv.innerHTML = `
+                <div class="status info">
+                    <h3>🔍 Детальна діагностика:</h3>
+                    <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+                    <p><strong>iOS Safari:</strong> ${isIOSSafari ? '✅ Так' : '❌ Ні'}</p>
+                    <p><strong>iOS PWA:</strong> ${isIOSPWA ? '✅ Так' : '❌ Ні'}</p>
+                    <p><strong>PWA Mode:</strong> ${isPWA ? '✅ Так' : '❌ Ні'}</p>
+                    <p><strong>Standalone:</strong> ${window.navigator.standalone}</p>
+                    <p><strong>Display Mode:</strong> ${window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser'}</p>
+                    <p><strong>Current URL:</strong> ${window.location.href}</p>
+                    <p><strong>Current ID (URL):</strong> ${currentId || 'відсутній'}</p>
+                    <p><strong>Stored ID (localStorage):</strong> ${storedId || 'відсутній'}</p>
+                </div>
+            `;
+        }
+        
+        function testClientId() {
+            const storedId = localStorage.getItem('client_id');
+            const currentParams = new URLSearchParams(window.location.search);
+            const currentId = currentParams.get('id');
+            
+            console.log('🔍 Client ID Test:', {
+                stored: storedId,
+                current: currentId,
+                url: window.location.href
+            });
+            
+            if (storedId && !currentId) {
+                console.log('🔄 Redirecting to stored ID:', storedId);
+                const newUrl = new URL(window.location);
+                newUrl.searchParams.set('id', storedId);
+                window.location.href = newUrl.href;
+            }
+            
+            updateStatus();
+        }
+        
+        function simulatePWA() {
+            // Не можемо реально симулювати standalone mode, але можемо показати що буде
+            alert('Для справжнього тестування PWA:\n1. Відкрийте цю сторінку в Safari на iOS\n2. Натисніть "Поділитися"\n3. Оберіть "На початковий екран"\n4. Запустіть PWA з початкового екрану');
+        }
+        
+        function clearStorage() {
+            localStorage.removeItem('client_id');
+            console.log('🗑️ localStorage очищено');
+            updateStatus();
+        }
+        
+        function setTestId() {
+            const testId = '53f5172d-786f-4978-9607-4f699ecb7b7c';
+            localStorage.setItem('client_id', testId);
+            console.log('💾 Тест ID встановлено:', testId);
+            
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('id', testId);
+            window.location.href = newUrl.href;
+        }
+        
+        function redirectToMain() {
+            const storedId = localStorage.getItem('client_id');
+            const targetUrl = storedId ? 
+                `./index.html?id=${encodeURIComponent(storedId)}` : 
+                './index.html';
+            window.location.href = targetUrl;
+        }
+        
+        // Автоматичне оновлення статусу
+        updateStatus();
+        
+        // Оновлення кожні 2 секунди
+        setInterval(updateStatus, 2000);
+        
+        // Логування для debug
+        console.log('🍎 iOS PWA Test Page Loaded');
+        console.log('Device Info:', {
+            userAgent: navigator.userAgent,
+            standalone: window.navigator.standalone,
+            displayMode: window.matchMedia('(display-mode: standalone)').matches
+        });
+    </script>
+</body>
+</html>

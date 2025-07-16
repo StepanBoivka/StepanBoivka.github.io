@@ -106,36 +106,60 @@
             const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                          window.navigator.standalone === true;
             
-            if (isPWA) {
-                console.log('PWA detected, checking for stored client ID...');
+            // Додаткова перевірка для iOS Safari PWA
+            const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isIOSPWA = isIOSSafari && window.navigator.standalone === true;
+            
+            console.log('🔍 PWA Detection:', {
+                isPWA: isPWA,
+                isIOSSafari: isIOSSafari,
+                isIOSPWA: isIOSPWA,
+                standalone: window.navigator.standalone,
+                displayMode: window.matchMedia('(display-mode: standalone)').matches
+            });
+            
+            if (isPWA || isIOSPWA) {
+                console.log('📱 PWA detected, checking for stored client ID...');
                 
                 try {
                     const storedId = localStorage.getItem('client_id');
                     const currentParams = new URLSearchParams(window.location.search);
                     const currentId = currentParams.get('id');
                     
-                    console.log('Stored ID:', storedId);
-                    console.log('Current ID:', currentId);
+                    console.log('💾 Stored ID:', storedId);
+                    console.log('🔗 Current ID:', currentId);
+                    console.log('🌐 Current URL:', window.location.href);
                     
                     // Якщо є збережений ID, але немає в поточному URL
                     if (storedId && !currentId) {
-                        console.log('Redirecting to stored client ID:', storedId);
+                        console.log('🔄 Redirecting to stored client ID:', storedId);
                         
                         const newUrl = new URL(window.location);
                         newUrl.searchParams.set('id', storedId);
                         
-                        // Перенаправляємо на URL з client ID
-                        window.location.replace(newUrl.href);
+                        console.log('➡️ Redirecting to:', newUrl.href);
+                        
+                        // Для iOS використовуємо window.location.href замість replace
+                        if (isIOSPWA) {
+                            window.location.href = newUrl.href;
+                        } else {
+                            window.location.replace(newUrl.href);
+                        }
                         return; // Зупиняємо виконання
                     }
                 } catch (e) {
-                    console.error('Error checking PWA redirect:', e);
+                    console.error('❌ Error checking PWA redirect:', e);
                 }
             }
         }
         
         // Викликаємо перевірку якомога раніше
         checkPWARedirect();
+        
+        // Додаткова перевірка для iOS
+        if (!ensureIOSPWARedirect()) {
+            console.log('🍎 iOS PWA: No redirect needed or not iOS PWA');
+        }
         
         // Оновлюємо manifest link з client ID якщо він є
         function updateManifestLink() {
@@ -203,6 +227,32 @@
                 }
             });
         }
+    </script>
+
+    <!-- Додатковий скрипт для iOS PWA перенаправлення -->
+    <script>
+        // Альтернативна перевірка для iOS PWA при повному завантаженні
+        window.addEventListener('load', function() {
+            const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isIOSPWA = isIOSSafari && window.navigator.standalone === true;
+            
+            if (isIOSPWA) {
+                console.log('🍎 iOS PWA detected on window load');
+                
+                setTimeout(function() {
+                    const currentParams = new URLSearchParams(window.location.search);
+                    const currentId = currentParams.get('id');
+                    
+                    if (!currentId) {
+                        const storedId = localStorage.getItem('client_id');
+                        if (storedId) {
+                            console.log('🔄 iOS PWA (window.load): Final redirect attempt to:', storedId);
+                            window.location.href = `${window.location.origin}${window.location.pathname}?id=${encodeURIComponent(storedId)}`;
+                        }
+                    }
+                }, 500); // Більша затримка для повної впевненості
+            }
+        });
     </script>
 
     <style>
@@ -3582,6 +3632,44 @@ body {
             return id;
         }
 
+        // Спеціальна функція для iOS PWA перенаправлення
+        function ensureIOSPWARedirect() {
+            const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isIOSPWA = isIOSSafari && window.navigator.standalone === true;
+            
+            if (!isIOSPWA) return false;
+            
+            console.log('🍎 iOS PWA detected - ensuring client ID redirect');
+            
+            const currentParams = new URLSearchParams(window.location.search);
+            const currentId = currentParams.get('id');
+            const storedId = localStorage.getItem('client_id');
+            
+            console.log('🔍 iOS Check:', { currentId, storedId, currentURL: window.location.href });
+            
+            if (storedId && !currentId) {
+                console.log('🔄 iOS PWA: Performing redirect to:', storedId);
+                
+                // Для iOS використовуємо найбільш надійний метод
+                const targetUrl = `${window.location.origin}${window.location.pathname}?id=${encodeURIComponent(storedId)}`;
+                console.log('➡️ iOS PWA: Redirecting to:', targetUrl);
+                
+                // Спочатку намагаємося оновити localStorage з новим часом
+                try {
+                    localStorage.setItem('client_id', storedId);
+                    localStorage.setItem('last_ios_redirect', Date.now().toString());
+                } catch (e) {
+                    console.error('localStorage error:', e);
+                }
+                
+                // Перенаправлення
+                window.location.href = targetUrl;
+                return true;
+            }
+            
+            return false;
+        }
+
         // Показати повідомлення про збережений client ID при запуску PWA
         function showClientIdInfo() {
             const storedId = localStorage.getItem('client_id');
@@ -3657,6 +3745,28 @@ body {
         showClientIdInfo();
         // Ждем полной загрузки страницы и всех скриптов
         document.addEventListener('DOMContentLoaded', function() {
+            // Додаткова перевірка для iOS PWA при завантаженні DOM
+            setTimeout(function() {
+                const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                const isIOSPWA = isIOSSafari && window.navigator.standalone === true;
+                
+                if (isIOSPWA) {
+                    console.log('🍎 iOS PWA detected on DOM ready, checking redirect...');
+                    
+                    const currentParams = new URLSearchParams(window.location.search);
+                    const currentId = currentParams.get('id');
+                    const storedId = localStorage.getItem('client_id');
+                    
+                    if (storedId && !currentId) {
+                        console.log('🔄 iOS PWA: Redirecting to client ID:', storedId);
+                        const newUrl = new URL(window.location);
+                        newUrl.searchParams.set('id', storedId);
+                        window.location.href = newUrl.href;
+                        return;
+                    }
+                }
+            }, 100); // Невелика затримка для упевненості
+            
             // Додати обробники клавіш тут, на верхньому рівні
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Control') {
