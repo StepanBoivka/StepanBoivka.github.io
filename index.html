@@ -2641,6 +2641,77 @@ body {
         let selectedFile = ''; // Додаємо глобальну змінну для вибраного файлу
         let locateControl; // Додаємо глобальну змінну для locate control
 
+        // Предопределенные цвета для орендарів
+        const predefinedColors = [
+            "#E44754", "#1B9688", "#ff9947", "#FAC1FA", "#9BBFF8",
+            "#95F1FA", "#C6F8BD", "#F7FAB2", "#FFD7A6", "#FDABAB",
+            "#A569BD", "#FF5733", "#4A235A", "#7DCEA0", "#E74C3C",
+            "#F5B041", "#2471A3", "#AF7AC5", "#58D68D", "#5DADE2"
+        ];
+        let colorIndex = 0;
+
+        // Режим налагодження для мобільних шарів
+        const DEBUG_MOBILE_LAYERS = false; // встановіть в true для налагодження
+        
+        function debugLog(...args) {
+            if (DEBUG_MOBILE_LAYERS) {
+                console.log(...args);
+            }
+        }
+
+        // Функції для фільтрації даних за роками (визначаємо глобально)
+        function filterByExpiryYear(feature, selectedYear) {
+            if (selectedYear === '') return true; // Показать все записи
+            if (selectedYear === 'no_date') {
+                // Показать только записи без даты
+                return !feature.properties?.['Дата завершення'];
+            }
+            if (feature.properties?.['Дата завершення']) {
+                const dateStr = feature.properties['Дата завершення'];
+                const year = dateStr.split('.')[2];
+                return year === selectedYear;
+            }
+            return false;
+        }
+        
+        function filterByRegistrationYear(feature, selectedYear) {
+            if (selectedYear === '') return true; // Показати всі записи
+            if (selectedYear === 'no_date') {
+                // Показати тільки записи без дати
+                return !feature.properties?.['Дата реєстрації оренди'];
+            }
+            if (feature.properties?.['Дата реєстрації оренди']) {
+                const dateStr = feature.properties['Дата реєстрації оренди'];
+                const year = dateStr.split('.')[2];
+                return year === selectedYear;
+            }
+            return false;
+        }
+
+        // Функції для стилізації шарів
+        function styleFeature(feature) {
+            // Для split используем орендаря части если есть
+            const tenant = feature.properties["Орендар частини"] || feature.properties["Орендар"];
+            return {
+                color: getColor(tenant),
+                weight: 0.5,
+                opacity: 1,
+                fillOpacity: 0.4
+            };
+        }
+
+        function getColor(tenant) {
+            if (!tenant) return "#ffffff";
+            if (!tenantColors[tenant]) {
+                tenantColors[tenant] = predefinedColors[colorIndex % predefinedColors.length];
+                colorIndex++;
+                
+                // Логуємо для налагодження
+                debugLog('Assigned color', tenantColors[tenant], 'to tenant', tenant);
+            }
+            return tenantColors[tenant];
+        }
+
         // Функція для очищення шарів
         function clearOverlays() {
             // Зберігаємо базові шари та поля
@@ -3354,15 +3425,6 @@ body {
                 
                 mobileLayersList.appendChild(layerItem);
             });
-        }
-        
-        // Режим налагодження для мобільних шарів
-        const DEBUG_MOBILE_LAYERS = false; // встановіть в true для налагодження
-        
-        function debugLog(...args) {
-            if (DEBUG_MOBILE_LAYERS) {
-                console.log(...args);
-            }
         }
         
         // Функція для витягування кольору з layers control
@@ -4540,29 +4602,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
     }
 }
 
-        function styleFeature(feature) {
-            // Для split используем орендаря части если есть
-            const tenant = feature.properties["Орендар частини"] || feature.properties["Орендар"];
-            return {
-                color: getColor(tenant),
-                weight: 0.5,
-                opacity: 1,
-                fillOpacity: 0.4
-            };
-        }
-
-        function getColor(tenant) {
-            if (!tenant) return "#ffffff";
-            if (!tenantColors[tenant]) {
-                tenantColors[tenant] = predefinedColors[colorIndex % predefinedColors.length];
-                colorIndex++;
-                
-                // Логуємо для налагодження
-                debugLog('Assigned color', tenantColors[tenant], 'to tenant', tenant);
-            }
-            return tenantColors[tenant];
-        }
-
         function onEachFeature(feature, layer) {
     if (feature.properties) {
         // Проверяем тип объекта и логируем
@@ -4775,15 +4814,6 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 }
             }
         }
-
-        // Предопределенные цвета
-        const predefinedColors = [
-            "#E44754", "#1B9688", "#ff9947", "#FAC1FA", "#9BBFF8",
-            "#95F1FA", "#C6F8BD", "#F7FAB2", "#FFD7A6", "#FDABAB",
-            "#A569BD", "#FF5733", "#4A235A", "#7DCEA0", "#E74C3C",
-            "#F5B041", "#2471A3", "#AF7AC5", "#58D68D", "#5DADE2"
-        ];
-        let colorIndex = 0;
 
         function clearOverlays() {
     // Зберігаємо базові шари та поля
@@ -5749,36 +5779,6 @@ function processGeoJsonData(data, clearExisting) {
                 option.textContent = year + ' рік';
                 registrationYearSelect.appendChild(option);
             });
-        }
-
-        // Функція для фільтрації даних за роком завершення оренди
-        function filterByExpiryYear(feature, selectedYear) {
-            if (selectedYear === '') return true; // Показать все записи
-            if (selectedYear === 'no_date') {
-                // Показать только записи без даты
-                return !feature.properties?.['Дата завершення'];
-            }
-            if (feature.properties?.['Дата завершення']) {
-                const dateStr = feature.properties['Дата завершення'];
-                const year = dateStr.split('.')[2];
-                return year === selectedYear;
-            }
-            return false;
-        }
-        
-        // Функція фільтрації за роком реєстрації оренди
-        function filterByRegistrationYear(feature, selectedYear) {
-            if (selectedYear === '') return true; // Показати всі записи
-            if (selectedYear === 'no_date') {
-                // Показати тільки записи без дати
-                return !feature.properties?.['Дата реєстрації оренди'];
-            }
-            if (feature.properties?.['Дата реєстрації оренди']) {
-                const dateStr = feature.properties['Дата реєстрації оренди'];
-                const year = dateStr.split('.')[2];
-                return year === selectedYear;
-            }
-            return false;
         }
 
         document.getElementById('expiryYearSelect').addEventListener('change', function() {
