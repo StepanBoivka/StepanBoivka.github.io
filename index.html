@@ -20,10 +20,10 @@
     <meta http-equiv="Expires" content="0">
     
     <!-- Версія для очищення кешу -->
-    <meta name="cache-version" content="2025-01-15-004-urgent-fix">
+    <meta name="cache-version" content="2025-01-15-012-original-colors-fix">
     
     <!-- Додатковий примусовий час для кешу -->
-    <meta name="cache-bust" content="1737056789">`
+    <meta name="cache-bust" content="1737059400">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
@@ -859,7 +859,7 @@ body {
             display: inline-flex !important;
             align-items: center !important;
             padding: 8px 12px !important;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background: linear-gradient(45deg, #198754, #157347) !important;
             color: white !important;
             text-decoration: none !important;
             border-radius: 8px !important;
@@ -868,12 +868,12 @@ body {
             transition: all 0.2s ease !important;
             min-height: 36px !important;
             justify-content: center !important;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+            box-shadow: 0 2px 8px rgba(25, 135, 84, 0.3) !important;
         }
         
         .popup-link a:hover {
             transform: translateY(-1px) !important;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+            box-shadow: 0 4px 12px rgba(25, 135, 84, 0.4) !important;
         }
         
         .popup-link a:active {
@@ -949,16 +949,17 @@ body {
         
         /* Стилі для мобільного заголовку попапу */
         .mobile-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background: linear-gradient(45deg, #198754, #157347) !important;
             color: white !important;
             padding: 12px 16px !important;
             margin: -13px -19px 12px -19px !important;
-            border-radius: 16px 16px 8px 8px !important;
+            border-radius: 8px 8px 0 0 !important;
             font-weight: 600 !important;
             font-size: 0.9rem !important;
             display: flex !important;
             align-items: center !important;
             gap: 12px !important;
+            overflow: hidden !important;
         }
         
         .mobile-header i {
@@ -969,7 +970,7 @@ body {
         
         /* Стилі для десктопного заголовку попапу */
         .desktop-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background: linear-gradient(45deg, #198754, #157347) !important;
             color: white !important;
             padding: 14px 18px !important;
             margin: -13px -19px 16px -19px !important;
@@ -979,7 +980,8 @@ body {
             display: flex !important;
             align-items: center !important;
             gap: 14px !important;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2) !important;
+            box-shadow: 0 2px 8px rgba(25, 135, 84, 0.2) !important;
+            overflow: hidden !important;
         }
         
         .desktop-header i {
@@ -1046,32 +1048,37 @@ body {
                 background-color: rgba(0,123,255,0.05);
             }
             
-            /* Стовпці з іконками та текстом */
+            /* Компактні стилі для мобільних попапів */
             .popup-content .property-name {
-                width: 45% !important;
-                min-width: 100px !important;
-                max-width: 140px !important;
+                width: 35% !important;
+                min-width: 80px !important;
+                max-width: 120px !important;
                 text-align: left;
-                padding: 8px 8px;
+                padding: 6px 4px;
                 vertical-align: middle;
-                background: rgba(13,110,253,0.05);
+                background: rgba(25,135,84,0.05);
                 border-right: 1px solid rgba(0,0,0,0.08);
                 display: flex;
                 align-items: center;
-                gap: 4px;
+                gap: 2px;
                 word-wrap: break-word;
                 word-break: break-word;
-                white-space: normal;
-                hyphens: auto;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: 10px !important;
             }
             
             .popup-content .property-value {
-                width: 55% !important;
-                padding: 8px 8px;
+                width: 65% !important;
+                padding: 6px 4px;
                 word-break: break-word;
-                line-height: 1.4;
+                line-height: 1.2;
                 color: #333;
                 font-weight: 500;
+                font-size: 10px !important;
+                overflow: hidden;
+                max-height: 2.4em;
             }
             
             .popup-content .property-name i {
@@ -1143,24 +1150,43 @@ body {
             }
         }
         
-        /* Для дуже маленьких екранів */
+        /* Для дуже маленьких екранів - УЛЬТРА КОМПАКТНО */
         @media (max-width: 400px) {
             .mobile-popup .leaflet-popup-content-wrapper {
-                margin: 0 4px !important;
-                max-width: calc(100vw - 16px) !important;
-                min-width: 260px !important;
+                margin: 0 2px !important;
+                max-width: calc(100vw - 8px) !important;
+                min-width: 240px !important;
+            }
+            
+            .popup-content {
+                padding: 8px !important;
+                max-height: 50vh !important;
+                overflow: hidden !important;
             }
             
             .popup-content table {
-                font-size: 0.75rem;
+                font-size: 9px !important;
+                table-layout: fixed !important;
             }
             
             .popup-content .property-name {
-                width: 50% !important;
-                min-width: 80px !important;
-                padding: 6px 5px;
-                font-size: 0.7rem;
-                gap: 2px;
+                width: 30% !important;
+                min-width: 60px !important;
+                padding: 4px 3px !important;
+                font-size: 8px !important;
+                gap: 1px !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+            
+            .popup-content .property-value {
+                width: 70% !important;
+                padding: 4px 3px !important;
+                font-size: 9px !important;
+                line-height: 1.1 !important;
+                max-height: 1.5em !important;
+                overflow: hidden !important;
             }
             
             .popup-content .property-value {
@@ -1671,7 +1697,7 @@ body {
         
         .mobile-search-overlay .leaflet-control-search input:focus {
             outline: none !important;
-            box-shadow: 0 0 0 2px #007bff !important;
+            box-shadow: 0 0 0 2px #198754 !important;
         }
         
         .mobile-search-overlay .leaflet-control-search .search-tooltip {
@@ -4124,7 +4150,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 }
             }
             
-            popupContent += '<table>';
+            popupContent += '<table style="width: 100%; border-collapse: separate; border-spacing: 0; margin: 0; background: transparent; border: none; border-radius: 0; overflow: visible;">';
             
             // Показуємо всі поля і на мобільних і на десктопах - тільки змінюємо вигляд
             const orderedKeys = [
@@ -4146,6 +4172,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
             ];
             
             // Обрабатываем каждое поле и добавляем в таблицу
+            const tableRows = [];
             orderedKeys.forEach(key => {
                 if (feature.properties.hasOwnProperty(key)) {
                     let value = feature.properties[key] || '';
@@ -4216,11 +4243,34 @@ function addPolygonToMap(geoJSON, originalProperties) {
                         displayKey = iconNames[key] || key;
                     }
                     
-                    popupContent += `<tr>
-                        <td class="property-name">${displayKey}:</td>
-                        <td class="property-value">${value}</td>
-                    </tr>`;
+                    tableRows.push({ displayKey, value });
                 }
+            });
+            
+            // Створюємо рядки таблиці з правильними заокругленими кутами
+            tableRows.forEach((row, index) => {
+                const isFirst = index === 0;
+                const isLast = index === tableRows.length - 1;
+                
+                let propertyNameStyle = "background: rgba(25,135,84,0.05) !important; color: #333 !important; border: none !important; border-right: 1px solid rgba(0,0,0,0.08) !important; padding: 8px 12px !important; font-weight: 600 !important; text-align: left !important; vertical-align: middle !important; margin: 0 !important;";
+                let propertyValueStyle = "border: none !important; padding: 8px 12px !important; background: white !important; vertical-align: middle !important; margin: 0 !important;";
+                
+                if (isFirst) {
+                    propertyNameStyle += " border-top-left-radius: 8px !important;";
+                    propertyValueStyle += " border-top-right-radius: 8px !important;";
+                }
+                
+                if (isLast) {
+                    propertyNameStyle += " border-bottom-left-radius: 8px !important;";
+                    propertyValueStyle += " border-bottom-right-radius: 8px !important;";
+                } else {
+                    propertyValueStyle += " border-bottom: 1px solid rgba(0,0,0,0.08) !important;";
+                }
+                
+                popupContent += `<tr>
+                    <td class="property-name" style="${propertyNameStyle}">${row.displayKey}:</td>
+                    <td class="property-value" style="${propertyValueStyle}">${row.value}</td>
+                </tr>`;
             });
             
             popupContent += '</table>';
