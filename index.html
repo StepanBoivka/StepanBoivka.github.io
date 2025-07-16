@@ -2433,6 +2433,10 @@ body {
                         <i class="bi bi-arrow-clockwise me-2"></i>
                         Скинути клієнтський ID
                     </button>
+                    <button class="btn btn-outline-info text-start" id="debugButton" style="display: none;">
+                        <i class="bi bi-bug me-2"></i>
+                        Показати дебаг інформацію
+                    </button>
                     <div id="selectionTools" style="display: none;">
                         <button class="btn btn-outline-warning text-start w-100 mb-2" data-action="clear-selection">
                             <i class="bi bi-trash3 me-2"></i>
@@ -3442,31 +3446,57 @@ body {
             const urlParams = new URLSearchParams(window.location.search);
             let id = urlParams.get('id');
             
+            console.log('getClientId - URL id:', id);
+            console.log('getClientId - current URL:', window.location.href);
+            
             // Якщо id є в URL, зберігаємо його в localStorage для PWA
             if (id) {
-                localStorage.setItem('client_id', id);
-                console.log('Client ID збережено:', id);
+                try {
+                    localStorage.setItem('client_id', id);
+                    console.log('Client ID збережено:', id);
+                } catch (e) {
+                    console.error('Помилка збереження в localStorage:', e);
+                }
             } else {
                 // Якщо id немає в URL (наприклад, при запуску PWA), спробуємо отримати з localStorage
-                const storedId = localStorage.getItem('client_id');
-                if (storedId) {
-                    id = storedId;
-                    console.log('Client ID відновлено з localStorage:', id);
-                    
-                    // Оновлюємо URL без перезавантаження сторінки
-                    const currentUrl = new URL(window.location);
-                    currentUrl.searchParams.set('id', id);
-                    window.history.replaceState({}, '', currentUrl);
+                try {
+                    const storedId = localStorage.getItem('client_id');
+                    console.log('getClientId - stored id:', storedId);
+                    if (storedId) {
+                        id = storedId;
+                        console.log('Client ID відновлено з localStorage:', id);
+                        
+                        // Оновлюємо URL без перезавантаження сторінки
+                        try {
+                            const currentUrl = new URL(window.location);
+                            currentUrl.searchParams.set('id', id);
+                            window.history.replaceState({}, '', currentUrl);
+                            console.log('URL оновлено:', currentUrl.href);
+                        } catch (urlError) {
+                            console.error('Помилка оновлення URL:', urlError);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Помилка читання з localStorage:', e);
                 }
             }
             
+            console.log('getClientId - final id:', id);
             return id;
         }
 
         // Показати повідомлення про збережений client ID при запуску PWA
         function showClientIdInfo() {
             const storedId = localStorage.getItem('client_id');
-            if (storedId && window.matchMedia('(display-mode: standalone)').matches) {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone === true; // iOS specific
+            
+            console.log('showClientIdInfo - storedId:', storedId);
+            console.log('showClientIdInfo - isIOS:', isIOS);
+            console.log('showClientIdInfo - isPWA:', isPWA);
+            
+            if (storedId && isPWA) {
                 // Показуємо кнопку скидання client ID
                 const resetButton = document.getElementById('resetClientIdButton');
                 if (resetButton) {
@@ -3498,7 +3528,11 @@ body {
                             }
                         }, 5000);
                         
-                        localStorage.setItem('clientIdInfoShown', today);
+                        try {
+                            localStorage.setItem('clientIdInfoShown', today);
+                        } catch (e) {
+                            console.error('Error saving to localStorage:', e);
+                        }
                     }, 2000);
                 }
             }
@@ -3507,6 +3541,20 @@ body {
         // Використовуємо функцію для отримання client ID
         const id = getClientId();
         const dataPath = id ? `data/${id}/` : 'data/';
+        
+        console.log('Final initialization - id:', id);
+        console.log('Final initialization - dataPath:', dataPath);
+        console.log('User agent:', navigator.userAgent);
+        console.log('Is iOS:', /iPad|iPhone|iPod/.test(navigator.userAgent));
+        console.log('Is PWA:', window.matchMedia('(display-mode: standalone)').matches);
+        
+        // Показуємо дебаг кнопку для iOS або PWA
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent) || window.matchMedia('(display-mode: standalone)').matches) {
+            const debugButton = document.getElementById('debugButton');
+            if (debugButton) {
+                debugButton.style.display = 'block';
+            }
+        }
         
         // Показуємо інформацію про client ID якщо PWA
         showClientIdInfo();
@@ -5094,9 +5142,21 @@ function addPolygonToMap(geoJSON, originalProperties) {
         }
 
         function loadFileList() {
+            console.log('Loading file list from:', dataPath + 'file_list.json');
+            console.log('Current dataPath:', dataPath);
+            console.log('Current id:', id);
+            
             fetch(dataPath + 'file_list.json')
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response ok:', response.ok);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('File list data:', data);
                     var select = document.getElementById('fileSelect');
                     select.innerHTML = '<option>Виберіть раду</option>';
                     data.files.forEach(file => {
@@ -5108,8 +5168,91 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 })
                 .catch(error => {
                     console.error('Error loading file list:', error);
-                    alert('Помилка завантаження списку файлів');
+                    console.error('Attempted URL:', dataPath + 'file_list.json');
+                    
+                    // Якщо завантаження з client-specific папки не вдалося, спробуємо загальну папку
+                    if (dataPath !== 'data/') {
+                        console.log('Fallback to general data folder');
+                        fetch('data/file_list.json')
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                console.log('Fallback file list data:', data);
+                                var select = document.getElementById('fileSelect');
+                                select.innerHTML = '<option>Виберіть раду</option>';
+                                data.files.forEach(file => {
+                                    var option = document.createElement('option');
+                                    option.value = file;
+                                    option.textContent = file.replace('.geojson', '');
+                                    select.appendChild(option);
+                                });
+                            })
+                            .catch(fallbackError => {
+                                console.error('Fallback also failed:', fallbackError);
+                                console.log('Trying PHP fallback...');
+                                // Останній варіант - спробуємо PHP скрипт
+                                tryPhpFallback();
+                            });
+                    } else {
+                        console.log('Trying PHP fallback...');
+                        tryPhpFallback();
+                    }
                 });
+        }
+        
+        function tryPhpFallback() {
+            // Спробуємо завантажити через PHP скрипт як останній варіант
+            fetch('list_files.php' + (id ? `?id=${id}` : ''))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`PHP script error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('PHP fallback successful:', data);
+                    var select = document.getElementById('fileSelect');
+                    select.innerHTML = '<option>Виберіть раду</option>';
+                    data.files.forEach(file => {
+                        var option = document.createElement('option');
+                        option.value = file;
+                        option.textContent = file.replace('.geojson', '');
+                        select.appendChild(option);
+                    });
+                })
+                .catch(phpError => {
+                    console.error('PHP fallback also failed:', phpError);
+                    // Як остання можливість - створюємо список з наявних файлів
+                    createManualFileList();
+                });
+        }
+        
+        function createManualFileList() {
+            console.log('Creating manual file list');
+            // Створюємо базовий список файлів для України
+            const defaultFiles = [
+                'Бабинська.geojson', 'Гнільченська.geojson', 'Кальненська.geojson',
+                'Лошнівська.geojson', 'Лядська.geojson', 'Майданецька.geojson',
+                'Полянська.geojson', 'Рекшинська.geojson', 'Ремезівцівська.geojson',
+                'Садівська.geojson', 'Сновицька.geojson', 'Сущинська.geojson',
+                'Тростянецька.geojson', 'Устє-Зеленська.geojson', 'Шпиколоська.geojson',
+                'Ясеновецька.geojson'
+            ];
+            
+            var select = document.getElementById('fileSelect');
+            select.innerHTML = '<option>Виберіть раду</option>';
+            defaultFiles.forEach(file => {
+                var option = document.createElement('option');
+                option.value = file;
+                option.textContent = file.replace('.geojson', '');
+                select.appendChild(option);
+            });
+            
+            console.log('Manual file list created');
         }
 
         function addFieldLayer() {
@@ -6723,6 +6866,39 @@ document.getElementById('exchangeButton').addEventListener('click', function() {
         // Отображаем модальное окно
         document.getElementById('exchangeModal').style.display = "block";
     }, 300);
+});
+
+// Обробник для кнопки дебагу
+document.getElementById('debugButton').addEventListener('click', function() {
+    const debugInfo = {
+        userAgent: navigator.userAgent,
+        isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+        isPWA: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
+        currentURL: window.location.href,
+        storedClientId: localStorage.getItem('client_id'),
+        currentId: id,
+        dataPath: dataPath,
+        localStorageSupported: typeof(Storage) !== "undefined"
+    };
+    
+    const debugText = JSON.stringify(debugInfo, null, 2);
+    
+    // Створюємо модальне вікно з дебаг інформацією
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.5); z-index: 10000; display: flex; 
+        align-items: center; justify-content: center; padding: 20px;
+    `;
+    modal.innerHTML = `
+        <div style="background: white; padding: 20px; border-radius: 8px; max-width: 90%; max-height: 80%; overflow: auto;">
+            <h5>Дебаг інформація</h5>
+            <pre style="font-size: 12px; background: #f8f9fa; padding: 10px; border-radius: 4px;">${debugText}</pre>
+            <button onclick="navigator.clipboard.writeText('${debugText.replace(/'/g, "\\'")}').then(()=>alert('Скопійовано!')).catch(()=>{})" class="btn btn-sm btn-secondary me-2">Копіювати</button>
+            <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" class="btn btn-sm btn-primary">Закрити</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
 });
 
 // Обробник для кнопки скидання client ID

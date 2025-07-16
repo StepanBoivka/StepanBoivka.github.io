@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agro-prostir-v2.6-client-id-complete';
+const CACHE_NAME = 'agro-prostir-v2.8-ios-debug';
 const urlsToCache = [
   '/',
   '/index.html',
