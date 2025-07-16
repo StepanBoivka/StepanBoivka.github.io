@@ -1,0 +1,2482 @@
+<!doctype html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Карта земельних ділянок</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="Земля UA">
+    <meta name="apple-mobile-web-app-title" content="Земля UA">
+    <meta name="description" content="Інтерактивна карта земельних ділянок України">
+    <meta name="theme-color" content="#198754">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" sizes="192x192" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiMxOTg3NTQiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0yMCAzSDRjLTEuMSAwLTIgLjktMiAydjE0YzAgMS4xLjkgMiAyIDJoMTZjMS4xIDAgMi0uOSAyLTJWNWMwLTEuMS0uOS0yLTItMnptLTEgMmwxIDF2MTJsLTEtMUg1bC0xIDFWNmwxLTFoMTR6Ii8+CjxwYXRoIGQ9Im04IDhsNCA0IDQtNCAyIDJMMTIgMTYgNiAxMGwyLTJ6Ii8+Cjwvc3ZnPgo8L3N2Zz4K">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHN2ZyB4PSIwIiB5PSIwIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzE5ODc1NCI+CjxwYXRoIGQ9Ik0yMCAzSDRjLTEuMSAwLTIgLjktMiAydjE0YzAgMS4xLjkgMiAyIDJoMTZjMS4xIDAgMi0uOSAyLTJWNWMwLTEuMS0uOS0yLTItMnptLTEgMmwxIDF2MTJsLTEtMUg1bC0xIDFWNmwxLTFoMTR6Ii8+CjxwYXRoIGQ9Im04IDhsNCA0IDQtNCAyIDJMMTIgMTYgNiAxMGwyLTJ6Ii8+Cjwvc3ZnPgo8L3N2Zz4K">
+    
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.0/dist/leaflet-search.min.css">
+    <link rel="stylesheet" href="css/area-tooltip.css">
+    <link rel="stylesheet" href="css/leaflet.draw.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* PWA та мобільні покращення */
+        html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    overscroll-behavior: none;
+}
+
+/* Підтримка safe-area для iPhone з вирізом */
+body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+#map {
+    position: absolute;
+    top: calc(56px + env(safe-area-inset-top));
+    bottom: env(safe-area-inset-bottom);
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    touch-action: pan-x pan-y;
+}
+
+.navbar {
+    z-index: 1000;
+    height: 56px;
+    position: fixed;
+    top: env(safe-area-inset-top);
+    left: 0;
+    right: 0;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(33, 37, 41, 0.95) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Покращення для touch взаємодії */
+.btn, .leaflet-control-layers-toggle, .leaflet-control-locate a, .leaflet-bar a {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Мобільна навігація */
+.navbar .btn {
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.navbar .btn:active {
+    transform: scale(0.95);
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* PWA Install Button */
+.pwa-install {
+    position: fixed;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    right: 20px;
+    z-index: 1001;
+    background: #198754;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 20px rgba(25, 135, 84, 0.4);
+    display: none;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.pwa-install:hover {
+    background: #157347;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(25, 135, 84, 0.5);
+}
+
+.pwa-install.show {
+    display: flex;
+}
+
+/* Loading Splash Screen */
+.splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: opacity 0.5s ease;
+}
+
+.splash-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.splash-logo {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    animation: pulse 2s infinite;
+}
+
+.splash-logo i {
+    font-size: 40px;
+}
+
+.splash-title {
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.splash-subtitle {
+    font-size: 16px;
+    opacity: 0.8;
+    margin-bottom: 40px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Зберігаємо всі стилі з оригінальної версії */
+.color-box {
+    width: 12px;
+    height: 12px;
+    display: inline-block;
+    margin-right: 5px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    vertical-align: middle;
+}
+
+.layer-name {
+    color: #333;
+    font-size: 12px;
+}
+
+.leaflet-control-search {
+    top: 5px !important;
+}
+
+/* Адаптивність для смартфонів */
+@media (max-width: 576px) {
+    #fileSelect {
+        max-width: calc(100% - 100px);
+        font-size: 14px;
+    }
+    
+    .navbar {
+        padding: 0.3rem;
+    }
+}
+.select-custom {
+    width: 200px; /* Зменшуємо стандартну ширину */
+}
+
+.select-custom-small {
+    width: 80px; /* Зменшуємо стандартну ширину */
+}
+
+/* Стилі для відкритого списку */
+.select-custom option, 
+.select-custom-small option {
+    width: auto;
+    min-width: 200px; /* Мінімальна ширина для відкритого списку */
+    white-space: normal; /* Дозволяємо перенос тексту */
+}
+
+/* Адаптивність для різних екранів */
+@media (max-width: 992px) {
+    .select-custom {
+        width: 150px;
+    }
+    .select-custom-small {
+        width: 70px;
+    }
+}
+
+@media (max-width: 576px) {
+    .select-custom {
+        width: 120px;
+        font-size: 12px; /* Зменшуємо розмір шрифту */
+    }
+    .select-custom-small {
+        width: 60px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 400px) {
+    .select-custom {
+        width: 100px;
+    }
+    .select-custom-small {
+        width: 50px;
+    }
+    /* Зменшуємо відступ між селектами */
+    .ms-2 {
+        margin-left: 0.3rem !important;
+    }
+}
+
+/* Додаємо еліпсис для довгого тексту */
+.select-custom, .select-custom-small {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+/* Стиль для тексту в закритому селекті */
+.select-custom option, .select-custom-small option {
+    text-overflow: ellipsis;
+}
+
+/* Оновлені стилі для спливаючого вікна */
+.popup-content {
+    padding: 8px;
+    font-size: 11px;
+    max-height: 300px;
+    overflow: auto;
+}
+
+.popup-content table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 3px;
+}
+
+.popup-content td {
+    padding: 1px 0;
+    vertical-align: top;
+    line-height: 1.2;
+}
+
+.popup-content td.property-name {
+    font-weight: bold;
+    padding-right: 8px;
+    white-space: nowrap;
+}
+
+.popup-content td.property-value {
+    padding-left: 4px;
+}
+
+/* Видаліть старі стилі для вкладок */
+.popup-tabs,
+.popup-tab {
+    display: none;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px солід #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 5px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#cadastralList {
+    width: 100%;
+    height: 150px;
+    margin: 10px 0;
+    padding: 5px;
+}
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.custom-div-icon {
+    margin-left: -10px !important;
+    margin-top: -10px !important;
+}
+.nav-tabs .nav-link {
+    color: #495057;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    margin-right: 5px;
+}
+
+.nav-tabs .nav-link.active {
+    color: #495057;
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+}
+
+.tab-content {
+    padding: 15px;
+    border: 1px солід #dee2e6;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+}
+
+.select-custom-small {
+    width: 100px; /* Стандартна ширина для десктопів */
+}
+
+@media (max-width: 992px) {
+    .select-custom-small {
+        width: 80px; /* Для планшетів */
+    }
+}
+
+@media (max-width: 576px) {
+    .select-custom-small {
+        width: 70px; /* Для мобільних */
+    }
+}
+
+@media (max-width: 400px) {
+    .select-custom-small {
+        width: 60px; /* Для дуже малих екранів */
+    }
+}
+
+.popup-link {
+    text-align: center;
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px солід #eee;
+}
+
+.popup-link a {
+    display: inline-block;
+    color: #198754; /* Bootstrap зелений колір */
+    text-decoration: none;
+}
+
+.popup-link i {
+    font-size: 18px;
+}
+
+.popup-link a:hover {
+    color: #157347; /* Темніший зелений при наведенні */
+}
+
+.popup-link .text-end {
+    font-size: 0.9em;
+    color: #666;
+}
+    .data-freshness-indicator {
+        font-size: 0.8rem;
+    }
+    .data-freshness-indicator i {
+        font-size: 1rem;
+    }
+    .freshness-good {
+        color: #28a745 !important;
+    }
+    .freshness-warning {
+        color: #ffc107 !important;
+    }
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.3; }
+        100% { opacity: 1; }
+    }
+
+    .freshness-бад {
+        color: #dc3545 !important;
+        animation: blink 2s ease-in-out infinite;
+    }
+    /* Стили для выделенных участков */
+    .selected-polygon {
+        filter: brightness(1.3);
+    }
+
+    .selected-polygon path {
+        stroke: #FFFF00 !important;
+        stroke-width: 3 !important;
+        stroke-dasharray: 10, 10 !important;
+        animation: dash 20s linear infinite;
+    }
+
+    @keyframes dash {
+        0% {
+            stroke-dashoffset: 0;
+        }
+        100% {
+            stroke-dashoffset: -1000;
+        }
+    }
+    /* Стили для инструментов измерения */
+    .leaflet-draw-tooltip {
+        background: rgb(54, 54, 54);
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid transparent;
+        border-radius: 4px;
+        color: #fff;
+        font: 12px/18px "Helvetica Neue", Arial, Helvetica, sans-serif;
+        margin-left: 20px;
+        margin-top: -21px;
+        padding: 4px 8px;
+        position: absolute;
+        visibility: hidden;
+        white-space: nowrap;
+        z-index: 6;
+    }
+    /* Додати нові стилі */
+.offcanvas {
+    --bs-offcanvas-width: 300px;
+}
+
+@media (max-width: 576px) {
+    .offcanvas {
+        --bs-offcanvas-width: 260px;
+    }
+}
+
+.offcanvas-title {
+    font-size: 1.1rem;
+}
+
+.form-label {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+/* Оновлені стилі для селектів */
+.offcanvas .form-select {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Стиль для кнопки відкриття меню */
+.navbar .btn-outline-light:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+/* Покращення читабельності тексту в темній темі */
+.offcanvas.bg-dark {
+    --bs-bg-opacity: 0.95;
+}
+
+.offcanvas .form-select option {
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+}
+
+/* Стилі для контактного телефону */
+.contact-phone a {
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.contact-phone a:hover {
+    background-color: rgba(255,255,255,0.1);
+    transform: scale(1.05);
+}
+
+/* Адаптивність для контактного телефону в navbar */
+@media (max-width: 768px) {
+    .contact-phone .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .contact-phone .phone-text {
+        display: none;
+    }
+}
+
+/* Стилі для контактної інформації в боковому меню */
+.offcanvas-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.offcanvas-body .mt-auto {
+    margin-top: auto !important;
+}
+    /* Оновлений CSS для текстових полів у модальному вікні */
+.modal textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+.modal textarea:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.modal .tab-content {
+    padding: 15px;
+    background: #fff;
+}
+.tools-menu {
+    background-color: white;
+}
+
+.tools-container {
+    position: absolute;
+    right: 35px;
+    top: 0;
+    background-color: white;
+    padding: 5px;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    z-index: 1000;
+    width: auto;
+    white-space: nowrap;
+}
+
+.tools-group-title {
+    font-weight: bold;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.tools-group {
+    margin-bottom: 10px;
+}
+
+.tool-button {
+    display: block;
+    margin: 5px 0;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    background-color: white;
+    color: #666;
+    border-radius: 4px;
+}
+
+.tool-title {
+    margin-left: 5px;
+    font-size: 14px;
+    vertical-align: middle;
+}
+    #exchangeTable {
+        width: 100%;
+        margin-bottom: 1rem;
+        font-size: 14px;
+    }
+
+    #exchangeTable th,
+    #exchangeTable td {
+        padding: 8px;
+        vertical-align: top;
+    }
+
+    #exchangeModal .modal-content {
+        width: 90%;
+        max-width: 800px;
+    }
+    /* Оптимизированные стили для модального окна обмена */
+    #exchangeModal .modal-content {
+        width: 95%;
+        max-width: 1000px; /* Расширяем максимальную ширину */
+        max-height: 90vh; /* Ограничиваем высоту окна */
+        margin: 5vh auto; /* Уменьшаем отступ сверху */
+    }
+    
+    #exchangeTableContainer {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    #fieldTables {
+        overflow-x: auto;
+    }
+    
+    #fieldTables table {
+        font-size: 13px; /* Уменьшаем размер шрифта */
+        width: 100%;
+        white-space: nowrap;
+    }
+    
+    #fieldTables th,
+    #fieldTables td {
+        padding: 4px 8px; /* Уменьшаем отступы в ячейках */
+    }
+    
+    #fieldTables .tenant-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Адаптивные стили для различных размеров экрана */
+    @media (max-width: 992px) {
+        #exchangeModal .modal-content {
+            width: 98%;
+            margin: 1vh auto;
+            max-height: 98vh;
+        }
+        
+        #fieldTables table {
+            font-size: 11px;
+        }
+        
+        #fieldTables th,
+        #fieldTables td {
+            padding: 3px 5px;
+        }
+    }
+
+    /* Оптимизация для колонки "Фактичний орендар" */
+    .factual-tenant-cell {
+        font-size: 12px; /* Уменьшаем размер шрифта */
+        white-space: normal; /* Разрешаем перенос текста */
+        word-break: break-word; /* Переносим длинные слова */
+    }
+
+    /* Додаткові мобільні покращення */
+    @media (max-width: 768px) {
+        /* Покращуємо leaflet контроли для мобільних */
+        .leaflet-control-layers {
+            max-height: 60vh;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .leaflet-control-locate a {
+            width: 44px;
+            height: 44px;
+            line-height: 42px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .leaflet-bar {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .leaflet-bar a {
+            min-width: 44px;
+            min-height: 44px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Покращуємо popup для мобільних */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            max-width: calc(100vw - 40px) !important;
+        }
+
+        .popup-content table {
+            font-size: 14px;
+        }
+
+        /* Мобільне меню покращення */
+        .offcanvas {
+            background: rgba(33, 37, 41, 0.98);
+            backdrop-filter: blur(20px);
+        }
+
+        /* Покращуємо кнопки в navbar для мобільних */
+        .navbar .btn {
+            min-width: 40px;
+            min-height: 40px;
+            border-radius: 10px;
+        }
+    }
+
+    /* Landscape орієнтація для мобільних */
+    @media (max-width: 768px) and (orientation: landscape) {
+        #map {
+            top: calc(50px + env(safe-area-inset-top));
+        }
+
+        .navbar {
+            height: 50px;
+        }
+
+        .pwa-install {
+            bottom: calc(10px + env(safe-area-inset-bottom));
+            right: 10px;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+    }
+
+    /* Покращення для великих мобільних екранів */
+    @media (min-width: 390px) and (max-width: 768px) {
+        .contact-phone .phone-text {
+            display: inline !important;
+            font-size: 12px;
+        }
+    }
+
+    /* Анімації для кращого UX */
+    .btn, .leaflet-bar a, .leaflet-control-layers-toggle {
+        transition: all 0.2s ease;
+    }
+
+    .btn:active, .leaflet-bar a:active {
+        transform: scale(0.95);
+    }
+
+    /* Підтримка dark mode та покращення читабельності управління шарами */
+    @media (prefers-color-scheme: dark) {
+        .leaflet-control-layers {
+            background: rgba(33, 37, 41, 0.95) !important;
+            color: white !important;
+        }
+
+        .leaflet-control-layers label {
+            color: white !important;
+        }
+
+        .leaflet-control-layers .layer-name {
+            color: white !important;
+        }
+
+        .leaflet-bar a {
+            background: rgba(33, 37, 41, 0.95);
+            color: white;
+        }
+    }
+
+    /* Покращення контрасту для управління шарами */
+    .leaflet-control-layers {
+        background: rgba(255, 255, 255, 0.98) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        backdrop-filter: blur(10px);
+    }
+
+    .leaflet-control-layers label {
+        color: #333 !important;
+        font-weight: 500 !important;
+    }
+
+    .leaflet-control-layers .layer-name {
+        color: #333 !important;
+        text-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
+    }
+
+    .leaflet-control-layers-list {
+        background: rgba(255, 255, 255, 0.98);
+    }
+
+    .leaflet-control-layers-expanded {
+        background: rgba(255, 255, 255, 0.98) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .leaflet-control-layers label span {
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    /* Стили для мобільних пристроїв - покращення читабельності */
+    @media (max-width: 768px) {
+        .leaflet-control-layers {
+            font-size: 14px;
+        }
+
+        .leaflet-control-layers label {
+            font-size: 14px;
+            line-height: 1.4;
+            padding: 4px 0;
+        }
+
+        .layer-name {
+            font-size: 14px !important;
+            font-weight: 500 !important;
+        }
+
+        .color-box {
+            width: 14px;
+            height: 14px;
+            margin-right: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.3);
+        }
+    }
+
+    /* Стили для високої контрастності */
+    @media (prefers-contrast: high) {
+        .leaflet-control-layers {
+            background: white !important;
+            border: 2px solid black !important;
+        }
+
+        .leaflet-control-layers label,
+        .leaflet-control-layers .layer-name {
+            color: black !important;
+            font-weight: bold !important;
+            text-shadow: none !important;
+        }
+
+        .color-box {
+            border: 2px solid black !important;
+        }
+    }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
+    <!-- Добавляем библиотеку JSZip для распаковки KMZ файлов -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+    <!-- Splash Screen для PWA -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-logo">
+            <i class="bi bi-geo-alt"></i>
+        </div>
+        <div class="splash-title">Земля UA</div>
+        <div class="splash-subtitle">Карта земельних ділянок України</div>
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- PWA Install Button -->
+    <button class="pwa-install" id="pwaInstall">
+        <i class="bi bi-download"></i>
+        Встановити
+    </button>
+
+    <!-- Оставляем тільки один navbar -->
+    <nav class="navbar navbar-dark bg-dark fixed-top py-1">
+        <div class="container-fluid px-2">
+            <!-- Кнопка для відкриття бокового меню -->
+            <button class="btn btn-outline-light btn-sm" 
+                    type="button" 
+                    data-bs-toggle="offcanvas" 
+                    data-bs-target="#mainMenu"
+                    aria-controls="mainMenu"
+                    style="width: 32px; height: 32px;">
+                <i class="bi bi-list"></i>
+            </button>
+
+            <!-- Кнопка замовлення доступу по центру -->
+            <div class="position-absolute start-50 translate-middle-x">
+                <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGQcVSh5EnTCa6eJKT9KYX6HleJnXveBcyrCEgaKvlQgRInQ/viewform" 
+                   class="btn btn-success btn-sm pulse-button" 
+                   target="_blank"
+                   title="Замовити доступ безкоштовно">
+                    <i class="bi bi-gift me-1"></i>Замовити
+                </a>
+            </div>
+
+            <!-- Контейнер для правої частини navbar -->
+            <div class="d-flex align-items-center">
+                <!-- Індикатор актуальності даних -->
+                <div class="data-freshness-indicator d-flex align-items-center me-3">
+                    <i class="bi bi-clock-history text-light me-1"></i>
+                    <small class="text-light" id="dataFreshnessText"></small>
+                </div>
+                
+                <!-- Контактний телефон -->
+                <div class="contact-phone d-flex align-items-center">
+                    <a href="tel:+380638805745" class="btn btn-outline-light btn-sm d-flex align-items-center" 
+                       title="Зателефонувати +38 063 880 57 45">
+                        <i class="bi bi-telephone me-1"></i>
+                        <span class="phone-text d-none d-lg-inline">+38 063 880 57 45</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Бокове меню -->
+    <div class="offcanvas offcanvas-start bg-dark text-light" tabindex="-1" id="mainMenu">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">Головне меню</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <!-- Секція вибору області перегляду -->
+            <div class="mb-4">
+                <h6 class="border-bottom border-secondary pb-2 mb-3">Вибір області перегляду</h6>
+                <div class="mb-3">
+                    <label for="fileSelect" class="form-label">Рада</label>
+                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="fileSelect">
+                        <option>Виберіть раду</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="fieldSelect" class="form-label">Поле обробітку</label>
+                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="fieldSelect">
+                        <option value="">Всі поля</option>
+                    </select>
+                </div>
+                <!-- Додаємо новий select для фільтрації за роком -->
+                <div class="mb-3">
+                    <label for="expiryYearSelect" class="form-label">Завершення оренди</label>
+                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="expiryYearSelect">
+                        <option value="">Всі роки</option>
+                    </select>
+                </div>
+                <!-- Додаємо новий select для фільтрації за датою реєстрації -->
+                <div class="mb-3">
+                    <label for="registrationYearSelect" class="form-label">Дата реєстрації оренди</label>
+                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="registrationYearSelect">
+                        <option value="">Всі роки</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Секція інструментів -->
+            <div class="mb-4">
+                <h6 class="border-bottom border-secondary pb-2 mb-3">Інструменти</h6>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-light text-start" id="cadastralSearchButton">
+                        <i class="bi bi-search me-2"></i>
+                        Пошук за списком номерів
+                    </button>
+                    <button class="btn btn-outline-light text-start" id="statisticsButton">
+                        <i class="bi bi-pie-chart-fill me-2"></i>
+                        Статистика
+                    </button>
+                    <button class="btn btn-outline-light text-start" id="exportButton">
+                        <i class="bi bi-table me-2"></i>
+                        Експорт в Excel
+                    </button>                    <button class="btn btn-outline-light text-start" id="freshnessButton">
+                        <i class="bi bi-building-fill me-2"></i>
+                        Моє підприємство
+                    </button>
+                    <button class="btn btn-outline-light text-start" id="exchangeButton">
+                        <i class="bi bi-arrow-left-right me-2"></i>
+                        Пропозиція обміну
+                    </button>
+                    <div id="selectionTools" style="display: none;">
+                        <button class="btn btn-outline-warning text-start w-100 mb-2" data-action="clear-selection">
+                            <i class="bi bi-trash3 me-2"></i>
+                            Очистити виділення
+                        </button>
+                        <button class="btn btn-outline-success text-start w-100" data-action="export-selected">
+                            <i class="bi bi-file-earmark-excel me-2"></i>
+                            Експортувати виділені
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Контактна інформація -->
+            <div class="mt-auto pt-3 border-top border-secondary">
+                <div class="text-center">
+                    <small class="text-muted d-block mb-2">Контактна інформація</small>
+                    <a href="tel:+380638805745" class="btn btn-outline-light btn-sm w-100">
+                        <i class="bi bi-telephone me-2"></i>
+                        +38 063 880 57 45
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Карта -->
+    <div id="map"></div>
+    <!-- Modal for cadastral numbers input -->
+<div id="cadastralModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h5>Пошук за кадастровими номерами</h5>
+        <ul class="nav nav-tabs" id="cadastralTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="own-tab" data-bs-toggle="tab" data-bs-target="#own" type="button">
+                    Свої ділянки
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="others-tab" data-bs-toggle="tab" data-bs-target="#others" type="button">
+                    Чужі ділянки
+                </button>
+            </li>
+        </ul>
+        <div class="tab-content" id="cadastralTabContent">
+            <div class="tab-pane fade show active" id="own" role="tabpanel">
+                <p class="text-muted mb-2">Вставте список своїх кадастрових номерів (кожен з нового рядка)</p>
+                <textarea id="ownCadastralList" 
+                          class="form-control" 
+                          placeholder="Наприклад:&#10;6821555100:05:006:0001&#10;6821555100:05:006:0002"></textarea>
+            </div>
+            <div class="tab-pane fade" id="others" role="tabpanel">
+                <p class="text-muted mb-2">Вставте список чужих кадастрових номерів (кожен з нового рядка)</p>
+                <textarea id="othersCadastralList" 
+                          class="form-control" 
+                          placeholder="Наприклад:&#10;6821555100:05:006:0003&#10;6821555100:05:006:0004"></textarea>
+            </div>
+        </div>
+        <div class="mt-3">
+            <button type="button" class="btn btn-primary" id="searchCadastral">Пошук</button>
+            <button type="button" class="btn btn-secondary ms-2" onclick="clearCadastralLists()">Очистити</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for GeoJSON export -->
+<div id="exportModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h5>Експорт даних</h5>
+        <div class="mb-3">
+            <label for="exportFilename" class="form-label">Назва файлу</label>
+            <input type="text" class="form-control" id="exportFilename" placeholder="Введіть назву файлу...">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Формат файлу</label>
+            <select class="form-select" id="exportFormat">
+                <option value="geojson">GeoJSON</option>
+                <option value="kml">KML</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Полігони</label>
+            <div id="polygonsList" class="list-group mb-2">
+                <!-- Тут будуть полігони -->
+            </div>
+        </div>
+        <button class="btn btn-primary" id="confirmExport">Експортувати</button>
+    </div>
+</div>
+
+<!-- Знайдіть div з id="exportModal" і додайте після нього новий модал -->
+<div id="loadModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h5>Завантаження полігонів</h5>
+        <div class="mb-3">
+            <label for="fileInput" class="form-label">Виберіть GeoJSON, KML або KMZ файл</label>
+            <input type="file" class="form-control" id="fileInput" accept=".geojson,.kml,.kmz">
+        </div>
+        <div class="mb-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="clearExisting">
+                <label class="form-check-label" for="clearExisting">
+                    Очистити існуючі полігони перед завантаженням
+                </label>
+            </div>
+        </div>
+        <button class="btn btn-primary" id="confirmLoad">Завантажити</button>
+    </div>
+</div>
+
+<!-- Modal for exchange proposal -->
+<div id="exchangeModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h5>Пропозиція обміну земельними ділянками</h5>
+        
+        <div id="exchangeInputContainer">
+            <div class="mb-2">
+                <label for="selectedTenant" class="form-label">Виберіть орендаря</label>
+                <select class="form-select form-select-sm" id="selectedTenant">
+                    <option value="">-- Виберіть орендаря --</option>
+                </select>
+            </div>
+            
+            <div class="mb-2">
+                <label for="exchangeList" class="form-label">Введіть кадастрові номери для обміну</label>
+                <textarea id="exchangeList" class="form-control form-control-sm" rows="4" 
+                         placeholder="Введіть кадастрові номери, кожен з нового рядка"></textarea>
+            </div>
+            
+            <div class="mb-2">
+                <button type="button" class="btn btn-primary btn-sm" id="addTenantData">Додати</button>
+                <button type="button" class="btn btn-success btn-sm" id="generateExchange">Аналізувати обмін</button>
+            </div>
+            
+            <div class="mb-2">
+                <h6 class="border-bottom pb-2 mb-2">Вибрані орендарі для обміну:</h6>
+                <div id="tenantSelections">
+                    <!-- Здесь будут выбранные арендаторы -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="exchangeTableContainer" style="display: none;">
+            <div id="exchangeSummary" class="mb-2">
+                <!-- Здесь будет краткая сводка по обмену -->
+            </div>
+            <div id="notFoundSummary" class="alert alert-warning mb-2" style="display: none;">
+                <!-- Здесь будет информация о ненайденных номерах -->
+            </div>
+            <div id="fieldTables" style="display: none;">
+                <!-- Сюда будут добавляться таблицы -->
+            </div>
+            <div id="exchangeAnalysisContainer" class="mt-3">
+                <h6>АНАЛІЗ РІВНОЦІННОСТІ ОБМІНУ:</h6>
+                <div id="exchangeAnalysis"></div>
+            </div>
+            <div class="mt-3 d-flex justify-content-between align-items-center flex-wrap">
+                <div class="mb-2"><strong>Загальна площа обміну: </strong><span id="totalArea">0</span> га</div>
+                <button type="button" class="btn btn-success" id="exportPDF">
+                    <i class="bi bi-file-pdf me-2"></i>Експорт в PDF
+                </button>
+            </div>
+            <div class="mt-2">
+                <button type="button" class="btn btn-secondary" id="backToExchangeInput">
+                    <i class="bi bi-arrow-left me-2"></i>Повернутися до редагування
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Скрипты -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
+    <script src="https://unpkg.com/leaflet-search@3.0.0/dist/leaflet-search.min.js"></script>
+    <script src="https://unpkg.com/leaflet-geometryutil/src/leaflet.geometryutil.js"></script>
+    <script src="js/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/leaflet-control-layers-tree@1.0.0/dist/leaflet-control-layers-tree.js"></script>
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CMBXL0TQLR"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-CMBXL0TQLR');
+    </script>
+    <!-- Основной скрипт -->
+    <script>
+        // PWA Variables
+        let deferredPrompt;
+        let isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // PWA Install Prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (!isStandalone) {
+                document.getElementById('pwaInstall').classList.add('show');
+            }
+        });
+
+        // PWA Install Button Click
+        document.getElementById('pwaInstall').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                    document.getElementById('pwaInstall').classList.remove('show');
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        // Приховуємо кнопку PWA якщо додаток вже встановлений
+        window.addEventListener('appinstalled', () => {
+            document.getElementById('pwaInstall').classList.remove('show');
+        });
+
+        // Splash Screen управління
+        function hideSplashScreen() {
+            const splash = document.getElementById('splashScreen');
+            splash.classList.add('hidden');
+            setTimeout(() => {
+                splash.style.display = 'none';
+            }, 500);
+        }
+
+        // Mobile touch improvements
+        function addMobileTouchSupport() {
+            // Відключаємо zoom на double tap для iOS
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+
+            // Покращуємо touch scrolling
+            document.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+
+            // Додаємо haptic feedback для iOS
+            function hapticFeedback(type = 'light') {
+                if (window.navigator.vibrate) {
+                    window.navigator.vibrate([50]);
+                }
+                if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') {
+                    // iOS haptic feedback
+                    try {
+                        navigator.vibrate(type === 'light' ? [25] : [50]);
+                    } catch (e) {
+                        console.log('Haptic feedback not supported');
+                    }
+                }
+            }
+
+            // Додаємо haptic feedback до кнопок
+            document.querySelectorAll('.btn, .leaflet-bar a').forEach(button => {
+                button.addEventListener('touchstart', () => hapticFeedback('light'), { passive: true });
+            });
+        }
+
+        // Глобальні змінні
+        let selectedFeatures = new Set();
+        let isCtrlPressed = false;
+        let map, layersControl, searchControl, fieldLayer;
+        let overlays = {};
+        let tenantColors = {};
+        let tenantAreas = {};
+        let freeLayer;
+        let freeArea = 0;
+        let originalGeoJsonData;
+        let baseMaps = {};
+        let cadastralModal;
+        let ownMarkersLayer, othersMarkersLayer;
+        let editableLayers;
+        let selectedFile = ''; // Додаємо глобальну змінну для вибраного файлу
+
+        // Функція для очищення шарів
+        function clearOverlays() {
+            // Зберігаємо базові шари та поля
+            const baseAndFieldLayers = {};
+            
+            // Копіюємо базові шари та поля
+            Object.entries(overlays).forEach(([key, layer]) => {
+                if (key === "Google Maps" || 
+                    key === "OpenStreetMap" || 
+                    key === "Актуальні растри" || 
+                    key === "kadastr.live" || 
+                    key === "Поля обробітку") {
+                    baseAndFieldLayers[key] = layer;
+                } else {
+                    // Видаляємо з карти тільки шари з даними
+                    map.removeLayer(layer);
+                }
+            });
+            
+            // Очищуємо overlays і відновлюємо базові шари та поля
+            overlays = {...baseAndFieldLayers};
+        }
+
+        // Автоматичне відкриття головного меню після завантаження сторінки
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ініціалізуємо PWA функції
+            addMobileTouchSupport();
+            
+            // Приховуємо splash screen після завантаження
+            setTimeout(() => {
+                hideSplashScreen();
+            }, 1500);
+
+            // Невелика затримка, щоб дати сторінці повністю завантажитись
+            setTimeout(function() {
+                const mainMenu = document.getElementById('mainMenu');
+                if (mainMenu) {
+                    const offcanvasMenu = new bootstrap.Offcanvas(mainMenu);
+                    offcanvasMenu.show();
+                }
+            }, 500);
+        });
+
+        // Функция для сбора данных карты с видимых слоев
+        function collectMapData() {
+            // Используем сет для предотвращения дублирования
+            const uniqueProperties = new Set();
+            const data = [];
+            
+            // Собираем все видимые слои типа split
+            Object.values(overlays).forEach(layerGroup => {
+                // Проверяем что это слой
+                if (!layerGroup || typeof layerGroup.eachLayer !== 'function') return;
+                
+                // Проверяем видим ли слой
+                if (map.hasLayer(layerGroup)) {
+                    
+                    layerGroup.eachLayer(layer => {
+                        if (layer.feature && layer.feature.properties) {
+                            // Проверяем тип объекта
+                            if (layer.feature.properties.type === 'split') {
+                                // Создаем уникальный идентификатор для свойств
+                                const kadNum = layer.feature.properties["Кадастровий номер"];
+                                const tenant = layer.feature.properties["Орендар частини"] || 
+                                            layer.feature.properties["Орендар"] || "";
+                                const status = layer.feature.properties["Статус"] || "";
+                                
+                                const propId = `${kadNum}_${tenant}_${status}`;
+                                
+                                // Проверяем, не добавляли ли мы уже этот объект
+                                if (!uniqueProperties.has(propId)) {
+                                    uniqueProperties.add(propId);
+                                    data.push(layer.feature.properties);
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+            
+            return data;
+        }
+
+        // Получение параметров из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+        const dataPath = id ? `data/${id}/` : 'data/';
+        // Ждем полной загрузки страницы и всех скриптов
+        document.addEventListener('DOMContentLoaded', function() {
+            // Додати обробники клавіш тут, на верхньому рівні
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Control') {
+                    isCtrlPressed = true;
+                }
+            });
+            
+            document.addEventListener('keyup', function(e) {
+                if (e.key === 'Control') {
+                    isCtrlPressed = false;
+                }
+            });
+
+            initializeMap();
+            // Инициализация модального окна и обработчиков событий
+            cadastralModal = document.getElementById("cadastralModal");
+            const closeBtn = document.getElementsByClassName("close")[0];
+            // Обработчики для кнопок выпадающего меню
+            document.getElementById('cadastralSearchButton').addEventListener('click', function() {
+                // Закриваємо бокову панель
+                var offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('mainMenu'));
+                offcanvas.hide();
+                // Після невеликої затримки показуємо модальне вікно
+                setTimeout(() => {
+                    clearCadastralLists();
+                    cadastralModal.style.display = "block";
+                }, 300); // Затримка для завершення анімації закриття бокової панелі
+            });
+                
+            document.getElementById('statisticsButton').addEventListener('click', function() {
+                var selectedFile = document.getElementById('fileSelect').value;
+                if (selectedFile && selectedFile !== 'Виберіть раду') {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const id = urlParams.get('id');
+                    const statisticsUrl = `statistics.html?file=${encodeURIComponent(selectedFile)}${id ? `&id=${id}` : ''}`;
+                    window.location.href = statisticsUrl;
+                } else {
+                    alert('Будь ласка, спочатку виберіть файл з даними.');
+                }
+            });
+            // Обработчики для модального окна
+            closeBtn.onclick = function() {
+                cadastralModal.style.display = "none";
+                clearCadastralLists();
+            }
+            window.onclick = function(event) {
+                if (event.target == cadastralModal) {
+                    cadastralModal.style.display = "none";
+                    clearCadastralLists();
+                }
+            }
+
+            // Обработчик поиска кадастровых номеров
+            document.getElementById('searchCadastral').addEventListener('click', searchCadastralNumbers);
+            // Удаляем обработчики для навбар поиска
+            // document.getElementById('navbarCadastralSearchButton').addEventListener('click', function() {
+            //     searchNavbarCadastralNumber();
+            // });
+            // Обработчик поиска кадастровых номеров
+            // document.getElementById('navbarCombinedSearchButton')
+            //     .addEventListener('click', function() {
+            //         searchNavbarCombined();
+            //     });
+
+            // Добавляем восстановление выбора ради
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnFile = urlParams.get('return_file');
+            if (returnFile) {
+                // Дожидаемся загрузки списка файлов и выбираем нужный
+                const checkSelect = setInterval(() => {
+                    const select = document.getElementById('fileSelect');
+                    const option = Array.from(select.options).find(opt => opt.value === returnFile);
+                    if (option) {
+                        clearInterval(checkSelect);
+                        select.value = returnFile;
+                        select.dispatchEvent(new Event('change'));
+                    }
+                }, 100);
+            }       
+
+            // Добавляем сохранение выбора для перехода на freshness
+            document.getElementById('freshnessButton').addEventListener('click', function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const id = urlParams.get('id');
+                const selectedFile = document.getElementById('fileSelect').value;
+                
+                let freshnessUrl = `freshness.html`;
+                if (id) freshnessUrl += `?id=${id}`;
+                if (selectedFile && selectedFile !== 'Виберіть раду') {
+                    freshnessUrl += id ? '&' : '?';
+                    freshnessUrl += `file=${encodeURIComponent(selectedFile)}`;
+                }
+                window.location.href = freshnessUrl;
+            });
+
+            function searchCadastralNumbers() {
+                var ownCadastralText = document.getElementById("ownCadastralList").value;
+                var othersCadastralText = document.getElementById("othersCadastralList").value;
+                
+                if (!ownCadastralText && !othersCadastralText) {
+                    alert('Будь ласка, введіть хоча б один кадастровий номер');
+                    return;
+                }
+
+                var ownNumbers = ownCadastralText.split('\n')
+                    .map(num => num.trim())
+                    .filter(num => num.length > 0);
+                var othersNumbers = othersCadastralText.split('\n')
+                    .map(num => num.trim())
+                    .filter(num => num.length > 0);
+
+                // Очищаємо попередні маркери
+                ownMarkersLayer.clearLayers();
+                othersMarkersLayer.clearLayers();
+                
+                var foundFeatures = new Map();
+                
+                Object.values(overlays).forEach(layerGroup => {
+                    if (layerGroup && typeof layerGroup.eachLayer === 'function') {
+                        layerGroup.eachLayer(layer => {
+                            if (layer.feature && layer.feature.properties) {
+                                const kadNum = layer.feature.properties["Кадастровий номер"];
+                                if (kadNum) {
+                                    const isOwn = ownNumbers.includes(kadNum);
+                                    const isOthers = othersNumbers.includes(kadNum);
+                                    
+                                    if (isOwn || isOthers) {
+                                        foundFeatures.set(kadNum, layer);
+                                        
+                                        // Додаємо маркер для знайденої ділянки
+                                        // Використовуємо допоміжну функцію для отримання центра
+                                        var center = getPolygonCenter(layer);
+                                        var marker = createMarker(center, kadNum, isOwn);
+                                        
+                                        // Додаємо попап
+                                        marker.bindPopup(`Кадастровий номер: ${kadNum}`, {
+                                            offset: [0, -20]
+                                        });
+                                        
+                                        marker.addTo(isOwn ? ownMarkersLayer : othersMarkersLayer);
+                                    }
+                                }
+                            }
+                        });
+                    }                     
+                });
+
+                if (foundFeatures.size > 0) {
+                // Перевіряємо, чи є маркери в шарах перед створенням групи і викликом getBounds()
+                if (ownMarkersLayer.getLayers().length > 0 || othersMarkersLayer.getLayers().length > 0) {
+                    var group = L.featureGroup([ownMarkersLayer, othersMarkersLayer]);
+                    map.fitBounds(group.getBounds(), {
+                        padding: [50, 50]
+                    });
+                }
+                
+                alert(`Знайдено ${foundFeatures.size} ділянок`);
+                cadastralModal.style.display = "none";
+                clearCadastralLists();
+            } else {
+                    alert('Ділянок не знайдено');
+                }     
+            }
+        });
+
+        function initializeMap() {
+    // Создаем карту один раз з мобільними покращеннями
+    map = L.map('map', {
+        zoomControl: false,
+        tap: true,
+        tapTolerance: 15,
+        touchZoom: true,
+        bounceAtZoomLimits: false,
+        wheelPxPerZoomLevel: 60,
+        zoomSnap: 0.5,
+        zoomDelta: 0.5,
+        maxBoundsViscosity: 0.5
+    }).setView([48.3794, 31.1656], 6);
+    
+    // Мобільні обмеження для карти
+    if (window.innerWidth <= 768) {
+        map.options.zoomSnap = 1;
+        map.options.zoomDelta = 1;
+        map.setMaxZoom(18);
+    }
+    
+    // Сброс переменной
+    isCtrlPressed = false;
+
+    // Создаем базовые слои
+    const googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        attribution: '&copy; <a href="https://www.google.com/maps">Google</a>'
+    }).addTo(map);
+
+    const openStreetMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    });
+
+    const rasterLayer = L.tileLayer(dataPath + 'tiles/{z}/{x}/{y}.png', {
+        maxZoom: 20,
+        attribution: 'Актуальні растри'
+    });
+
+    const kadastrLayer = L.tileLayer('https://cdn.kadastr.live/tiles/raster/styles/parcels/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://kadastr.live">kadastr.live</a>'
+    });
+
+    // Обновляем структуру базовых слоев
+    overlays = {
+        "Google Maps": googleLayer,
+        "OpenStreetMap": openStreetMapLayer,
+        "Актуальні растри": rasterLayer,
+        "kadastr.live": kadastrLayer
+    };
+
+    // Добавляем контроль локации
+    L.control.locate({
+        position: 'bottomright',
+        strings: {
+            title: "Показати моє місцезнаходження"
+        },
+        locateOptions: {
+            enableHighAccuracy: true,
+            maxZoom: 20,
+            timeout: 10000,
+            maximumAge: 0,
+            watch: true
+        },
+    }).addTo(map);
+
+    freeLayer = L.layerGroup();
+
+    // Обработчик клика по карте
+    map.on('click', function(e) {
+        if (!isCtrlPressed && !e.originalEvent.target.closest('.leaflet-control-layers')) {
+            clearSelection();
+        }
+    });
+
+    // Добавляем контроль слоев
+    layersControl = L.control.layers(baseMaps, overlays, {
+        collapsed: true
+    }).addTo(map);
+
+    // Загружаем список файлов и поля
+    loadFileList();
+    addFieldLayer();
+
+    // Инициализируем слои для маркеров после создания карты
+    ownMarkersLayer = L.layerGroup().addTo(map);
+    othersMarkersLayer = L.layerGroup().addTo(map);
+
+    // Инициализация инструментов измерения
+    editableLayers = new L.FeatureGroup();
+    map.addLayer(editableLayers);
+
+    // Змінюємо налаштування L.Control.Draw - УДАЛЯЕМ ДУБЛИРУЮЩИЕ ЕЛЕМЕНТИ УПРАВЛІННЯ
+    // На карті не будем показувати стандартні елементи управління L.Control.Draw,
+    // так як ми використовуємо наше власне меню інструментів
+    var drawControl = new L.Control.Draw({
+        position: 'topright',
+        draw: false, // Отключаем панель инструментов рисования
+        edit: false  // Отключаем панель инструментов редактирования
+    });
+    
+    // Добавляем обработчики событий для создания и редактирования полигонов
+    map.on(L.Draw.Event.CREATED, function (e) {
+        var layer = e.layer;
+        
+        // Рахуємо площу в гектарах
+        var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+        var areaInHectares = (area / 10000).toFixed(4);
+        
+        // Додаємо попап з площею
+        layer.bindPopup('Площа: ' + areaInHectares + ' га');
+        
+        // Додаємо полігон до шару для редагування
+        editableLayers.addLayer(layer);
+    });
+
+    // Оновлюємо попап з площею при редагуванні
+    map.on(L.Draw.Event.EDITED, function (e) {
+        e.layers.eachLayer(function (layer) {
+            if (layer instanceof L.Polygon) {
+                var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                var areaInHectares = (area / 10000).toFixed(4);
+                layer.setPopupContent('Площа: ' + areaInHectares + ' га');
+            }
+        });
+    });
+
+    // Додаємо випадаюче меню з інструментами
+var toolsButton = L.Control.extend({
+    options: {
+        position: 'topright'
+    },
+    onAdd: function (map) {
+        var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control tools-menu');
+
+        // Головна кнопка
+        var mainButton = L.DomUtil.create('a', 'tools-main-button', container);
+        mainButton.href = '#';
+        mainButton.title = 'Інструменти редагування';
+        mainButton.innerHTML = '<i class="bi bi-tools"></i>';
+
+        // Контейнер для кнопок інструментів
+        var toolsContainer = L.DomUtil.create('div', 'tools-container', container);
+        toolsContainer.style.display = 'none';
+
+        // Групуємо інструменти за категоріями
+        const toolGroups = [
+            {
+                title: 'Малювання',
+                tools: [
+                    { icon: 'bi-pencil-square', title: 'Малювати полігон', action: function() { 
+                        new L.Draw.Polygon(map).enable();
+                    }},
+                    { icon: 'bi-arrows-move', title: 'Редагувати полігони', action: function() {
+                        new L.EditToolbar.Edit(map, {featureGroup: editableLayers}).enable();
+                    }},
+                    { icon: 'bi-trash', title: 'Видалити полігон', action: function() {
+                        new L.EditToolbar.Delete(map, {featureGroup: editableLayers}).enable(); 
+                    }}
+                ]
+            },
+            {
+                title: 'Файли',
+                tools: [
+                    { icon: 'bi-file-earmark-arrow-down', title: 'Експорт в GeoJSON/KML', action: function() {
+                        exportToGeoJSON();
+                    }},
+                    { icon: 'bi-folder2-open', title: 'Імпорт з GeoJSON/KML', action: function() {
+                        showLoadModal();
+                    }}
+                ]
+            }
+        ];
+
+        // Створюємо групи інструментів
+        toolGroups.forEach(group => {
+            if (group.title) {
+                const groupTitle = L.DomUtil.create('div', 'tools-group-title', toolsContainer);
+                groupTitle.textContent = group.title;
+            }
+            
+            const groupContainer = L.DomUtil.create('div', 'tools-group', toolsContainer);
+            group.tools.forEach(tool => {
+                const button = L.DomUtil.create('a', 'tool-button', groupContainer);
+                button.href = '#';
+                button.title = tool.title;
+                button.innerHTML = `<i class="bi ${tool.icon}"></i>`;
+                L.DomEvent.on(button, 'click', function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    L.DomEvent.preventDefault(e);
+                    toolsContainer.style.display = 'none';
+                    tool.action();
+                });
+            }); 
+        });
+
+        // Обробник кліку на головну кнопку
+        L.DomEvent.on(mainButton, 'click', function(e) {
+            L.DomEvent.stopPropagation(e);
+            L.DomEvent.preventDefault(e);
+            toolsContainer.style.display = toolsContainer.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Закриваємо меню при кліку поза ним
+        L.DomEvent.on(document, 'click', function() {
+            toolsContainer.style.display = 'none';
+        });
+
+        // Запобігаємо закриттю при кліку на меню
+        L.DomEvent.on(container, 'click', function(e) {
+            L.DomEvent.stopPropagation(e);
+        });
+
+        return container;
+    }
+});
+
+// Додаємо меню на карту
+map.addControl(new toolsButton());
+
+            let cutLine = null;
+            let polygonToCut = null;
+            let isInCutMode = false;
+            let cutPoints = [];
+
+            function startCutMode() {
+    isInCutMode = true;
+    map.dragging.disable();
+    map.doubleClickZoom.disable();
+    // Змінюємо курсор для показу, що режим активний
+    map._container.style.cursor = 'crosshair';
+
+    // Показуємо підказку користувачу
+    alert('Виберіть полігон для розрізання');
+
+    editableLayers.eachLayer(function(layer) {
+        if (layer instanceof L.Polygon) {
+            // Додаємо підсвічування при наведенні
+            layer.on('mouseover', function() {
+                if (!polygonToCut) {
+                    this.setStyle({
+                        color: '#ff0000',
+                        weight: 3
+                    });
+                }
+            });
+
+            layer.on('mouseout', function() {
+                if (!polygonToCut) {
+                    this.setStyle({
+                        color: '#3388ff',
+                        weight: 2
+                    });
+                }
+            });
+
+            layer.on('click', selectPolygonToCut);
+        }
+    });
+}
+
+function selectPolygonToCut(e) {
+    if (!isInCutMode) return;
+
+    L.DomEvent.stopPropagation(e);
+
+    if (polygonToCut) {
+        // Якщо полігон вже вибрано, ігнорумо повторний вибір
+        return;
+    }
+    
+    polygonToCut = e.target;
+    
+    // Підсвічуємо вибраний полігон
+    polygonToCut.setStyle({
+        color: '#ff0000',
+        weight: 3,
+        fillOpacity: 0.3
+    });
+    
+    // Показуємо підказку для наступного кроку
+    alert('Тепер клацніть по карті в двох місцях, щоб створити лінію розрізу');
+
+    // Додаємо обробник для малювання лінії
+    map.on('click', onDrawCutLine);
+}
+    
+function onDrawCutLine(e) {
+    if (!polygonToCut) return;
+    
+    cutPoints.push(e.latlng);
+
+    if (cutLine) {
+        map.removeLayer(cutLine);
+    }
+
+    // Показуємо лінію розрізу
+    cutLine = L.polyline(cutPoints, {
+        color: '#ff0000',
+        weight: 3,
+        dashArray: '5, 10'
+    }).addTo(map);
+    
+    if (cutPoints.length >= 2) {
+        if (performCut()) {
+            cancelCutMode();
+            cutButton.state('cut-inactive');
+        } else {
+            // Якщо розрізання не вдалося, очищаємо точки але залишаємося в режимі розрізання
+            cutPoints = [];
+            if (cutLine) {
+                map.removeLayer(cutLine);
+                cutLine = null;
+            }
+        }
+    }
+}
+
+function cancelCutMode() {
+    isInCutMode = false;
+    map.dragging.enable();
+    map.doubleClickZoom.enable();
+    // Повертаємо стандартний курсор
+    map._container.style.cursor = '';
+
+    // Очищаємо точки розрізу
+    cutPoints = [];
+
+    // Знімаємо підсвічування з полігону
+    if (polygonToCut) {
+        polygonToCut.setStyle({
+            color: '#3388ff',
+            weight: 2,
+            fillOpacity: 0.2
+        });
+        polygonToCut = null;
+    }
+
+    // Видаляємо всі обробники подій
+    editableLayers.eachLayer(function(layer) {
+        if (layer instanceof L.Polygon) {
+            layer.off('mouseover');
+            layer.off('mouseout');
+            layer.off('click', selectPolygonToCut);
+        }
+    });
+
+    map.off('click', onDrawCutLine);
+}
+
+function performCut() {
+    try {
+        if (!polygonToCut || cutPoints.length < 2) {
+            throw new Error('Не вибрано полігон або недостатньо точок для розрізання');
+        }
+
+        const polygonGeoJSON = polygonToCut.toGeoJSON();
+
+        // Створюємо лінію з точок кліку
+        const line = turf.lineString(cutPoints.map(latlng => [latlng.lng, latlng.lat]));
+
+        // Знаходимо перетин лінії з полігоном
+        const intersection = turf.lineIntersect(line, polygonGeoJSON);
+        if (intersection.features.length < 2) {
+            throw new Error('Лінія розрізу повинна перетинати полігон у двох точках');
+        }
+
+        // Створюємо лінію розрізу через точки перетину
+        const cutLine = turf.lineString([
+            intersection.features[0].geometry.coordinates,
+            intersection.features[1].geometry.coordinates
+        ]);
+
+        // Створюємо буфер навколо лінії розрізу
+        const bufferedLine = turf.buffer(cutLine, 0.0001);
+
+        // Розрізаємо полігон
+        const clipped = turf.difference(polygonGeoJSON, bufferedLine);
+        if (!clipped) {
+            throw new Error('Помилка при розрізанні. Спробуйте інший кут розрізу.');
+        }
+
+        // Якщо отримали MultiPolygon, розділяємо його на окремі полігони
+        if (clipped.geometry.type === 'MultiPolygon') {
+            // Видаляємо оригінальний полігон
+            editableLayers.removeLayer(polygonToCut);
+
+            // Додаємо нові полігони
+            clipped.geometry.coordinates.forEach(coords => {
+                const newPolygon = turf.polygon(coords);
+                // Перевіряємо чи площа нового полігону не занадто мала
+                const area = turf.area(newPolygon) / 10000; // конвертуємо в га
+                if (area > 0.001) { // ігноруємо дуже малі частини
+                    addPolygonToMap(newPolygon, polygonToCut.feature.properties);
+                }
+            });
+                
+            return true;
+        } else if (clipped.geometry.type === 'Polygon') {
+            // Видаляємо оригінальний полігон
+            editableLayers.removeLayer(polygonToCut);
+
+            // Додаємо новий полігон
+            addPolygonToMap(clipped, polygonToCut.feature.properties);
+            return true;
+        }
+
+        throw new Error('Невдалий результат розрізання');
+    } catch (error) {
+        alert('Помилка при розрізанні полігону: ' + error.message);
+        return false;
+    }
+}
+        
+// Додайте допоміжну функцію для додавання полігону на карту:
+function addPolygonToMap(geoJSON, originalProperties) {
+    const area = turf.area(geoJSON) / 10000; // конвертуємо в га
+    geoJSON.properties = {
+        ...originalProperties,
+        "Площа розрахована": area.toFixed(4)
+    };
+
+    L.geoJSON(geoJSON, {
+        style: {
+            color: '#3388ff',
+            weight: 2,
+            fillOpacity: 0.2
+        }
+    }).eachLayer(layer => {
+        layer.feature = {
+            type: 'Feature',
+            properties: geoJSON.properties,
+            geometry: geoJSON.geometry
+        };
+        const popupContent = 'Площа: ' + area.toFixed(4) + ' га';
+        layer.bindPopup(popupContent);
+        editableLayers.addLayer(layer);
+    });
+}
+
+            function mergeSelectedPolygons() {
+                if (selectedFeatures.size < 2) {
+                    alert('Виберіть принаймні 2 полігони для об\'єднання');
+                    return;
+                }
+
+                try {
+                    let polygons = [];
+                    selectedFeatures.forEach(featureId => {
+                        editableLayers.eachLayer(layer => {
+                            if (L.stamp(layer) === featureId) {
+                                polygons.push(layer);
+                            }
+                        });
+                    });
+
+                    // Конвертуємо полігони в формат turf.js
+                    const features = polygons.map(p => p.toGeoJSON());
+
+                    // Об'єднуємо полігони
+                    let union = features[0];
+                    for (let i = 1; i < features.length; i++) {
+                        union = turf.union(union, features[i]);
+                    }
+
+                    // Видаляємо старі полігони
+                    polygons.forEach(p => editableLayers.removeLayer(p));
+
+                    // Рахуємо площу нового полігону
+                    const area = turf.area(union) / 10000; // конвертуємо в га
+                    union.properties = {
+                        "Площа розрахована": area.toFixed(4)
+                    };
+
+                    // Додаємо новий полігон
+                    L.geoJSON(union, {
+                        style: {
+                            color: '#3388ff',
+                            weight: 2,
+                            fillOpacity: 0.2
+                        }
+                    }).eachLayer(layer => {
+                        layer.feature = union;
+                        const popupContent = 'Площа: ' + area.toFixed(4) + ' га';
+                        layer.bindPopup(popupContent);
+                        editableLayers.addLayer(layer);
+                    });
+
+                    clearSelection();
+                } catch (error) {
+                    alert('Помилка при об\'єднанні полігонів: ' + error.message);
+                }
+            }
+                    
+        // Функция переключения выделения
+        function toggleFeatureSelection(layer, e) {
+    if (e) { // Перевіряємо чи існує e
+        L.DomEvent.stopPropagation(e);
+    }
+
+    const featureId = L.stamp(layer);
+
+    if (selectedFeatures.has(featureId)) {
+        // Знімаємо виділення
+        selectedFeatures.delete(featureId);
+        layer.setStyle({
+            fillOpacity: 0.4,
+            weight: 0.5,
+            color: getColor(layer.feature.properties["Орендар"])
+        });
+    } else {
+        // Додаємо виділення
+        if (!isCtrlPressed) {
+            // Якщо Ctrl не натиснуто - очищаємо попередні виділення
+            clearSelection();
+        }
+        selectedFeatures.add(featureId);
+        layer.setStyle({
+            fillOpacity: 0.6,
+            weight: 2,
+            color: '#FFFF00'
+        });
+    }
+
+    updateSelectionInfo();
+}
+
+        // Функция обновления информации о выделении
+        function updateSelectionInfo() {
+            
+            // Множество для отслеживания уже обработанных комбинаций
+            const processedParts = new Set();
+            // Кадастровые номера и общая информация
+            const uniqueFeatures = new Map();
+            // Информация по арендаторам
+            const tenantAreas = new Map();
+            // Площади по статусам
+            const statusAreas = new Map();
+            
+            // Перебираем выбранные объекты
+            selectedFeatures.forEach(featureId => {
+                Object.values(overlays).forEach(layerGroup => {
+                    if (!layerGroup || typeof layerGroup.eachLayer !== 'function') return;
+                    
+                    layerGroup.eachLayer(layer => {
+                        if (L.stamp(layer) !== featureId || !layer.feature || !layer.feature.properties) return;
+                        
+                        const props = layer.feature.properties;
+                        if (props.type !== 'split') {
+                            return;
+                        }
+                        
+                        const kadNum = props["Кадастровий номер"];
+                        const partArea = parseFloat(props["Площа частини"]) || 0;
+                        const totalArea = parseFloat(props["Площа розрахована"]) || 0;
+                        const tenant = props["Орендар частини"] || props["Орендар"] || "Без орендаря";
+                        const status = props["Статус"] || "Не вказано";
+                        
+                        // Уникальный идентификатор комбинации
+                        const partId = `${kadNum}_${tenant}_${status}`;
+                        
+                        // Проверяем, не добавляли ли мы уже этот объект
+                        if (processedParts.has(partId) || !kadNum || isNaN(partArea) || partArea <= 0) {
+                            return; // Пропускаем уже обработанные или некорректные данные
+                        }
+                        
+                        processedParts.add(partId);
+                        
+                        // Создаем или обновляем информацию по кадастровому номеру
+                        if (!uniqueFeatures.has(kadNum)) {
+                            uniqueFeatures.set(kadNum, {
+                                totalArea: totalArea,
+                                tenant: tenant,
+                                tenantCounted: false
+                            });
+                        }
+                        
+                        // Добавляем арендатора если еще не учтен для этого участка
+                        if (!tenantAreas.has(tenant)) {
+                            tenantAreas.set(tenant, 0);
+                        }
+                        
+                        const featInfo = uniqueFeatures.get(kadNum);
+                        if (!featInfo.tenantCounted) {
+                            tenantAreas.set(tenant, tenantAreas.get(tenant) + totalArea);
+                            featInfo.tenantCounted = true;
+                        }
+                        
+                        // Добавляем площадь по статусу
+                        if (!statusAreas.has(status)) {
+                            statusAreas.set(status, 0);
+                        }
+                        statusAreas.set(status, statusAreas.get(status) + partArea);
+                    });
+                });
+            });
+
+            // Подсчитываем общую площадь участков
+            const totalSelectedArea = Array.from(uniqueFeatures.values())
+                .reduce((sum, info) => sum + info.totalArea, 0);
+            
+            // Подсчитываем общую площадь частей по статусам
+            const totalPartsArea = Array.from(statusAreas.values())
+                .reduce((sum, area) => sum + area, 0);
+
+            // Обновляем интерфейс
+            updateSelectionInfoUI(uniqueFeatures, tenantAreas, statusAreas, totalSelectedArea, totalPartsArea);
+        }
+
+        // Функция для обновления UI с инфобоксом о выделенных участках
+        function updateSelectionInfoUI(uniqueFeatures, tenantAreas, statusAreas, totalSelectedArea, totalPartsArea) {
+            const infoElement = document.getElementById('selectionInfo');
+            const selectionTools = document.getElementById('selectionTools');
+            
+            if (uniqueFeatures.size === 0) {
+                if (infoElement) infoElement.remove();
+                if (selectionTools) selectionTools.style.display = 'none';
+                return;
+            }
+            
+            // Создаем инфобокс если его еще нет
+            if (!infoElement) {
+                const info = L.control({position: 'bottomleft'});
+                info.onAdd = function() {
+                    const div = L.DomUtil.create('div', 'selection-info');
+                    div.id = 'selectionInfo';
+                    div.style.background = 'white';
+                    div.style.color = 'black';
+                    div.style.padding = '6px';
+                    div.style.border = '2px солід #666';
+                    div.style.borderRadius = '4px';
+                    div.style.maxWidth = '300px';
+                    return div;
+                };
+                info.addTo(map);
+            }
+            
+            // Формируем HTML для арендаторов
+            let tenantsInfo = '';
+            tenantAreas.forEach((area, tenant) => {
+                const color = tenant === "Без орендаря" ? "#ffffff" : getColor(tenant);
+                tenantsInfo += `
+                    <div style="display: flex; align-items: center; margin-top: 3px;">
+                        <span style="
+                            display: inline-block;
+                            width: 12px;
+                            height: 12px;
+                            margin-right: 5px;
+                            background-color: ${color};
+                            border: 1px solid #666;
+                            border-radius: 2px;
+                        "></span>
+                        <span>${tenant}: ${area.toFixed(4)} га</span>
+                    </div>`;
+            });
+            
+            // Формируем HTML для статусов
+            let statusInfo = '';
+            statusAreas.forEach((area, status) => {
+                const statusText = status.toLowerCase();
+                const color = statusText === 'обробляється' ? '#198754' : 
+                            statusText === 'не обробляється' ? '#dc3545' : 
+                            '#666666';
+                statusInfo += `
+                    <div style="display: flex; align-items: center; margin-top: 3px;">
+                        <span style="
+                            display: inline-block;
+                            width: 12px; 
+                            height: 12px;
+                            margin-right: 5px;
+                            background-color: ${color};
+                            border: 1px solid #666;
+                            border-radius: 2px;
+                        "></span>
+                        <span>${status}: ${area.toFixed(4)} га</span>
+                    </div>`;
+            });
+            
+            // Обновляем содержимое инфобокса
+            document.getElementById('selectionInfo').innerHTML = `
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <div>
+                        <b>Виділено ділянок:</b> ${uniqueFeatures.size}<br>
+                        <div style="margin-top: 3px;">
+                            <b>Загальна площа:</b> ${totalSelectedArea.toFixed(4)} га
+                        </div>
+                    </div>
+                    <hr style="margin: 4px 0">
+                    <div>
+                        <strong>Розподіл по орендарях:</strong>
+                        ${tenantsInfo}
+                    </div>
+                    <hr style="margin: 4px 0">
+                    <div>
+                        <strong>Розподіл за статусами:</strong>
+                        ${statusInfo}
+                    </div>
+                    <div style="margin-top: 3px; font-size: 0.9em; color: #666; text-align: right;">
+                        Площа частин: ${totalPartsArea.toFixed(4)} га
+                    </div>
+                </div>`;
+            
+            // Показываем инструменты выделения
+            if (selectionTools) {
+                selectionTools.style.display = 'block';
+            }
+        }
+        
+        // Модифікуємо існуючий обробник зміни fieldSelect
+        document.getElementById('fieldSelect').addEventListener('change', function() {
+            var selectedField = this.value;
+            var selectedFile = document.getElementById('fileSelect').value;
+            var selectedYear = document.getElementById('expiryYearSelect').value;
+            if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
+                clearOverlays();
+                tenantAreas = {};
+                freeArea = 0;
+                selectedFeatures.clear(); // Очищаем виділення при зміні фільтра
+                
+                
+                // Фільтруємо тільки split-частини
+                const filteredFeatures = originalGeoJsonData.features.filter(feature => {
+                    // Проверяем тип объекта
+                    if (!feature.properties || feature.properties.type !== 'split') {
+                        return false;
+                    }
+                    
+                    // Проверяем соответствие полю
+                    const fieldMatch = !selectedField || 
+                        feature.properties['Назва поля'] === selectedField;
+                    
+                    // Проверяем соответствие году (если выбран)
+                    let yearMatch = true;
+                    if (selectedYear) {
+                        if (selectedYear === 'no_date') {
+                            yearMatch = !feature.properties['Дата завершення'];
+                        } else if (feature.properties['Дата завершення']) {
+                            const dateStr = feature.properties['Дата завершення'];
+                            const year = dateStr.split('.')[2];
+                            yearMatch = year === selectedYear;
+                        } else {
+                            yearMatch = false;
+                        }
+                    }
+                    
+                    return fieldMatch && yearMatch;
+                });
+                
+                
+                const filteredData = {
+                    type: "FeatureCollection",
+                    features: filteredFeatures
+                };
+                
+                var geoJsonLayer = L.geoJSON(filteredData, {
+                    style: styleFeature,
+                    onEachFeature: onEachFeature
+                });
+                
+                overlays[selectedFile] = geoJsonLayer;
+                geoJsonLayer.addTo(map);
+                
+                if (geoJsonLayer.getBounds().isValid()) {
+                    map.fitBounds(geoJsonLayer.getBounds());
+                }
+                
+                updateLayersControl();
+                addSearchControl(geoJsonLayer);
+                updateDataFreshnessIndicator(filteredData);
+            }
+        });
+
+        // Додаємо обробник зміни року завершення оренди
+        document.getElementById('expiryYearSelect').addEventListener('change', function() {
+            var selectedField = document.getElementById('fieldSelect').value;
+            var selectedFile = document.getElementById('fileSelect').value;
+            var selectedExpiryYear = this.value;
+            var selectedRegistrationYear = document.getElementById('registrationYearSelect').value;
+            
+            if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
+                clearOverlays();
+                tenantAreas = {};
+                freeArea = 0;
+                selectedFeatures.clear(); // Очищуємо виділення при зміні фільтра
+                
+                // Фільтруємо тільки split-частини
+                const filteredFeatures = originalGeoJsonData.features.filter(feature => {
+                    // Перевіряємо тип об'єкта
+                    if (!feature.properties || feature.properties.type !== 'split') {
+                        return false;
+                    }
+                    
+                    // Перевіряємо відповідність полю
+                    const fieldMatch = !selectedField || feature.properties['Назва поля'] === selectedField;
+                    
+                    // Перевіряємо відповідність року завершення
+                    const expiryMatch = !selectedExpiryYear || filterByExpiryYear(feature, selectedExpiryYear);
+                    
+                    // Перевіряємо відповідність року реєстрації
+                    const registrationMatch = !selectedRegistrationYear || filterByRegistrationYear(feature, selectedRegistrationYear);
+                    
+                    return fieldMatch && expiryMatch && registrationMatch;
+                });
+                
+                const filteredData = {
+                    type: "FeatureCollection",
+                    features: filteredFeatures
+                };
+                
+                var geoJsonLayer = L.geoJSON(filteredData, {
+                    style: styleFeature,
+                    onEachFeature: onEachFeature
+                });
+                
+                overlays[selectedFile] = geoJsonLayer;
+                geoJsonLayer.addTo(map);
+                
+                if (geoJsonLayer.getBounds().isValid()) {
+                    map.fitBounds(geoJsonLayer.getBounds());
+                }
+                
+                updateLayersControl();
+                addSearchControl(geoJsonLayer);
+                updateDataFreshnessIndicator(filteredData);
+            }
+        });
+
+        // Обробник фільтрації за роком реєстрації
+        document.getElementById('registrationYearSelect').addEventListener('change', function() {
+            var selectedRegistrationYear = this.value;
+            var selectedExpiryYear = document.getElementById('expiryYearSelect').value;
+            var selectedField = document.getElementById('fieldSelect').value;
+            selectedFile = document.getElementById('fileSelect').value;
+            
+            if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
+                clearOverlays();
+                tenantAreas = {};
+                freeArea = 0;
+                selectedFeatures.clear();
+                
+                // Фільтруємо тільки split-частини
+                const filteredFeatures = originalGeoJsonData.features.filter(feature => {
+                    const fieldMatch = !selectedField || feature.properties["Назва поля"] === selectedField;
+                    const expiryMatch = !selectedExpiryYear || filterByExpiryYear(feature, selectedExpiryYear);
+                    const registrationMatch = !selectedRegistrationYear || filterByRegistrationYear(feature, selectedRegistrationYear);
+                    return feature.properties?.type === 'split' && fieldMatch && expiryMatch && registrationMatch;
+                });
+                
+                const filteredData = {
+                    type: "FeatureCollection",
+                    features: filteredFeatures
+                };
+                
+                var geoJsonLayer = L.geoJSON(filteredData, {
+                    style: styleFeature,
+                    onEachFeature: onEachFeature
+                });
+                
+                overlays[selectedFile] = geoJsonLayer;
+                geoJsonLayer.addTo(map);
+                
+                if (geoJsonLayer.getBounds().isValid()) {
+                    map.fitBounds(geoJsonLayer.getBounds());
+                }
+                
+                updateLayersControl();
+                addSearchControl(geoJsonLayer);
+                updateDataFreshnessIndicator(filteredData);
+            }
+        });
+    </script>
+</body>
+</html>
