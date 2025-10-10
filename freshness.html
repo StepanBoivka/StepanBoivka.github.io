@@ -80,9 +80,26 @@
                     завантаження...
                 </small>
             </h1>
-            <button type="button" class="btn btn-outline-primary" onclick="copyKoatuuList()" title="Копіювати список КОАТУУ в буфер обміну">
-                <i class="bi bi-clipboard"></i> Копіювати КОАТУУ
-            </button>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary" onclick="copyKoatuuList()" title="Копіювати список КОАТУУ в буфер обміну">
+                    <i class="bi bi-clipboard"></i> Копіювати КОАТУУ
+                </button>
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
+                    <span class="visually-hidden">Більше опцій</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="showPerformanceStats()">
+                        <i class="bi bi-speedometer2 me-2"></i>Статистика продуктивності
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="clearCache()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Очистити кеш
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="reloadWithNoCache()">
+                        <i class="bi bi-arrow-repeat me-2"></i>Перезавантажити без кешу
+                    </a></li>
+                </ul>
+            </div>
         </div><!-- Контейнер для інформації про підприємство -->
         <div id="enterpriseInfo" class="card border-primary mb-4" style="display: none;">
             <div class="card-header bg-primary text-white">
@@ -122,6 +139,266 @@
         // Глобальні змінні для client ID та dataPath
         let globalId = null;
         let globalDataPath = null;
+
+        // 🚀 СИСТЕМА КЕШУВАННЯ ДЛЯ ПРОДУКТИВНОСТІ
+        class DataCache {
+            constructor() {
+                this.cache = new Map();
+                this.fetchPromises = new Map(); // Запобігаємо дублюванню запитів
+                this.stats = { hits: 0, misses: 0, errors: 0 };
+            }
+            
+            async get(key, fetcher) {
+                // Якщо дані вже в кеші
+                if (this.cache.has(key)) {
+                    this.stats.hits++;
+                    console.log(`🎯 Cache HIT for: ${key}`);
+                    return this.cache.get(key);
+                }
+                
+                // Якщо вже є активний запит для цього ключа
+                if (this.fetchPromises.has(key)) {
+                    console.log(`⏳ Waiting for existing request: ${key}`);
+                    return await this.fetchPromises.get(key);
+                }
+                
+                // Створюємо новий запит
+                this.stats.misses++;
+                console.log(`📥 Cache MISS for: ${key}`);
+                
+                const fetchPromise = this._fetchWithRetry(key, fetcher);
+                this.fetchPromises.set(key, fetchPromise);
+                
+                try {
+                    const data = await fetchPromise;
+                    this.cache.set(key, data);
+                    return data;
+                } catch (error) {
+                    this.stats.errors++;
+                    throw error;
+                } finally {
+                    this.fetchPromises.delete(key);
+                }
+            }
+            
+            async _fetchWithRetry(key, fetcher, maxRetries = 2) {
+                let lastError;
+                for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                    try {
+                        if (attempt > 0) {
+                            console.log(`🔄 Retry ${attempt}/${maxRetries} for: ${key}`);
+                            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                        }
+                        return await fetcher();
+                    } catch (error) {
+                        lastError = error;
+                        console.warn(`❌ Attempt ${attempt + 1} failed for ${key}:`, error.message);
+                    }
+                }
+                throw lastError;
+            }
+            
+            clear() {
+                this.cache.clear();
+                this.fetchPromises.clear();
+                this.stats = { hits: 0, misses: 0, errors: 0 };
+            }
+            
+            getStats() {
+                const total = this.stats.hits + this.stats.misses;
+                return {
+                    ...this.stats,
+                    hitRate: total > 0 ? ((this.stats.hits / total) * 100).toFixed(1) : 0,
+                    cacheSize: this.cache.size
+                };
+            }
+        }
+        
+        // Глобальний кеш
+        const dataCache = new DataCache();
+        
+        // 🚀 СИСТЕМА МОНІТОРИНГУ ПРОДУКТИВНОСТІ
+        class PerformanceMonitor {
+            constructor() {
+                this.timers = new Map();
+                this.metrics = new Map();
+                this.enabled = true;
+            }
+            
+            start(label) {
+                if (!this.enabled) return;
+                this.timers.set(label, performance.now());
+                console.time(label);
+            }
+            
+            end(label, logResult = true) {
+                if (!this.enabled) return;
+                
+                const startTime = this.timers.get(label);
+                if (!startTime) return;
+                
+                const duration = performance.now() - startTime;
+                this.timers.delete(label);
+                
+                if (!this.metrics.has(label)) {
+                    this.metrics.set(label, []);
+                }
+                this.metrics.get(label).push(duration);
+                
+                console.timeEnd(label);
+                if (logResult) {
+                    console.log(`⚡ ${label}: ${duration.toFixed(2)}ms`);
+                }
+                
+                return duration;
+            }
+            
+            getStats() {
+                const stats = {};
+                this.metrics.forEach((durations, label) => {
+                    const avg = durations.reduce((a, b) => a + b, 0) / durations.length;
+                    const min = Math.min(...durations);
+                    const max = Math.max(...durations);
+                    
+                    stats[label] = {
+                        calls: durations.length,
+                        avg: avg.toFixed(2),
+                        min: min.toFixed(2),
+                        max: max.toFixed(2),
+                        total: durations.reduce((a, b) => a + b, 0).toFixed(2)
+                    };
+                });
+                return stats;
+            }
+            
+            logSummary() {
+                console.group('📊 Звіт по продуктивності');
+                const stats = this.getStats();
+                Object.entries(stats).forEach(([label, data]) => {
+                    console.log(`${label}: avg=${data.avg}ms, calls=${data.calls}, total=${data.total}ms`);
+                });
+                console.log('📊 Статистика кешу:', dataCache.getStats());
+                console.groupEnd();
+            }
+        }
+        
+        const perfMonitor = new PerformanceMonitor();
+        
+        // 🚀 ПАРАЛЕЛЬНЕ ЗАВАНТАЖЕННЯ GEOJSON ФАЙЛІВ
+        async function loadGeojsonFiles(dataPath, fileList, batchSize = 5) {
+            console.time('loadGeojsonFiles');
+            console.log(`📊 Завантаження ${fileList.length} файлів батчами по ${batchSize}`);
+            
+            const results = [];
+            
+            // Обробляємо файли батчами для контролю навантаження
+            for (let i = 0; i < fileList.length; i += batchSize) {
+                const batch = fileList.slice(i, i + batchSize);
+                console.log(`📦 Батч ${Math.floor(i/batchSize) + 1}/${Math.ceil(fileList.length/batchSize)}: ${batch.length} файлів`);
+                
+                const batchPromises = batch.map(async (fileName) => {
+                    const filePath = dataPath + fileName;
+                    
+                    return await dataCache.get(filePath, async () => {
+                        const response = await fetch(filePath);
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        const data = await response.json();
+                        
+                        // Оптимізуємо дані одразу при завантаженні
+                        return {
+                            fileName,
+                            councilName: fileName.replace('.geojson', ''),
+                            features: data.features || [],
+                            totalFeatures: data.features?.length || 0,
+                            loadedAt: Date.now()
+                        };
+                    });
+                });
+                
+                try {
+                    const batchResults = await Promise.all(batchPromises);
+                    results.push(...batchResults);
+                    
+                    // Невелика пауза між батчами для зменшення навантаження
+                    if (i + batchSize < fileList.length) {
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+                } catch (error) {
+                    console.error(`❌ Помилка в батчі ${Math.floor(i/batchSize) + 1}:`, error);
+                }
+            }
+            
+            console.timeEnd('loadGeojsonFiles');
+            console.log(`✅ Завантажено ${results.length}/${fileList.length} файлів`);
+            console.log('📊 Статистика кешу:', dataCache.getStats());
+            
+            return results;
+        }
+        
+        // 🚀 ОПТИМІЗОВАНА ОБРОБКА ДАНИХ РАДИ
+        function processCouncilData(councilData, edrpou, txtCadastralNumbers) {
+            const { councilName, features } = councilData;
+            
+            // Фільтруємо тільки original записи одразу
+            const originalFeatures = features.filter(feature => feature.properties?.type === 'original');
+            
+            const councilResult = {
+                name: councilName,
+                cadastralNumbers: new Set(),
+                missingInDzkCount: 0,
+                missingInRrpCount: 0,
+                plotsDetails: new Map(),
+                allPlots: new Map(),
+                totalOriginalFeatures: originalFeatures.length
+            };
+            
+            // Збираємо кадастрові номери цієї ради для нашого ЄДРПОУ
+            originalFeatures.forEach(feature => {
+                const props = feature.properties;
+                const cadastralNumber = props?.['Кадастровий номер'];
+                
+                if (cadastralNumber) {
+                    // Зберігаємо інформацію про всі ділянки ради
+                    if (!councilResult.allPlots.has(cadastralNumber)) {
+                        councilResult.allPlots.set(cadastralNumber, {
+                            cadastral: cadastralNumber,
+                            owner: props['Власник'] || '',
+                            tenant: props['Орендар'] || props['Орендар частини'] || '',
+                            tenantEdrpou: props['ЄДРПОУ орендаря ділянки'] || '',
+                            area: props['Площа розрахована'] || props['Площа частини'] || '',
+                            registrationDate: props['Дата реєстрації оренди'] || '',
+                            expiryDate: props['Дата завершення'] || '',
+                            status: props['Статус'] || '',
+                            field: props['Назва поля'] || '',
+                            council: councilName
+                        });
+                    }
+                    
+                    // Якщо ділянка з нашим ЄДРПОУ
+                    if (props['ЄДРПОУ орендаря ділянки'] === edrpou) {
+                        councilResult.cadastralNumbers.add(cadastralNumber);
+                        // Зберігаємо детальну інформацію про ділянку з нашим ЄДРПОУ
+                        if (!councilResult.plotsDetails.has(cadastralNumber)) {
+                            councilResult.plotsDetails.set(cadastralNumber, {
+                                cadastral: cadastralNumber,
+                                owner: props['Власник'] || '',
+                                tenant: props['Орендар'] || props['Орендар частини'] || '',
+                                area: props['Площа розрахована'] || props['Площа частини'] || '',
+                                registrationDate: props['Дата реєстрації оренди'] || '',
+                                expiryDate: props['Дата завершення'] || '',
+                                status: props['Статус'] || '',
+                                field: props['Назва поля'] || '',
+                                council: councilName
+                            });
+                        }
+                    }
+                }
+            });
+            
+            return councilResult;
+        }
         
         // Функція для отримання client ID з URL або localStorage
         function getClientId() {
@@ -844,10 +1121,22 @@
 
             return comparison;
         }        async function loadAndAnalyzeData(dataPath, hasEnterpriseData = false) {
+            perfMonitor.start('loadAndAnalyzeData_total');
+            
             try {
-                const response = await fetch(dataPath + 'file_list.json');
-                const data = await response.json();
+                // Показуємо індикатор завантаження
+                showLoadingIndicator('Завантаження списку файлів...');
+                
+                const fileListData = await dataCache.get(dataPath + 'file_list.json', async () => {
+                    const response = await fetch(dataPath + 'file_list.json');
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                });
+                
                 const grid = document.getElementById('cardsView');
+                const tableBody = document.getElementById('tableBody');
                 
                 // Сховати/показати колонки з бейджами в залежності від наявності даних підприємства
                 const badgeHeaders = document.querySelectorAll('.badge-column');
@@ -855,25 +1144,223 @@
                     header.style.display = hasEnterpriseData ? 'table-cell' : 'none';
                 });
                 
-                let totalPlots = 0;
-                const totalCouncils = data.files.length;
+                const totalCouncils = fileListData.files.length;
+                showLoadingIndicator(`Аналіз даних ${totalCouncils} рад...`);
                 
-                for (const file of data.files) {
-                    const councilData = await analyzeCouncilData(dataPath + file);
-                    const card = createCouncilCard(file.replace('.geojson', ''), councilData, hasEnterpriseData);
-                    grid.appendChild(card);
+                // 🚀 ПАРАЛЕЛЬНИЙ АНАЛІЗ ВСІХ ФАЙЛІВ
+                perfMonitor.start('parallel_analysis');
+                const analysisPromises = fileListData.files.map(async (file) => {
+                    const filePath = dataPath + file;
+                    return await dataCache.get(`analysis_${filePath}`, async () => {
+                        perfMonitor.start(`analyze_${file}`);
+                        const result = await analyzeCouncilData(filePath);
+                        perfMonitor.end(`analyze_${file}`, false);
+                        return result;
+                    });
+                });
+                
+                const analysisResults = await Promise.all(analysisPromises);
+                perfMonitor.end('parallel_analysis');
+                
+                // 🚀 ОПТИМІЗОВАНА ПОБУДОВА DOM - використовуємо DocumentFragment
+                const cardFragment = document.createDocumentFragment();
+                const tableFragment = document.createDocumentFragment();
+                
+                let totalPlots = 0;
+                
+                analysisResults.forEach((councilData, index) => {
+                    const fileName = fileListData.files[index];
+                    const councilName = fileName.replace('.geojson', '');
+                    
+                    // Створюємо картку
+                    const card = createCouncilCard(councilName, councilData, hasEnterpriseData);
+                    cardFragment.appendChild(card);
+                    
                     totalPlots += councilData.totalRecords;
-                }                // Обновляем заголовок сторінки
+                });
+                
+                // Додаємо всі елементи в DOM за один раз
+                grid.appendChild(cardFragment);                // Обновляем заголовок сторінки
                 document.getElementById('pageSubtitle').textContent = `${totalCouncils} рад, ${totalPlots.toLocaleString('uk-UA')} ділянок`;
+                
+                hideLoadingIndicator();
+                perfMonitor.end('loadAndAnalyzeData_total');
+                console.log(`🏁 Завершено аналіз ${totalCouncils} рад, ${totalPlots} ділянок`);
+                
+                // Логуємо детальну статистику продуктивності
+                perfMonitor.logSummary();
+                
             } catch (error) {
-                console.error('Помилка завантаження даних:', error);
-                alert('Помилка завантаження списку файлів');
+                console.error('❌ Помилка завантаження даних:', error);
+                hideLoadingIndicator();
+                showErrorMessage('Не вдалося завантажити дані. Спробуйте пізніше.');
             }
+        }
+        
+        // 🚀 ФУНКЦІЇ ДЛЯ ІНДИКАТОРА ЗАВАНТАЖЕННЯ
+        function showLoadingIndicator(message = 'Завантаження...') {
+            let loader = document.getElementById('globalLoader');
+            if (!loader) {
+                loader = document.createElement('div');
+                loader.id = 'globalLoader';
+                loader.innerHTML = `
+                    <div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,0.9); z-index: 9999;">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="visually-hidden">Завантаження...</span>
+                            </div>
+                            <h5 id="loadingMessage" class="text-muted">${message}</h5>
+                            <div class="progress mt-2" style="width: 300px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(loader);
+            } else {
+                loader.style.display = 'block';
+                document.getElementById('loadingMessage').textContent = message;
+            }
+        }
+        
+        function hideLoadingIndicator() {
+            const loader = document.getElementById('globalLoader');
+            if (loader) {
+                loader.style.display = 'none';
+            }
+        }
+        
+        function showErrorMessage(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 10000; max-width: 400px;';
+            alert.innerHTML = `
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alert);
+            
+            // Автоматично прибираємо через 5 секунд
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+        
+        // 🚀 LAZY LOADING СИСТЕМИ ДЛЯ ГРАФІКІВ
+        const chartObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !entry.target.dataset.chartLoaded) {
+                    const chartId = entry.target.dataset.chartId;
+                    const statsData = JSON.parse(entry.target.dataset.statsData);
+                    const councilName = entry.target.dataset.councilName;
+                    
+                    createChart(chartId, statsData, councilName);
+                    entry.target.dataset.chartLoaded = 'true';
+                    
+                    // Припиняємо спостереження за цим елементом
+                    chartObserver.unobserve(entry.target);
+                }
+            });
+        }, {
+            root: null,
+            rootMargin: '50px', // Завантажуємо трохи раніше ніж стає видимим
+            threshold: 0.1
+        });
+        
+        function setupLazyChart(chartContainer, chartId, stats, councilName) {
+            // Зберігаємо дані в data-атрибутах
+            chartContainer.dataset.chartId = chartId;
+            chartContainer.dataset.statsData = JSON.stringify(stats);
+            chartContainer.dataset.councilName = councilName;
+            chartContainer.dataset.chartLoaded = 'false';
+            
+            // Додаємо плейсхолдер
+            chartContainer.innerHTML = `
+                <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                    <div class="text-center">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Завантаження...</span>
+                        </div>
+                        <small>Завантаження графіку...</small>
+                    </div>
+                </div>
+            `;
+            
+            // Починаємо спостереження
+            chartObserver.observe(chartContainer);
+        }
+        
+        function createChart(chartId, stats, councilName) {
+            const dates = Object.keys(stats.dailyUpdates).sort();
+            const updates = dates.map(date => stats.dailyUpdates[date]);
+            
+            console.log(`📊 Створюємо графік для ${councilName}`);
+            
+            // Очищуємо контейнер і додаємо canvas
+            const container = document.querySelector(`[data-chart-id="${chartId}"]`);
+            container.innerHTML = `<canvas id="${chartId}"></canvas>`;
+            
+            new Chart(document.getElementById(chartId), {
+                type: 'bar',
+                data: {
+                    labels: dates.map(date => {
+                        const [y, m, d] = date.split('-');
+                        return `${d}.${m}`;
+                    }),
+                    datasets: [{
+                        label: 'Кількість оновлень',
+                        data: updates,
+                        backgroundColor: updates.map(value => 
+                            value === 0 ? 'rgba(200,200,200,0.2)' : 'rgba(54, 162, 235, 0.5)'
+                        ),
+                        borderColor: updates.map(value => 
+                            value === 0 ? 'rgba(200,200,200,0.5)' : 'rgba(54, 162, 235, 1)'
+                        ),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: Math.max(1, Math.ceil(Math.max(...updates) / 20)),
+                                maxTicksLimit: 10
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    return value === 0 ? 'Немає оновлень' : `Оновлено: ${value} ділянок`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         async function analyzeCouncilData(filePath) {
-            const response = await fetch(filePath);
-            const data = await response.json();
+            // Використовуємо кеш для даних
+            const data = await dataCache.get(filePath, async () => {
+                const response = await fetch(filePath);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            });
+            
             const now = new Date();
             
             // Фільтруємо тільки original записи
@@ -1008,57 +1495,9 @@
                 </div>
             `;
 
-            // Додаємо створення графіка після рендерингу картки
-            setTimeout(() => {
-                const dates = Object.keys(stats.dailyUpdates).sort();
-                const updates = dates.map(date => stats.dailyUpdates[date]);
-                
-                new Chart(document.getElementById(`chart-${name}`), {
-                    type: 'bar',
-                    data: {
-                        labels: dates.map(date => {
-                            const [y, m, d] = date.split('-');
-                            return `${d}.${m}`;
-                        }),
-                        datasets: [{
-                            label: 'Кількість оновлень',
-                            data: updates,
-                            backgroundColor: updates.map(value => 
-                                value === 0 ? 'rgba(200,200,200,0.2)' : 'rgba(54, 162, 235, 0.5)'
-                            ),
-                            borderColor: updates.map(value => 
-                                value === 0 ? 'rgba(200,200,200,0.5)' : 'rgba(54, 162, 235, 1)'
-                            ),
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: Math.max(1, Math.ceil(Math.max(...updates) / 20)),
-                                    maxTicksLimit: 10
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const value = context.raw;
-                                        return value === 0 ? 'Немає оновлень' : `Оновлено: ${value} ділянок`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }, 100);
+            // 🚀 LAZY LOADING для графіків - створюємо тільки коли стають видимими
+            const chartContainer = div.querySelector('.daily-updates-chart');
+            setupLazyChart(chartContainer, `chart-${name}`, stats, name);
 
             return div;
         }        function addTableRow(name, statusClass, statusText, stats, freshPercent, mediumPercent, oldPercent, noDatePercent, latestDate, missingInDzkCount = 0, missingInRrpCount = 0, hasEnterpriseData = false) {
@@ -1163,6 +1602,123 @@
                     btn.innerHTML = originalHtml;
                 }, 2000);
             });
+        }
+        
+        // 🚀 ФУНКЦІЇ ДЛЯ КЕРУВАННЯ ПРОДУКТИВНІСТЮ
+        function showPerformanceStats() {
+            const cacheStats = dataCache.getStats();
+            const perfStats = perfMonitor.getStats();
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-speedometer2 me-2"></i>
+                                Статистика продуктивності
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-primary">📊 Кеш</h6>
+                                    <div class="bg-light p-3 rounded mb-3">
+                                        <div><strong>Hit Rate:</strong> ${cacheStats.hitRate}%</div>
+                                        <div><strong>Hits:</strong> ${cacheStats.hits}</div>
+                                        <div><strong>Misses:</strong> ${cacheStats.misses}</div>
+                                        <div><strong>Errors:</strong> ${cacheStats.errors}</div>
+                                        <div><strong>Cache Size:</strong> ${cacheStats.cacheSize} items</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-success">⚡ Час виконання</h6>
+                                    <div class="bg-light p-3 rounded mb-3" style="max-height: 300px; overflow-y: auto;">
+                                        ${Object.entries(perfStats).map(([label, data]) => `
+                                            <div class="mb-2">
+                                                <strong>${label}:</strong><br>
+                                                <small>
+                                                    Avg: ${data.avg}ms | 
+                                                    Calls: ${data.calls} | 
+                                                    Total: ${data.total}ms
+                                                </small>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <h6>💡 Рекомендації:</h6>
+                                <ul class="mb-0">
+                                    <li>Hit Rate > 70% - добра ефективність кешу</li>
+                                    <li>Час завантаження < 2сек - хороша швидкість</li>
+                                    <li>При низькому Hit Rate - очистіть кеш</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
+                            <button type="button" class="btn btn-warning" onclick="clearCache(); bootstrap.Modal.getInstance(this.closest('.modal')).hide();">
+                                Очистити кеш
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                document.body.removeChild(modal);
+            });
+        }
+        
+        function clearCache() {
+            dataCache.clear();
+            perfMonitor.metrics.clear();
+            
+            showSuccessMessage('Кеш очищено! Наступне завантаження буде повільнішим, але з найсвіжішими даними.');
+        }
+        
+        function reloadWithNoCache() {
+            // Очищуємо кеш браузера для цієї сторінки
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        caches.delete(name);
+                    });
+                });
+            }
+            
+            clearCache();
+            
+            // Перезавантажуємо сторінку з параметром для обходу кешу
+            const url = new URL(window.location);
+            url.searchParams.set('nocache', Date.now());
+            window.location.href = url.toString();
+        }
+        
+        function showSuccessMessage(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alert.style.cssText = 'top: 20px; right: 20px; z-index: 10000; max-width: 400px;';
+            alert.innerHTML = `
+                <i class="bi bi-check-circle-fill me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
         }
     </script>
 </body>
