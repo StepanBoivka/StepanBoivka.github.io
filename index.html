@@ -3495,11 +3495,11 @@ body {
                             font-weight: 600 !important;
                         }
                         
-                        /* Не перезаписуємо кольори для нового popup формату */
+                        /* Білий колір за замовчуванням для popup контенту */
+                        .mobile-modal-content .popup-content,
                         .mobile-modal-content .popup-content span,
                         .mobile-modal-content .popup-content div {
-                            color: inherit !important;
-                            line-height: inherit !important;
+                            color: #FFFFFF !important;
                         }
                         
                         .mobile-modal-content p {
@@ -3569,6 +3569,39 @@ body {
                         
                         .mobile-modal-content a {
                             color: #10B981 !important;
+                        }
+                        
+                        /* ===== ВАЖЛИВО: Стилі для нового popup формату ===== */
+                        .mobile-modal-content .popup-content {
+                            color: #FFFFFF !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content > div {
+                            color: inherit !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content [style*="color: #FFFFFF"] {
+                            color: #FFFFFF !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content [style*="color: #ABABAB"] {
+                            color: #ABABAB !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content [style*="color: #8E8E93"] {
+                            color: #8E8E93 !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content [style*="color: #10B981"] {
+                            color: #10B981 !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content [style*="color: #EF4444"] {
+                            color: #EF4444 !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content [style*="color: #F59E0B"] {
+                            color: #F59E0B !important;
                         }
                         
                         /* Дозволяємо виділення тексту */
