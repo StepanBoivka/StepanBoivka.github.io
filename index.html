@@ -6275,126 +6275,215 @@ function addPolygonToMap(geoJSON, originalProperties) {
 }
 
         function createPopupContent(feature, layer) {
-            let popupContent = '<div class="popup-content">';
+            const props = feature.properties;
+            const cadastralNumber = props["Кадастровий номер"] || '';
+            const tenant = props["Орендар"] || props["Орендар частини"] || '';
+            const expiryDate = props["Дата завершення"] || '';
+            const registrationDate = props["Дата реєстрації оренди"] || '';
+            const areaDZK = parseFloat(props["Площа земельної ділянки"]) || 0;
+            const areaCalc = parseFloat(props["Площа розрахована"]) || parseFloat(props["Площа частини"]) || 0;
             
-            popupContent += '<table style="width: 100%; border-collapse: separate; border-spacing: 0; margin: 0; background: transparent; border: none; border-radius: 0; overflow: visible;">';
-            
-            // Показуємо всі поля і на мобільних і на десктопах - тільки змінюємо вигляд
-            const orderedKeys = [
-                "Кадастровий номер",
-                "Номер земельної ділянки", 
-                "Площа земельної ділянки",
-                "Площа розрахована",
-                "Площа частини",
-                "Цільове призначення",
-                "Форма власності",
-                "Власник",
-                "Орендар",
-                "Орендар частини", 
-                "Дата реєстрації оренди",
-                "Дата завершення",
-                "Вид обмеження",
-                "Статус",
-                "Назва поля"
-            ];
-            
-            // Обрабатываем каждое поле и добавляем в таблицу
-            const tableRows = [];
-            orderedKeys.forEach(key => {
-                if (feature.properties.hasOwnProperty(key)) {
-                    let value = feature.properties[key] || '';
-                    
-                    // Форматируем числовые значения площадей с точностью до 4 знаков
-                    if ((key === "Площа розрахована" || key === "Площа частини") && !isNaN(parseFloat(value))) {
-                        value = parseFloat(value).toFixed(4) + " га";
+            // Визначаємо статус оренди
+            let rentalStatus = { text: 'ВІЛЬНО', color: '#8E8E93', bg: 'rgba(142, 142, 147, 0.15)', icon: 'circle' };
+            if (tenant) {
+                const today = new Date();
+                let expiryDateObj = null;
+                
+                if (expiryDate) {
+                    // Парсимо дату (формат DD.MM.YYYY)
+                    const parts = expiryDate.split('.');
+                    if (parts.length === 3) {
+                        expiryDateObj = new Date(parts[2], parts[1] - 1, parts[0]);
                     }
+                }
+                
+                if (expiryDateObj) {
+                    const diffMs = expiryDateObj - today;
+                    const diffMonths = diffMs / (1000 * 60 * 60 * 24 * 30);
                     
-                    // Покращуємо відображення дат для мобільних
-                    if ((key === "Дата реєстрації оренди" || key === "Дата завершення") && value) {
-                        // Форматуємо дату якщо це можливо
-                        try {
-                            const date = new Date(value);
-                            if (!isNaN(date.getTime())) {
-                                value = date.toLocaleDateString('uk-UA');
-                            }
-                        } catch (e) {
-                            // Залишаємо оригінальне значення якщо не вдалося форматувати
-                        }
-                    }
-                    
-                    // Скорочуємо довгі значення для мобільних
-                    if (window.innerWidth <= 768 && typeof value === 'string' && value.length > 50) {
-                        value = `<span title="${value}">${value.substring(0, 47)}...</span>`;
-                    }
-                    
-                    // Додаємо іконки та короткі пояснення для всіх полів
-                    let displayKey = key;
-                    if (window.innerWidth <= 768) {
-                        // Для мобільних використовуємо повні назви без скорочень
-                        displayKey = key;
+                    if (diffMs < 0) {
+                        rentalStatus = { text: 'ПРОСТРОЧЕНО', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.15)', icon: 'exclamation-circle' };
+                    } else if (diffMonths <= 6) {
+                        rentalStatus = { text: 'ЗАКІНЧУЄТЬСЯ', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.15)', icon: 'clock-history' };
                     } else {
-                        // Повні назви з іконками для десктопу
-                        const iconNames = {
-                            "Кадастровий номер": '<i class="bi bi-hash"></i> Кадастровий',
-                            "Номер земельної ділянки": '<i class="bi bi-123"></i> Номер земельної ділянки',
-                            "Площа земельної ділянки": '<i class="bi bi-square"></i> Площа земельної ділянки',
-                            "Площа розрахована": '<i class="bi bi-calculator"></i> Площа',
-                            "Площа частини": '<i class="bi bi-bounding-box"></i> Площа частини',
-                            "Цільове призначення": '<i class="bi bi-bullseye"></i> Цільове призначення',
-                            "Форма власності": '<i class="bi bi-building"></i> Форма власності',
-                            "Власник": '<i class="bi bi-person-check"></i> Власник',
-                            "Орендар": '<i class="bi bi-person-workspace"></i> Орендар',
-                            "Орендар частини": '<i class="bi bi-person-workspace"></i> Орендар частини',
-                            "Дата реєстрації оренди": '<i class="bi bi-calendar-check"></i> Реєстрація',
-                            "Дата завершення": '<i class="bi bi-calendar-x"></i> Завершення',
-                            "Вид обмеження": '<i class="bi bi-shield-exclamation"></i> Обмеження',
-                            "Статус": '<i class="bi bi-info-circle"></i> Статус',
-                            "Назва поля": '<i class="bi bi-geo"></i> Назва поля'
-                        };
-                        displayKey = iconNames[key] || key;
+                        rentalStatus = { text: 'ДІЮЧИЙ', color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)', icon: 'check-circle' };
                     }
-                    
-                    tableRows.push({ displayKey, value });
-                }
-            });
-            
-            // Створюємо рядки таблиці з правильними заокругленими кутами
-            tableRows.forEach((row, index) => {
-                const isFirst = index === 0;
-                const isLast = index === tableRows.length - 1;
-                
-                // Monobank-style popup стилі
-                let propertyNameStyle = "background: #2C2C2E !important; color: #ABABAB !important; border: none !important; border-right: 1px solid rgba(255,255,255,0.08) !important; padding: 10px 14px !important; font-weight: 500 !important; text-align: left !important; vertical-align: middle !important; margin: 0 !important; font-size: 13px !important;";
-                let propertyValueStyle = "border: none !important; padding: 10px 14px !important; background: #1C1C1E !important; color: #FFFFFF !important; vertical-align: middle !important; margin: 0 !important; font-size: 14px !important; font-weight: 500 !important;";
-                
-                // Додаємо верхні заокруглені кути до першого рядка (тепер немає заголовка)
-                if (isFirst) {
-                    propertyNameStyle += " border-top-left-radius: 12px !important;";
-                    propertyValueStyle += " border-top-right-radius: 12px !important;";
-                }
-                
-                if (isLast) {
-                    propertyNameStyle += " border-bottom-left-radius: 12px !important;";
-                    propertyValueStyle += " border-bottom-right-radius: 12px !important;";
                 } else {
-                    propertyValueStyle += " border-bottom: 1px solid rgba(255,255,255,0.08) !important;";
-                    propertyNameStyle += " border-bottom: 1px solid rgba(255,255,255,0.08) !important;";
+                    rentalStatus = { text: 'ДІЮЧИЙ', color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)', icon: 'check-circle' };
                 }
-                
-                popupContent += `<tr>
-                    <td class="property-name" style="${propertyNameStyle}">${row.displayKey}:</td>
-                    <td class="property-value" style="${propertyValueStyle}">${row.value}</td>
-                </tr>`;
-            });
-            
-            popupContent += '</table>';
-            
-            // Отримуємо кадастровий номер для посилань
-            const cadastralNumber = feature.properties["Кадастровий номер"];
-            if (cadastralNumber) {
-                const publicUrl = 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber;
-                popupContent += createPopupLinks(publicUrl, feature.properties["Дата оновлення"]);
             }
+            
+            // Розраховуємо час до закінчення
+            let countdown = '';
+            if (expiryDate && tenant) {
+                const parts = expiryDate.split('.');
+                if (parts.length === 3) {
+                    const expiryDateObj = new Date(parts[2], parts[1] - 1, parts[0]);
+                    const today = new Date();
+                    const diffMs = expiryDateObj - today;
+                    
+                    if (diffMs > 0) {
+                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                        const years = Math.floor(diffDays / 365);
+                        const months = Math.floor((diffDays % 365) / 30);
+                        
+                        if (years > 0) {
+                            countdown = `${years} р. ${months} міс.`;
+                        } else if (months > 0) {
+                            countdown = `${months} міс.`;
+                        } else {
+                            countdown = `${diffDays} дн.`;
+                        }
+                    } else {
+                        const overdueDays = Math.abs(Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+                        countdown = `прострочено ${overdueDays} дн.`;
+                    }
+                }
+            }
+            
+            // Різниця площ
+            let areaDiff = '';
+            let areaDiffColor = '#8E8E93';
+            if (areaDZK > 0 && areaCalc > 0) {
+                const diff = ((areaCalc - areaDZK) / areaDZK * 100).toFixed(1);
+                if (diff > 0) {
+                    areaDiff = `+${diff}%`;
+                    areaDiffColor = '#10B981';
+                } else if (diff < 0) {
+                    areaDiff = `${diff}%`;
+                    areaDiffColor = '#EF4444';
+                }
+            }
+            
+            // Створюємо popup контент
+            let popupContent = `<div class="popup-content" style="padding: 0;">`;
+            
+            // Статус-badge зверху
+            popupContent += `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #2C2C2E; border-radius: 12px 12px 0 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <span style="background: ${rentalStatus.bg}; color: ${rentalStatus.color}; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">
+                        <i class="bi bi-${rentalStatus.icon}" style="margin-right: 4px;"></i>${rentalStatus.text}
+                    </span>
+                    ${countdown ? `<span style="color: #ABABAB; font-size: 12px;"><i class="bi bi-hourglass-split" style="margin-right: 4px;"></i>${countdown}</span>` : ''}
+                </div>`;
+            
+            // СЕКЦІЯ: Ділянка
+            popupContent += `
+                <div style="padding: 12px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <div style="color: #8E8E93; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                        <i class="bi bi-geo-alt" style="margin-right: 4px;"></i>ДІЛЯНКА
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: 'SF Mono', monospace;" id="cadastral-${cadastralNumber.replace(/[:.]/g, '-')}">${cadastralNumber}</span>
+                        <button onclick="navigator.clipboard.writeText('${cadastralNumber}'); this.innerHTML='<i class=\\'bi bi-check\\'></i>'; setTimeout(() => this.innerHTML='<i class=\\'bi bi-copy\\'></i>', 1500);" 
+                                style="background: #3A3A3C; border: none; color: #ABABAB; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                            <i class="bi bi-copy"></i>
+                        </button>
+                    </div>
+                    ${props["Назва поля"] ? `<div style="color: #ABABAB; font-size: 13px;"><i class="bi bi-signpost" style="margin-right: 4px; color: #10B981;"></i>${props["Назва поля"]}</div>` : ''}
+                </div>`;
+            
+            // СЕКЦІЯ: Площа
+            popupContent += `
+                <div style="padding: 12px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <div style="color: #8E8E93; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                        <i class="bi bi-rulers" style="margin-right: 4px;"></i>ПЛОЩА
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="color: #FFFFFF; font-size: 20px; font-weight: 700;">${areaDZK.toFixed(4)} <span style="font-size: 14px; color: #ABABAB;">га</span></div>
+                            <div style="color: #ABABAB; font-size: 12px;">за ДЗК</div>
+                        </div>
+                        ${areaCalc > 0 ? `
+                        <div style="text-align: right;">
+                            <div style="color: #FFFFFF; font-size: 16px; font-weight: 600;">${areaCalc.toFixed(4)} <span style="font-size: 12px; color: #ABABAB;">га</span></div>
+                            <div style="color: ${areaDiffColor}; font-size: 12px; font-weight: 500;">${areaDiff} розрах.</div>
+                        </div>` : ''}
+                    </div>
+                </div>`;
+            
+            // СЕКЦІЯ: Власність
+            if (props["Власник"] || props["Форма власності"]) {
+                popupContent += `
+                    <div style="padding: 12px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <div style="color: #8E8E93; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                            <i class="bi bi-person" style="margin-right: 4px;"></i>ВЛАСНІСТЬ
+                        </div>
+                        ${props["Власник"] ? `<div style="color: #FFFFFF; font-size: 14px; font-weight: 500; margin-bottom: 4px;">${props["Власник"]}</div>` : ''}
+                        ${props["Форма власності"] ? `<div style="color: #ABABAB; font-size: 12px;">${props["Форма власності"]}</div>` : ''}
+                    </div>`;
+            }
+            
+            // СЕКЦІЯ: Оренда
+            if (tenant || registrationDate || expiryDate) {
+                popupContent += `
+                    <div style="padding: 12px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: #8E8E93; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="bi bi-file-earmark-text" style="margin-right: 4px;"></i>ОРЕНДА
+                            </span>
+                        </div>
+                        ${tenant ? `<div style="color: #FFFFFF; font-size: 14px; font-weight: 500; margin-bottom: 8px;">${tenant}</div>` : ''}
+                        <div style="display: flex; gap: 16px;">
+                            ${registrationDate ? `
+                            <div>
+                                <div style="color: #8E8E93; font-size: 11px;">Реєстрація</div>
+                                <div style="color: #FFFFFF; font-size: 13px; font-weight: 500;">${registrationDate}</div>
+                            </div>` : ''}
+                            ${expiryDate ? `
+                            <div>
+                                <div style="color: #8E8E93; font-size: 11px;">Завершення</div>
+                                <div style="color: ${rentalStatus.color}; font-size: 13px; font-weight: 500;">${expiryDate}</div>
+                            </div>` : ''}
+                        </div>
+                    </div>`;
+            }
+            
+            // СЕКЦІЯ: Додатково (згорнута)
+            const additionalFields = [];
+            if (props["Цільове призначення"]) additionalFields.push({ label: 'Цільове призначення', value: props["Цільове призначення"] });
+            if (props["Вид обмеження"]) additionalFields.push({ label: 'Обмеження', value: props["Вид обмеження"] });
+            if (props["Номер земельної ділянки"]) additionalFields.push({ label: 'Номер ділянки', value: props["Номер земельної ділянки"] });
+            
+            if (additionalFields.length > 0) {
+                popupContent += `
+                    <details style="background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <summary style="padding: 12px 14px; color: #ABABAB; font-size: 12px; cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;">
+                            <span><i class="bi bi-three-dots" style="margin-right: 4px;"></i>Додатково</span>
+                            <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
+                        </summary>
+                        <div style="padding: 0 14px 12px 14px;">
+                            ${additionalFields.map(f => `
+                                <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <span style="color: #8E8E93; font-size: 12px;">${f.label}</span>
+                                    <span style="color: #FFFFFF; font-size: 12px; text-align: right; max-width: 60%;">${f.value}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </details>`;
+            }
+            
+            // Quick Actions
+            const publicUrl = cadastralNumber ? 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber : '';
+            popupContent += `
+                <div style="padding: 12px 14px; background: #2C2C2E; border-radius: 0 0 12px 12px; display: flex; justify-content: space-around; gap: 8px;">
+                    <button onclick="navigator.clipboard.writeText('${cadastralNumber}'); this.querySelector('span').textContent='Скопійовано!';" 
+                            style="flex: 1; background: #3A3A3C; border: none; color: #FFFFFF; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 500;">
+                        <i class="bi bi-copy" style="display: block; font-size: 18px; margin-bottom: 4px; color: #10B981;"></i>
+                        <span>Копіювати</span>
+                    </button>
+                    ${publicUrl ? `
+                    <a href="${publicUrl}" target="_blank" 
+                       style="flex: 1; background: #3A3A3C; border: none; color: #FFFFFF; padding: 10px; border-radius: 10px; text-decoration: none; font-size: 12px; font-weight: 500; text-align: center;">
+                        <i class="bi bi-box-arrow-up-right" style="display: block; font-size: 18px; margin-bottom: 4px; color: #3B82F6;"></i>
+                        <span>ДЗК</span>
+                    </a>` : ''}
+                    <button onclick="alert('Функція в розробці')" 
+                            style="flex: 1; background: #3A3A3C; border: none; color: #FFFFFF; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 500;">
+                        <i class="bi bi-star" style="display: block; font-size: 18px; margin-bottom: 4px; color: #F59E0B;"></i>
+                        <span>Обране</span>
+                    </button>
+                </div>`;
             
             popupContent += '</div>';
             
@@ -6409,7 +6498,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 layer.bindPopup('', { maxWidth: 1, className: 'hidden-popup' });
             } else {
                 // Для десктопу - звичайний попап
-                const popupOptions = { maxWidth: 350 };
+                const popupOptions = { maxWidth: 380, minWidth: 320 };
                 layer.bindPopup(popupContent, popupOptions);
             }
         }
