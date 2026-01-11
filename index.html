@@ -6416,29 +6416,23 @@ function addPolygonToMap(geoJSON, originalProperties) {
             // Створюємо popup контент
             let popupContent = `<div class="popup-content" style="padding: 0;">`;
             
-            // Статус-badge зверху
-            popupContent += `
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #2C2C2E; border-radius: 12px 12px 0 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                    <span style="background: ${rentalStatus.bg}; color: ${rentalStatus.color}; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">
-                        <i class="bi bi-${rentalStatus.icon}" style="margin-right: 4px;"></i>${rentalStatus.text}
-                    </span>
-                    ${countdown ? `<span style="color: #ABABAB; font-size: 12px;"><i class="bi bi-hourglass-split" style="margin-right: 4px;"></i>${countdown}</span>` : ''}
-                </div>`;
-            
-            // СЕКЦІЯ: Ділянка
+            // СЕКЦІЯ: Ділянка (об'єднано зі статусом)
             popupContent += `
                 <div style="padding: 12px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                    <div style="color: #8E8E93; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                        <i class="bi bi-geo-alt" style="margin-right: 4px;"></i>ДІЛЯНКА
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="background: ${rentalStatus.bg}; color: ${rentalStatus.color}; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; letter-spacing: 0.3px;">
+                            <i class="bi bi-${rentalStatus.icon}" style="margin-right: 3px;"></i>${rentalStatus.text}
+                        </span>
+                        ${countdown ? `<span style="color: #8E8E93; font-size: 11px;"><i class="bi bi-hourglass-split" style="margin-right: 3px;"></i>${countdown}</span>` : ''}
                     </div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                        <span style="color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: 'SF Mono', monospace;" id="cadastral-${cadastralNumber.replace(/[:.]/g, '-')}">${cadastralNumber}</span>
-                        <button onclick="navigator.clipboard.writeText('${cadastralNumber}'); this.innerHTML='<i class=\\'bi bi-check\\'></i>'; setTimeout(() => this.innerHTML='<i class=\\'bi bi-copy\\'></i>', 1500);" 
-                                style="background: #3A3A3C; border: none; color: #ABABAB; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="color: #FFFFFF; font-size: 14px; font-weight: 600; font-family: 'SF Mono', monospace;">${cadastralNumber}</span>
+                        <button onclick="navigator.clipboard.writeText('${cadastralNumber}'); this.innerHTML='<i class=\\'bi bi-check\\' style=\\'color:#10B981\\'></i>'; setTimeout(() => this.innerHTML='<i class=\\'bi bi-copy\\'></i>', 1500);" 
+                                style="background: #3A3A3C; border: none; color: #ABABAB; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 12px;">
                             <i class="bi bi-copy"></i>
                         </button>
                     </div>
-                    ${props["Назва поля"] ? `<div style="color: #ABABAB; font-size: 13px;"><i class="bi bi-signpost" style="margin-right: 4px; color: #10B981;"></i>${props["Назва поля"]}</div>` : ''}
+                    ${props["Назва поля"] ? `<div style="color: #8E8E93; font-size: 12px; margin-top: 4px;"><i class="bi bi-signpost" style="margin-right: 3px; color: #10B981;"></i>${props["Назва поля"]}</div>` : ''}
                 </div>`;
             
             // СЕКЦІЯ: Площа
@@ -6521,26 +6515,21 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     </details>`;
             }
             
-            // Quick Actions
+            // Quick Actions (компактні)
             const publicUrl = cadastralNumber ? 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber : '';
             popupContent += `
-                <div style="padding: 12px 14px; background: #2C2C2E; border-radius: 0 0 12px 12px; display: flex; justify-content: space-around; gap: 8px;">
-                    <button onclick="navigator.clipboard.writeText('${cadastralNumber}'); this.querySelector('span').textContent='Скопійовано!';" 
-                            style="flex: 1; background: #3A3A3C; border: none; color: #FFFFFF; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 500;">
-                        <i class="bi bi-copy" style="display: block; font-size: 18px; margin-bottom: 4px; color: #10B981;"></i>
+                <div style="padding: 10px 14px; background: #2C2C2E; border-radius: 0 0 12px 12px; display: flex; gap: 8px;">
+                    <button onclick="navigator.clipboard.writeText('${cadastralNumber}'); this.querySelector('span').textContent='✓';" 
+                            style="flex: 1; background: #3A3A3C; border: none; color: #FFFFFF; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="bi bi-copy" style="font-size: 14px; color: #10B981;"></i>
                         <span>Копіювати</span>
                     </button>
                     ${publicUrl ? `
                     <a href="${publicUrl}" target="_blank" 
-                       style="flex: 1; background: #3A3A3C; border: none; color: #FFFFFF; padding: 10px; border-radius: 10px; text-decoration: none; font-size: 12px; font-weight: 500; text-align: center;">
-                        <i class="bi bi-box-arrow-up-right" style="display: block; font-size: 18px; margin-bottom: 4px; color: #3B82F6;"></i>
-                        <span>ДЗК</span>
+                       style="flex: 1; background: #3A3A3C; border: none; color: #FFFFFF; padding: 8px; border-radius: 8px; text-decoration: none; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="bi bi-box-arrow-up-right" style="font-size: 14px; color: #3B82F6;"></i>
+                        <span>Відкрити ДЗК</span>
                     </a>` : ''}
-                    <button onclick="alert('Функція в розробці')" 
-                            style="flex: 1; background: #3A3A3C; border: none; color: #FFFFFF; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 500;">
-                        <i class="bi bi-star" style="display: block; font-size: 18px; margin-bottom: 4px; color: #F59E0B;"></i>
-                        <span>Обране</span>
-                    </button>
                 </div>`;
             
             popupContent += '</div>';
