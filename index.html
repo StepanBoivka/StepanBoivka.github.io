@@ -3495,9 +3495,14 @@ body {
                             font-weight: 600 !important;
                         }
                         
-                        .mobile-modal-content p,
-                        .mobile-modal-content span,
-                        .mobile-modal-content div {
+                        /* Не перезаписуємо кольори для нового popup формату */
+                        .mobile-modal-content .popup-content span,
+                        .mobile-modal-content .popup-content div {
+                            color: inherit !important;
+                            line-height: inherit !important;
+                        }
+                        
+                        .mobile-modal-content p {
                             color: #ABABAB !important;
                             line-height: 1.6 !important;
                         }
@@ -3536,6 +3541,16 @@ body {
                         
                         .mobile-modal-content .property-name {
                             background: #2C2C2E !important;
+                            color: #ABABAB !important;
+                        }
+                        
+                        /* Стилі для кнопок в popup */
+                        .mobile-modal-content button {
+                            color: #FFFFFF !important;
+                        }
+                        
+                        /* Стилі для details/summary */
+                        .mobile-modal-content details summary {
                             color: #ABABAB !important;
                         }
                         
@@ -3634,7 +3649,13 @@ body {
         
         // Функція для обробки контенту модального вікна
         function processModalContent(content) {
-            // Якщо контент вже є HTML
+            // Якщо контент вже в новому форматі (має секції з ДІЛЯНКА, ПЛОЩА і т.д.) - не змінюємо
+            if (typeof content === 'string' && (content.includes('ДІЛЯНКА') || content.includes('popup-content'))) {
+                // Просто повертаємо як є - це новий формат popup
+                return content;
+            }
+            
+            // Якщо контент вже є HTML (старий формат)
             if (typeof content === 'string' && content.includes('<')) {
                 // Покращуємо структуру для мобільного відображення
                 let processed = content;
@@ -6279,8 +6300,9 @@ function addPolygonToMap(geoJSON, originalProperties) {
             const cadastralNumber = props["Кадастровий номер"] || '';
             const tenant = props["Орендар"] || props["Орендар частини"] || '';
             const expiryDate = props["Дата завершення"] || '';
-            const registrationDate = props["Дата реєстрації оренди"] || '';
-            const areaDZK = parseFloat(props["Площа земельної ділянки"]) || 0;
+            const registrationDate = props["Дата реєстрації оренди"] || props["Дата реєстрації"] || '';
+            // Виправлено: використовуємо "Площа ДЗК" замість "Площа земельної ділянки"
+            const areaDZK = parseFloat(props["Площа ДЗК"]) || parseFloat(props["Площа земельної ділянки"]) || 0;
             const areaCalc = parseFloat(props["Площа розрахована"]) || parseFloat(props["Площа частини"]) || 0;
             
             // Визначаємо статус оренди
