@@ -256,22 +256,22 @@
         /* ===== MONOBANK-STYLE DESIGN SYSTEM ===== */
         :root {
             /* Кольорова палітра */
-            --mono-bg: #1C1C1E;
-            --mono-surface: #2C2C2E;
-            --mono-surface-elevated: #3A3A3C;
-            --mono-card: #2C2C2E;
+            --mono-bg: #000000;
+            --mono-surface: #1C1C1E;
+            --mono-surface-elevated: #2C2C2E;
+            --mono-card: #1C1C1E;
             --mono-primary: #10B981;
             --mono-primary-soft: rgba(16, 185, 129, 0.15);
             --mono-accent: #34D399;
             --mono-text: #FFFFFF;
-            --mono-text-secondary: #8E8E93;
-            --mono-text-muted: #636366;
-            --mono-border: rgba(255, 255, 255, 0.08);
-            --mono-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            --mono-shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.2);
-            --mono-radius: 20px;
+            --mono-text-secondary: #ABABAB;
+            --mono-text-muted: #8E8E93;
+            --mono-border: rgba(255, 255, 255, 0.12);
+            --mono-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --mono-shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.3);
+            --mono-radius: 16px;
             --mono-radius-sm: 12px;
-            --mono-radius-lg: 28px;
+            --mono-radius-lg: 24px;
             --mono-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -2914,168 +2914,167 @@ body {
     </button>
 
     <!-- Оставляем тільки один navbar -->
-    <nav class="navbar navbar-dark bg-dark fixed-top py-1">
-        <div class="container-fluid px-2">
+    <nav class="navbar navbar-dark fixed-top py-1" style="background: var(--mono-surface) !important; border-bottom: 1px solid var(--mono-border);">
+        <div class="container-fluid px-3">
             <!-- Кнопка для відкриття бокового меню -->
-            <button class="btn btn-outline-light btn-sm" 
+            <button class="btn btn-sm" 
+                    style="background: var(--mono-surface-elevated); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); width: 40px; height: 40px;" 
                     type="button" 
                     data-bs-toggle="offcanvas" 
                     data-bs-target="#mainMenu"
-                    aria-controls="mainMenu"
-                    style="width: 32px; height: 32px;">
-                <i class="bi bi-list"></i>
+                    aria-controls="mainMenu">
+                <i class="bi bi-list" style="font-size: 18px;"></i>
             </button>
 
-            <!-- Кнопка замовлення доступу по центру -->
+            <!-- Логотип по центру -->
             <div class="d-flex justify-content-center flex-grow-1">
+                <span style="color: var(--mono-text); font-size: 17px; font-weight: 600; letter-spacing: -0.3px;">
+                    <i class="bi bi-geo-alt-fill me-1" style="color: var(--mono-primary);"></i>АГРО-ПРОСТІР
+                </span>
+            </div>
+
+            <!-- Контейнер для правої частини navbar -->
+            <div class="d-flex align-items-center gap-2">
+                <!-- Кнопка замовлення -->
                 <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGQcVSh5EnTCa6eJKT9KYX6HleJnXveBcyrCEgaKvlQgRInQ/viewform" 
-                   class="btn btn-success btn-sm pulse-button" 
+                   class="btn btn-sm d-none d-md-flex" 
+                   style="background: var(--mono-primary); border: none; color: white; border-radius: var(--mono-radius-sm); padding: 8px 16px; font-weight: 600;"
                    target="_blank"
                    title="Замовити доступ безкоштовно">
                     <i class="bi bi-gift me-1"></i>Замовити
                 </a>
-            </div>
-
-            <!-- Контейнер для правої частини navbar -->
-            <div class="d-flex align-items-center">
-                <!-- Індикатор актуальності даних -->
-                <div class="data-freshness-indicator d-flex align-items-center me-3">
-                    <i class="bi bi-clock-history text-light me-1"></i>
-                    <small class="text-light" id="dataFreshnessText"></small>
-                </div>
                 
                 <!-- Контактний телефон -->
-                <div class="contact-phone d-flex align-items-center">
-                    <a href="tel:+380638805745" class="btn btn-outline-light btn-sm d-flex align-items-center" 
-                       title="Зателефонувати +38 063 880 57 45">
-                        <i class="bi bi-telephone me-1"></i>
-                        <span class="phone-text d-none d-lg-inline">+38 063 880 57 45</span>
-                    </a>
-                </div>
+                <a href="tel:+380638805745" 
+                   class="btn btn-sm d-flex align-items-center" 
+                   style="background: var(--mono-surface-elevated); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); width: 40px; height: 40px;"
+                   title="Зателефонувати">
+                    <i class="bi bi-telephone" style="font-size: 16px;"></i>
+                </a>
             </div>
         </div>
     </nav>
 
     <!-- Бокове меню -->
-    <div class="offcanvas offcanvas-start bg-dark text-light" tabindex="-1" id="mainMenu">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title">Головне меню</h5>
+    <div class="offcanvas offcanvas-start text-light" tabindex="-1" id="mainMenu" style="background: var(--mono-surface) !important;">
+        <div class="offcanvas-header" style="border-bottom: 1px solid var(--mono-border);">
+            <h5 class="offcanvas-title" style="font-weight: 700; font-size: 1.4rem;">Меню</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
             <!-- Секція вибору області перегляду -->
-            <div class="mb-4">
-                <h6 class="border-bottom border-secondary pb-2 mb-3">Вибір області перегляду</h6>
+            <div class="mb-4" style="background: var(--mono-surface-elevated); border-radius: var(--mono-radius); padding: 16px;">
+                <h6 style="color: var(--mono-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">Фільтри</h6>
                 <div class="mb-3">
-                    <label for="fileSelect" class="form-label">
-                        <i class="bi bi-geo-alt me-1"></i>
+                    <label for="fileSelect" class="form-label" style="color: var(--mono-text); font-weight: 500;">
+                        <i class="bi bi-geo-alt me-1" style="color: var(--mono-primary);"></i>
                         Рада
                     </label>
-                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="fileSelect">
+                    <select class="form-select form-select-sm" id="fileSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
                         <option>Виберіть раду</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label for="fieldSelect" class="form-label">
+                    <label for="fieldSelect" class="form-label" style="color: var(--mono-text); font-weight: 500;">
                         <i class="bi bi-grid-3x3-gap me-1"></i>
+                        <i class="bi bi-grid-3x3-gap me-1" style="color: var(--mono-primary);"></i>
                         Поле обробітку
                     </label>
-                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="fieldSelect">
+                    <select class="form-select form-select-sm" id="fieldSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
                         <option value="">Всі поля</option>
                     </select>
                 </div>
                 <!-- Додаємо новий select для фільтрації за роком -->
                 <div class="mb-3">
-                    <label for="expiryYearSelect" class="form-label">
-                        <i class="bi bi-calendar-x me-1"></i>
+                    <label for="expiryYearSelect" class="form-label" style="color: var(--mono-text); font-weight: 500;">
+                        <i class="bi bi-calendar-x me-1" style="color: var(--mono-primary);"></i>
                         Завершення оренди
                     </label>
-                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="expiryYearSelect">
+                    <select class="form-select form-select-sm" id="expiryYearSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
                         <option value="">Всі роки</option>
                     </select>
                 </div>
                 <!-- Додаємо новий select для фільтрації за датою реєстрації -->
                 <div class="mb-3">
-                    <label for="registrationYearSelect" class="form-label">
-                        <i class="bi bi-calendar-check me-1"></i>
+                    <label for="registrationYearSelect" class="form-label" style="color: var(--mono-text); font-weight: 500;">
+                        <i class="bi bi-calendar-check me-1" style="color: var(--mono-primary);"></i>
                         Дата реєстрації оренди
                     </label>
-                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="registrationYearSelect">
+                    <select class="form-select form-select-sm" id="registrationYearSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
                         <option value="">Всі роки</option>
                     </select>
                 </div>
                 <!-- Фільтр за цільовим використанням -->
                 <div class="mb-3">
-                    <label for="landUseSelect" class="form-label">
-                        <i class="bi bi-signpost-split me-1"></i>
+                    <label for="landUseSelect" class="form-label" style="color: var(--mono-text); font-weight: 500;">
+                        <i class="bi bi-signpost-split me-1" style="color: var(--mono-primary);"></i>
                         Цільове використання
                     </label>
-                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="landUseSelect">
+                    <select class="form-select form-select-sm" id="landUseSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
                         <option value="">Всі типи</option>
                     </select>
                 </div>
                 <!-- Фільтр за площею земельної ділянки -->
                 <div class="mb-3">
-                    <label class="form-label">
-                        <i class="bi bi-rulers me-1"></i>
+                    <label class="form-label" style="color: var(--mono-text); font-weight: 500;">
+                        <i class="bi bi-rulers me-1" style="color: var(--mono-primary);"></i>
                         Площа ДЗК (га)
                     </label>
                     <div class="row g-2">
                         <div class="col-6">
-                            <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary" id="areaMinInput" placeholder="Від" step="0.01" min="0">
+                            <input type="number" class="form-control form-control-sm" id="areaMinInput" placeholder="Від" step="0.01" min="0" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
                         </div>
                         <div class="col-6">
-                            <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary" id="areaMaxInput" placeholder="До" step="0.01" min="0">
+                            <input type="number" class="form-control form-control-sm" id="areaMaxInput" placeholder="До" step="0.01" min="0" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
                         </div>
                     </div>
-                    <button class="btn btn-outline-primary btn-sm w-100 mt-2" id="applyAreaFilterBtn">
-                        <i class="bi bi-funnel me-1"></i>Застосувати фільтр площі
+                    <button class="btn btn-sm w-100 mt-2" id="applyAreaFilterBtn" style="background: var(--mono-primary-soft); color: var(--mono-primary); border: none; border-radius: var(--mono-radius-sm); padding: 12px; font-weight: 600;">
+                        <i class="bi bi-funnel me-1"></i>Застосувати
                     </button>
                 </div>
                 <!-- Кнопка скидання всіх фільтрів -->
-                <div class="mb-3">
-                    <button class="btn btn-outline-danger btn-sm w-100" id="resetAllFiltersBtn">
-                        <i class="bi bi-x-circle me-1"></i>Скинути всі фільтри
-                    </button>
-                </div>
+                <button class="btn btn-sm w-100" id="resetAllFiltersBtn" style="background: rgba(239, 68, 68, 0.15); color: #EF4444; border: none; border-radius: var(--mono-radius-sm); padding: 12px; font-weight: 600;">
+                    <i class="bi bi-x-circle me-1"></i>Скинути фільтри
+                </button>
             </div>
             <!-- Секція інструментів -->
-            <div class="mb-4">
-                <h6 class="border-bottom border-secondary pb-2 mb-3">Інструменти</h6>
+            <div class="mb-4" style="background: var(--mono-surface-elevated); border-radius: var(--mono-radius); padding: 16px;">
+                <h6 style="color: var(--mono-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">Інструменти</h6>
                 <div class="d-grid gap-2">
-                    <button class="btn btn-outline-light text-start" id="cadastralSearchButton">
-                        <i class="bi bi-search me-2"></i>
+                    <button class="btn text-start" id="cadastralSearchButton" style="background: var(--mono-bg); color: var(--mono-text); border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
+                        <i class="bi bi-search me-2" style="color: var(--mono-primary);"></i>
                         Пошук за списком номерів
                     </button>
-                    <button class="btn btn-outline-light text-start" id="statisticsButton">
-                        <i class="bi bi-pie-chart-fill me-2"></i>
+                    <button class="btn text-start" id="statisticsButton" style="background: var(--mono-bg); color: var(--mono-text); border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
+                        <i class="bi bi-pie-chart-fill me-2" style="color: var(--mono-primary);"></i>
                         Статистика
                     </button>
-                    <button class="btn btn-outline-light text-start" id="exportButton">
-                        <i class="bi bi-table me-2"></i>
+                    <button class="btn text-start" id="exportButton" style="background: var(--mono-bg); color: var(--mono-text); border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
+                        <i class="bi bi-table me-2" style="color: var(--mono-primary);"></i>
                         Експорт в Excel
-                    </button>                    <button class="btn btn-outline-light text-start" id="freshnessButton">
-                        <i class="bi bi-building-fill me-2"></i>
+                    </button>
+                    <button class="btn text-start" id="freshnessButton" style="background: var(--mono-bg); color: var(--mono-text); border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
+                        <i class="bi bi-building-fill me-2" style="color: var(--mono-primary);"></i>
                         Моє підприємство
                     </button>
-                    <button class="btn btn-outline-light text-start" id="exchangeButton">
-                        <i class="bi bi-arrow-left-right me-2"></i>
+                    <button class="btn text-start" id="exchangeButton" style="background: var(--mono-bg); color: var(--mono-text); border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
+                        <i class="bi bi-arrow-left-right me-2" style="color: var(--mono-primary);"></i>
                         Пропозиція обміну
                     </button>
-                    <button class="btn btn-outline-warning text-start" id="resetClientIdButton" style="display: none;">
+                    <button class="btn text-start" id="resetClientIdButton" style="display: none; background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
                         <i class="bi bi-arrow-clockwise me-2"></i>
                         Скинути клієнтський ID
                     </button>
-                    <button class="btn btn-outline-info text-start" id="debugButton" style="display: none;">
+                    <button class="btn text-start" id="debugButton" style="display: none; background: rgba(59, 130, 246, 0.15); color: #3B82F6; border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
                         <i class="bi bi-bug me-2"></i>
                         Показати дебаг інформацію
                     </button>
                     <div id="selectionTools" style="display: none;">
-                        <button class="btn btn-outline-warning text-start w-100 mb-2" data-action="clear-selection">
+                        <button class="btn text-start w-100 mb-2" data-action="clear-selection" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
                             <i class="bi bi-trash3 me-2"></i>
                             Очистити виділення
                         </button>
-                        <button class="btn btn-outline-success text-start w-100" data-action="export-selected">
+                        <button class="btn text-start w-100" data-action="export-selected" style="background: var(--mono-primary-soft); color: var(--mono-primary); border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
                             <i class="bi bi-file-earmark-excel me-2"></i>
                             Експортувати виділені
                         </button>
@@ -3084,10 +3083,10 @@ body {
             </div>
             
             <!-- Контактна інформація -->
-            <div class="mt-auto pt-3 border-top border-secondary">
+            <div class="mt-auto pt-3" style="border-top: 1px solid var(--mono-border);">
                 <div class="text-center">
-                    <small class="text-muted d-block mb-2">Контактна інформація</small>
-                    <a href="tel:+380638805745" class="btn btn-outline-light btn-sm w-100">
+                    <small style="color: var(--mono-text-secondary); display: block; margin-bottom: 12px;">Контакти</small>
+                    <a href="tel:+380638805745" class="btn w-100" style="background: var(--mono-primary); color: white; border: none; border-radius: var(--mono-radius-sm); padding: 14px; font-weight: 600;">
                         <i class="bi bi-telephone me-2"></i>
                         +38 063 880 57 45
                     </a>
