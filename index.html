@@ -1478,14 +1478,20 @@ body {
             backdrop-filter: blur(10px);
         }
 
-        /* Покращуємо popup для мобільних */
+        /* ===== MONOBANK-STYLE POPUP ===== */
         .leaflet-popup-content-wrapper {
-            border-radius: 16px;
+            border-radius: var(--mono-radius) !important;
             max-width: calc(100vw - 32px) !important;
-            min-width: 260px;
-            backdrop-filter: blur(15px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 280px;
+            background: var(--mono-surface) !important;
+            box-shadow: var(--mono-shadow) !important;
+            border: 1px solid var(--mono-border) !important;
+        }
+        
+        .leaflet-popup-tip {
+            background: var(--mono-surface) !important;
+            border: 1px solid var(--mono-border) !important;
+            box-shadow: none !important;
         }
         
         .leaflet-popup {
@@ -1513,19 +1519,35 @@ body {
             user-select: text !important;
         }
         
+        /* Кнопка закриття popup */
+        .leaflet-popup-close-button {
+            color: var(--mono-text-secondary) !important;
+            font-size: 20px !important;
+            padding: 8px !important;
+        }
+        
+        .leaflet-popup-close-button:hover {
+            color: var(--mono-text) !important;
+        }
+        
         /* Стилі для довгих назв полів */
         .popup-content .property-name {
             word-wrap: break-word;
             word-break: break-word;
             white-space: normal;
             hyphens: auto;
+            color: var(--mono-text-secondary) !important;
+        }
+        
+        .popup-content .property-value {
+            color: var(--mono-text) !important;
         }
         
         /* Іконки з текстом */
         .icon-text {
             font-size: 0.75rem;
             font-weight: 600;
-            color: #495057;
+            color: var(--mono-text-secondary);
             margin-left: 4px;
         }
         
@@ -2970,17 +2992,16 @@ body {
                         <i class="bi bi-geo-alt me-1" style="color: var(--mono-primary);"></i>
                         Рада
                     </label>
-                    <select class="form-select form-select-sm" id="fileSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
+                    <select class="form-select form-select-sm" id="fileSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px; width: 100%;">
                         <option>Виберіть раду</option>
                     </select>
                 </div>
                 <div class="mb-3">
                     <label for="fieldSelect" class="form-label" style="color: var(--mono-text); font-weight: 500;">
-                        <i class="bi bi-grid-3x3-gap me-1"></i>
                         <i class="bi bi-grid-3x3-gap me-1" style="color: var(--mono-primary);"></i>
                         Поле обробітку
                     </label>
-                    <select class="form-select form-select-sm" id="fieldSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
+                    <select class="form-select form-select-sm" id="fieldSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px; width: 100%;">
                         <option value="">Всі поля</option>
                     </select>
                 </div>
@@ -6312,20 +6333,22 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 const isFirst = index === 0;
                 const isLast = index === tableRows.length - 1;
                 
-                let propertyNameStyle = "background: rgba(25,135,84,0.05) !important; color: #333 !important; border: none !important; border-right: 1px solid rgba(0,0,0,0.08) !important; padding: 8px 12px !important; font-weight: 600 !important; text-align: left !important; vertical-align: middle !important; margin: 0 !important;";
-                let propertyValueStyle = "border: none !important; padding: 8px 12px !important; background: white !important; vertical-align: middle !important; margin: 0 !important;";
+                // Monobank-style popup стилі
+                let propertyNameStyle = "background: #2C2C2E !important; color: #ABABAB !important; border: none !important; border-right: 1px solid rgba(255,255,255,0.08) !important; padding: 10px 14px !important; font-weight: 500 !important; text-align: left !important; vertical-align: middle !important; margin: 0 !important; font-size: 13px !important;";
+                let propertyValueStyle = "border: none !important; padding: 10px 14px !important; background: #1C1C1E !important; color: #FFFFFF !important; vertical-align: middle !important; margin: 0 !important; font-size: 14px !important; font-weight: 500 !important;";
                 
                 // Додаємо верхні заокруглені кути до першого рядка (тепер немає заголовка)
                 if (isFirst) {
-                    propertyNameStyle += " border-top-left-radius: 8px !important;";
-                    propertyValueStyle += " border-top-right-radius: 8px !important;";
+                    propertyNameStyle += " border-top-left-radius: 12px !important;";
+                    propertyValueStyle += " border-top-right-radius: 12px !important;";
                 }
                 
                 if (isLast) {
-                    propertyNameStyle += " border-bottom-left-radius: 8px !important;";
-                    propertyValueStyle += " border-bottom-right-radius: 8px !important;";
+                    propertyNameStyle += " border-bottom-left-radius: 12px !important;";
+                    propertyValueStyle += " border-bottom-right-radius: 12px !important;";
                 } else {
-                    propertyValueStyle += " border-bottom: 1px solid rgba(0,0,0,0.08) !important;";
+                    propertyValueStyle += " border-bottom: 1px solid rgba(255,255,255,0.08) !important;";
+                    propertyNameStyle += " border-bottom: 1px solid rgba(255,255,255,0.08) !important;";
                 }
                 
                 popupContent += `<tr>
@@ -6548,10 +6571,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
         }
 
         function createPopupLinks(publicUrl, updateDate) {
-            let content = '<div class="popup-link d-flex justify-content-between align-items-center">';
-            content += `<a href="${publicUrl}" target="_blank" title="інформація з сервісів ДЗК">`;
+            let content = '<div class="popup-link d-flex justify-content-between align-items-center" style="padding: 12px 14px; background: #2C2C2E; border-radius: 12px; margin-top: 8px;">';
+            content += `<a href="${publicUrl}" target="_blank" title="інформація з сервісів ДЗК" style="color: #10B981; font-size: 20px;">`;
             content += '<i class="bi bi-info-circle"></i></a>';
-            content += '<div class="text-end">';
+            content += '<div class="text-end" style="color: #ABABAB; font-size: 13px;">';
             if (updateDate) {
                 const [day, month, year] = updateDate.split('.').map(Number);
                 const updateDateTime = new Date(year, month - 1, day);
@@ -6559,7 +6582,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
                 content += updateDate;
                 if (updateDateTime < twoMonthsAgo) {
-                    content += ' <i class="bi bi-exclamation-triangle-fill text-warning" ' +
+                    content += ' <i class="bi bi-exclamation-triangle-fill" style="color: #F59E0B;" ' +
                               'title="Інформація може бути застарілою"></i>';
                 }
             }
