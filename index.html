@@ -3531,11 +3531,17 @@ body {
                             font-weight: 600 !important;
                         }
                         
-                        /* Білий колір за замовчуванням для popup контенту */
-                        .mobile-modal-content .popup-content,
-                        .mobile-modal-content .popup-content span,
-                        .mobile-modal-content .popup-content div {
-                            color: #FFFFFF !important;
+                        /* Білий колір за замовчуванням для popup контенту, але дозволяємо inline стилі */
+                        .mobile-modal-content .popup-content {
+                            color: #FFFFFF;
+                        }
+                        
+                        .mobile-modal-content .popup-content div:not([style*="color"]) {
+                            color: #FFFFFF;
+                        }
+                        
+                        .mobile-modal-content .popup-content span:not([style*="color"]) {
+                            color: #FFFFFF;
                         }
                         
                         .mobile-modal-content p {
