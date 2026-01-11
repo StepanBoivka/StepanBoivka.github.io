@@ -5832,12 +5832,16 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 info.onAdd = function() {
                     const div = L.DomUtil.create('div', 'selection-info');
                     div.id = 'selectionInfo';
-                    div.style.background = 'white';
-                    div.style.color = 'black';
-                    div.style.padding = '6px';
-                    div.style.border = '2px солід #666';
-                    div.style.borderRadius = '4px';
-                    div.style.maxWidth = '300px';
+                    div.style.cssText = `
+                        background: #1C1C1E;
+                        color: #FFFFFF;
+                        padding: 12px 14px;
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        border-radius: 12px;
+                        max-width: 300px;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+                        font-size: 13px;
+                    `;
                     return div;
                 };
                 info.addTo(map);
@@ -5846,19 +5850,18 @@ function addPolygonToMap(geoJSON, originalProperties) {
             // Формируем HTML для арендаторов
             let tenantsInfo = '';
             tenantAreas.forEach((area, tenant) => {
-                const color = tenant === "Без орендаря" ? "#ffffff" : getColor(tenant);
+                const color = tenant === "Без орендаря" ? "#3A3A3C" : getColor(tenant);
                 tenantsInfo += `
-                    <div style="display: flex; align-items: center; margin-top: 3px;">
+                    <div style="display: flex; align-items: center; margin-top: 6px;">
                         <span style="
                             display: inline-block;
                             width: 12px;
                             height: 12px;
-                            margin-right: 5px;
+                            margin-right: 8px;
                             background-color: ${color};
-                            border: 1px solid #666;
-                            border-radius: 2px;
+                            border-radius: 3px;
                         "></span>
-                        <span>${tenant}: ${area.toFixed(4)} га</span>
+                        <span style="color: #FFFFFF;">${tenant}: <strong>${area.toFixed(4)}</strong> га</span>
                     </div>`;
             });
             
@@ -5866,44 +5869,46 @@ function addPolygonToMap(geoJSON, originalProperties) {
             let statusInfo = '';
             statusAreas.forEach((area, status) => {
                 const statusText = status.toLowerCase();
-                const color = statusText === 'обробляється' ? '#198754' : 
-                            statusText === 'не обробляється' ? '#dc3545' : 
-                            '#666666';
+                const color = statusText === 'обробляється' ? '#10B981' : 
+                            statusText === 'не обробляється' ? '#EF4444' : 
+                            '#8E8E93';
                 statusInfo += `
-                    <div style="display: flex; align-items: center; margin-top: 3px;">
+                    <div style="display: flex; align-items: center; margin-top: 6px;">
                         <span style="
                             display: inline-block;
                             width: 12px; 
                             height: 12px;
-                            margin-right: 5px;
+                            margin-right: 8px;
                             background-color: ${color};
-                            border: 1px solid #666;
-                            border-radius: 2px;
+                            border-radius: 3px;
                         "></span>
-                        <span>${status}: ${area.toFixed(4)} га</span>
+                        <span style="color: #FFFFFF;">${status}: <strong>${area.toFixed(4)}</strong> га</span>
                     </div>`;
             });
             
             // Обновляем содержимое инфобокса
             document.getElementById('selectionInfo').innerHTML = `
                 <div style="max-height: 300px; overflow-y: auto;">
-                    <div>
-                        <b>Виділено ділянок:</b> ${uniqueFeatures.size}<br>
-                        <div style="margin-top: 3px;">
-                            <b>Загальна площа:</b> ${totalSelectedArea.toFixed(4)} га
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Виділено</span>
+                            <span style="background: rgba(16, 185, 129, 0.15); color: #10B981; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600;">${uniqueFeatures.size}</span>
+                        </div>
+                        <div style="color: #FFFFFF; font-size: 18px; font-weight: 700; margin-top: 4px;">
+                            ${totalSelectedArea.toFixed(4)} <span style="font-size: 14px; color: #8E8E93; font-weight: 400;">га</span>
                         </div>
                     </div>
-                    <hr style="margin: 4px 0">
+                    <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 0;"></div>
                     <div>
-                        <strong>Розподіл по орендарях:</strong>
+                        <div style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Орендарі</div>
                         ${tenantsInfo}
                     </div>
-                    <hr style="margin: 4px 0">
+                    <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 0;"></div>
                     <div>
-                        <strong>Розподіл за статусами:</strong>
+                        <div style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Статуси</div>
                         ${statusInfo}
                     </div>
-                    <div style="margin-top: 3px; font-size: 0.9em; color: #666; text-align: right;">
+                    <div style="margin-top: 10px; font-size: 11px; color: #8E8E93; text-align: right;">
                         Площа частин: ${totalPartsArea.toFixed(4)} га
                     </div>
                 </div>`;
@@ -8472,12 +8477,16 @@ function analyzeExchange() {
                     info.onAdd = function() {
                         const div = L.DomUtil.create('div', 'selection-info');
                         div.id = 'selectionInfo';
-                        div.style.background = 'white';
-                        div.style.color = 'black';
-                        div.style.padding = '6px';
-                        div.style.border = '2px solid #666';
-                        div.style.borderRadius = '4px';
-                        div.style.maxWidth = '300px';
+                        div.style.cssText = `
+                            background: #1C1C1E;
+                            color: #FFFFFF;
+                            padding: 12px 14px;
+                            border: 1px solid rgba(255, 255, 255, 0.08);
+                            border-radius: 12px;
+                            max-width: 300px;
+                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+                            font-size: 13px;
+                        `;
                         return div;
                     };
                     info.addTo(map);
@@ -8486,19 +8495,18 @@ function analyzeExchange() {
                 // Формируем информацию по арендаторам (показываем общую площадь)
                 let tenantsInfo = '';
                 tenantAreas.forEach((data, tenant) => {
-                    const color = tenant === "Без орендаря" ? "#ffffff" : getColor(tenant);
+                    const color = tenant === "Без орендаря" ? "#3A3A3C" : getColor(tenant);
                     tenantsInfo += `
-                        <div style="display: flex; align-items: center; margin-top: 3px;">
+                        <div style="display: flex; align-items: center; margin-top: 6px;">
                             <span style="
                                 display: inline-block;
                                 width: 12px;
                                 height: 12px;
-                                margin-right: 5px;
+                                margin-right: 8px;
                                 background-color: ${color};
-                                border: 1px solid #666;
-                                border-radius: 2px;
+                                border-radius: 3px;
                             "></span>
-                            <span>${tenant}: ${data.totalArea.toFixed(4)} га</span>
+                            <span style="color: #FFFFFF;">${tenant}: <strong>${data.totalArea.toFixed(4)}</strong> га</span>
                         </div>`;
                 });
                 
@@ -8506,43 +8514,46 @@ function analyzeExchange() {
                 let statusInfo = '';
                 statusAreas.forEach((area, status) => {
                     const statusText = status.toLowerCase();
-                    const color = statusText === 'обробляється' ? '#198754' : 
-                                 statusText === 'не обробляється' ? '#dc3545' : 
-                                 '#666666';
+                    const color = statusText === 'обробляється' ? '#10B981' : 
+                                 statusText === 'не обробляється' ? '#EF4444' : 
+                                 '#8E8E93';
                     statusInfo += `
-                        <div style="display: flex; align-items: center; margin-top: 3px;">
+                        <div style="display: flex; align-items: center; margin-top: 6px;">
                             <span style="
                                 display: inline-block;
                                 width: 12px;
                                 height: 12px;
-                                margin-right: 5px;
+                                margin-right: 8px;
                                 background-color: ${color};
-                                border: 1px solid #666;
-                                border-radius: 2px;
+                                border-radius: 3px;
                             "></span>
-                            <span>${status}: ${area.toFixed(4)} га</span>
+                            <span style="color: #FFFFFF;">${status}: <strong>${area.toFixed(4)}</strong> га</span>
                         </div>`;
                 });
 
                 // Обновляем HTML содержимое
                 document.getElementById('selectionInfo').innerHTML = `
                     <div style="max-height: 300px; overflow-y: auto;">
-                        <div>
-                            <b>Виділено ділянок:</b> ${uniqueFeatures.size}<br>
-                            <div style="margin-top: 3px;">
-                                <b>Загальна площа:</b> ${totalSelectedArea.toFixed(4)} га
+                        <div style="margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Виділено</span>
+                                <span style="background: rgba(16, 185, 129, 0.15); color: #10B981; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600;">${uniqueFeatures.size}</span>
+                            </div>
+                            <div style="color: #FFFFFF; font-size: 18px; font-weight: 700; margin-top: 4px;">
+                                ${totalSelectedArea.toFixed(4)} <span style="font-size: 14px; color: #8E8E93; font-weight: 400;">га</span>
                             </div>
                         </div>
-                        <hr style="margin: 4px 0">
+                        <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 0;"></div>
                         <div>
+                            <div style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Орендарі</div>
                             ${tenantsInfo}
                         </div>
-                        <hr style="margin: 4px 0">
+                        <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 0;"></div>
                         <div>
-                            <strong>Розподіл за статусами:</strong>
+                            <div style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Статуси</div>
                             ${statusInfo}
                         </div>
-                        <div style="margin-top: 3px; font-size: 0.9em; color: #666; text-align: right;">
+                        <div style="margin-top: 10px; font-size: 11px; color: #8E8E93; text-align: right;">
                             Площа частин: ${totalPartsArea.toFixed(4)} га
                         </div>
                     </div>`;
