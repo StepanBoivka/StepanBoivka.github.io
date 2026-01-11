@@ -6509,6 +6509,9 @@ function addPolygonToMap(geoJSON, originalProperties) {
             
             // СЕКЦІЯ: Оренда
             if (tenant || registrationDate || expiryDate) {
+                // Отримуємо колір орендаря з карти
+                const tenantColor = tenant ? getColor(tenant) : '#FFFFFF';
+                
                 popupContent += `
                     <div style="padding: 12px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
@@ -6516,7 +6519,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
                                 <i class="bi bi-file-earmark-text" style="margin-right: 4px;"></i>ОРЕНДА
                             </span>
                         </div>
-                        ${tenant ? `<div style="color: #FFFFFF; font-size: 14px; font-weight: 500; margin-bottom: 8px;">${tenant}</div>` : ''}
+                        ${tenant ? `<div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <span style="display: inline-block; width: 10px; height: 10px; background-color: ${tenantColor}; border-radius: 3px; margin-right: 8px;"></span>
+                            <span style="color: ${tenantColor}; font-size: 14px; font-weight: 600;">${tenant}</span>
+                        </div>` : ''}
                         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                             ${registrationDate ? `
                             <div>
