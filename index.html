@@ -6646,6 +6646,14 @@ function addPolygonToMap(geoJSON, originalProperties) {
         function updateDataFreshnessIndicator(data) {
             const indicator = document.getElementById('dataFreshnessText');
             const icon = document.querySelector('.data-freshness-indicator i');
+            const freshnessContainer = document.querySelector('.data-freshness-indicator');
+            
+            // Якщо елементів немає (наприклад, на мобільних), просто виходимо
+            if (!indicator || !icon || !freshnessContainer) {
+                console.log('Data freshness indicator not found, skipping update');
+                return;
+            }
+            
             const datesInfo = data.features.reduce((acc, f) => {
                 const date = f.properties?.["Дата оновлення"];
                 if (!date) {
@@ -6660,14 +6668,14 @@ function addPolygonToMap(geoJSON, originalProperties) {
             const totalRecords = data.features.length;
             const { dates, noDate } = datesInfo;
             if (dates.length === 0 && noDate === totalRecords) {
-                document.querySelector('.data-freshness-indicator').classList.add('freshness-бад');
+                freshnessContainer.classList.add('freshness-бад');
                 icon.title = `Записів без дати оновлення: ${noDate}`;
                 return;
             }
             if (dates.length === 0 && noDate === 0) {
                 indicator.textContent = 'Немає даних';
                 icon.className = 'bi bi-clock-history text-light me-1';
-                document.querySelector('.data-freshness-indicator').classList.remove('freshness-бад');
+                freshnessContainer.classList.remove('freshness-бад');
                 return;
             }
             const now = new Date();
@@ -6692,10 +6700,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
             } else {
                 text = `Застаріло ${oldPercent}%`;
                 className = 'freshness-бад';
-                document.querySelector('.data-freshness-indicator').classList.add('freshness-бад');
+                freshnessContainer.classList.add('freshness-бад');
             }
             if (className !== 'freshness-бад') {
-                document.querySelector('.data-freshness-indicator').classList.remove('freshness-бад');
+                freshnessContainer.classList.remove('freshness-бад');
             }
             const tooltip = `Актуально (до 1 міс): ${freshPercent}%\n` +
                            `До 2 міс: ${mediumPercent}%\n` +
