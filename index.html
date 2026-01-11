@@ -5299,12 +5299,12 @@ body {
         // Функція для витягування назви шару
         function extractLayerName(layerName) {
             // Перевіряємо чи є площа в назві (для орендарів)
-            if (window.tenantAreas && tenantAreas[layerName]) {
+            if (typeof tenantAreas !== 'undefined' && tenantAreas[layerName]) {
                 return `${layerName} (${tenantAreas[layerName].toFixed(2)} га)`;
             }
             
             // Для вільних від оренди
-            if (layerName === 'вільні від оренди' && window.freeArea) {
+            if (layerName === 'вільні від оренди' && typeof freeArea !== 'undefined' && freeArea > 0) {
                 return `вільні від оренди (${freeArea.toFixed(2)} га)`;
             }
             
