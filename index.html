@@ -5873,20 +5873,14 @@ function addPolygonToMap(geoJSON, originalProperties) {
             return;
         }
         
-        // Обробляємо площу та орендаря (потрібно одразу)
+        // Обробляємо площу та орендаря
         processAreaAndTenant(feature, layer);
         
-        // LAZY POPUP: Створюємо popup тільки при першому кліку (економить пам'ять)
-        let popupCreated = false;
+        // Створюємо popup одразу (потрібно для коректної роботи)
+        createPopupContent(feature, layer);
         
+        // Обробник кліку для виділення
         layer.on('click', function(e) {
-            // Створюємо popup лише один раз
-            if (!popupCreated) {
-                createPopupContent(feature, layer);
-                popupCreated = true;
-            }
-            
-            // Обробка виділення
             if (!e.originalEvent.target.closest('.leaflet-popup')) {
                 toggleFeatureSelection(layer, e);
             }
@@ -7100,43 +7094,8 @@ function processGeoJsonData(data, clearExisting) {
             return true;
         }
 
-        // Debounce функція для оптимізації продуктивності
-        let filterDebounceTimer = null;
-        function debounceFilter(callback, delay = 300) {
-            clearTimeout(filterDebounceTimer);
-            filterDebounceTimer = setTimeout(callback, delay);
-        }
-
-        // Показуємо індикатор завантаження при фільтрації
-        function showFilteringIndicator() {
-            let indicator = document.getElementById('filteringIndicator');
-            if (!indicator) {
-                indicator = document.createElement('div');
-                indicator.id = 'filteringIndicator';
-                indicator.innerHTML = '<i class="bi bi-hourglass-split"></i> Фільтрація...';
-                indicator.style.cssText = 'position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(25, 135, 84, 0.9); color: white; padding: 8px 16px; border-radius: 20px; z-index: 9999; font-size: 14px; display: none;';
-                document.body.appendChild(indicator);
-            }
-            indicator.style.display = 'block';
-        }
-        
-        function hideFilteringIndicator() {
-            const indicator = document.getElementById('filteringIndicator');
-            if (indicator) indicator.style.display = 'none';
-        }
-
-        // Універсальна функція для застосування всіх фільтрів (з debounce)
+        // Універсальна функція для застосування всіх фільтрів
         function applyAllFilters() {
-            showFilteringIndicator();
-            
-            debounceFilter(() => {
-                applyFiltersImmediate();
-                hideFilteringIndicator();
-            }, 200);
-        }
-        
-        // Негайне застосування фільтрів (внутрішня функція)
-        function applyFiltersImmediate() {
             var selectedField = document.getElementById('fieldSelect').value;
             var selectedFile = document.getElementById('fileSelect').value;
             var selectedExpiryYear = document.getElementById('expiryYearSelect').value;
