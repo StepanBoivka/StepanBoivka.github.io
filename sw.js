@@ -1,4 +1,6 @@
-const CACHE_NAME = 'agro-prostir-v3.1-manifest-fix';
+const CACHE_NAME = 'agro-prostir-v4.0-optimized';
+const GEOJSON_CACHE_NAME = 'agro-prostir-geojson-v1';
+
 const urlsToCache = [
   '/',
   '/index.html',
@@ -18,6 +20,8 @@ self.addEventListener('install', event => {
         return cache.addAll(urlsToCache);
       })
   );
+  // Активувати одразу без очікування
+  self.skipWaiting();
 });
 
 // Активація Service Worker
@@ -26,28 +30,63 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
+          // Видаляємо старі кеші, крім поточних
+          if (cacheName !== CACHE_NAME && cacheName !== GEOJSON_CACHE_NAME) {
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
+  // Взяти контроль над сторінками одразу
+  self.clients.claim();
 });
 
-// Fetch подій (обробка запитів)
+// Fetch подій (обробка запитів) - оптимізована стратегія
 self.addEventListener('fetch', event => {
-  // Для всіх запитів - стандартна логіка кешування
+  const url = new URL(event.request.url);
+  
+  // Для GeoJSON файлів - стратегія "Network First, Cache Fallback"
+  // Це забезпечує свіжі дані, але працює офлайн
+  if (url.pathname.endsWith('.geojson') || url.pathname.includes('/data/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // Кешуємо успішну відповідь
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(GEOJSON_CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // При помилці мережі - повертаємо з кешу
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+  
+  // Для статичних ресурсів - стратегія "Cache First, Network Fallback"
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Повертаємо кешовану версію або завантажуємо з мережі
         if (response) {
           return response;
         }
-        return fetch(event.request);
-      }
-    )
+        return fetch(event.request).then(networkResponse => {
+          // Кешуємо нові ресурси
+          if (networkResponse.ok && event.request.method === 'GET') {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return networkResponse;
+        });
+      })
   );
 });
 

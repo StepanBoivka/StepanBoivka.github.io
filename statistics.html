@@ -7,220 +7,871 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
+        :root {
+            --mono-bg: #000000;
+            --mono-surface: #1C1C1E;
+            --mono-surface-2: #2C2C2E;
+            --mono-surface-3: #3A3A3C;
+            --mono-border: rgba(255, 255, 255, 0.08);
+            --mono-text: #FFFFFF;
+            --mono-text-secondary: #8E8E93;
+            --mono-text-muted: #636366;
+            --mono-green: #10B981;
+            --mono-green-bg: rgba(16, 185, 129, 0.15);
+            --mono-red: #EF4444;
+            --mono-red-bg: rgba(239, 68, 68, 0.15);
+            --mono-yellow: #F59E0B;
+            --mono-yellow-bg: rgba(245, 158, 11, 0.15);
+            --mono-blue: #3B82F6;
+            --mono-blue-bg: rgba(59, 130, 246, 0.15);
+            --mono-orange: #F97316;
+            --mono-orange-bg: rgba(249, 115, 22, 0.15);
+            --mono-radius: 12px;
+            --mono-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: var(--mono-bg);
+            color: var(--mono-text);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+        }
+        
+        /* Navbar */
+        .navbar {
+            background: var(--mono-surface) !important;
+            border-bottom: 1px solid var(--mono-border);
+            padding: 12px 0;
+        }
+        
+        .navbar-brand {
+            color: var(--mono-text) !important;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-pdf {
+            background: var(--mono-surface-2);
+            border: 1px solid var(--mono-border);
+            color: var(--mono-text);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .btn-pdf:hover {
+            background: var(--mono-surface-3);
+            color: var(--mono-text);
+        }
+        
+        /* Page title */
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: var(--mono-text);
+        }
+        
+        .page-title span {
+            color: var(--mono-green);
+        }
+        
+        /* Stats Cards */
         .stats-card {
-            background: white;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
-            margin-bottom: 1rem;
+            background: var(--mono-surface);
+            border-radius: var(--mono-radius);
+            padding: 20px;
+            border: 1px solid var(--mono-border);
+            height: 100%;
         }
+        
+        .stats-card-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--mono-text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
         .stats-value {
-            font-size: 1.25rem;
-            font-weight: bold;
-            margin-top: 0.375rem;
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-top: 8px;
         }
-        .stats-label {
-            color: #6c757d;
-            font-size: 0.875rem;
+        
+        .stats-value-unit {
+            font-size: 16px;
+            font-weight: 400;
+            color: var(--mono-text-secondary);
+            margin-left: 4px;
         }
+        
+        .stats-subtitle {
+            font-size: 13px;
+            color: var(--mono-text-secondary);
+            margin-top: 4px;
+        }
+        
+        /* Section */
+        .section {
+            background: var(--mono-surface);
+            border-radius: var(--mono-radius);
+            border: 1px solid var(--mono-border);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--mono-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title i {
+            color: var(--mono-green);
+        }
+        
+        .section-body {
+            padding: 20px;
+        }
+        
+        /* Tables */
         .data-table {
             width: 100%;
-        }
-        .year-expired { color: var(--bs-danger); }
-        .year-current { color: var(--bs-warning); }
-        .year-future { color: var(--bs-success); }
-        
-        .matrix-table {
             border-collapse: collapse;
-            width: 100%;
         }
-        .matrix-table th:not(.sticky-col),
-        .matrix-table td:not(.sticky-col) {
-            padding: 0.5rem;
+        
+        .data-table th {
+            background: var(--mono-surface-2);
+            color: var(--mono-text-secondary);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--mono-border);
+        }
+        
+        .data-table th.text-end {
             text-align: right;
         }
-        .matrix-table .sticky-col {
+        
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--mono-border);
+            font-size: 14px;
+            color: var(--mono-text);
+        }
+        
+        .data-table td.text-end {
+            text-align: right;
+        }
+        
+        .data-table tbody tr:hover {
+            background: var(--mono-surface-2);
+        }
+        
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .data-table .total-row {
+            background: var(--mono-surface-2);
+            font-weight: 600;
+        }
+        
+        .data-table .total-row td {
+            border-top: 2px solid var(--mono-border);
+        }
+        
+        /* Year colors */
+        .year-expired { color: var(--mono-red); }
+        .year-current { color: var(--mono-yellow); }
+        .year-future { color: var(--mono-green); }
+        
+        /* Progress bar */
+        .progress-bar-container {
+            position: relative;
+            height: 24px;
+            background: var(--mono-surface-2);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            display: flex;
+        }
+        
+        .progress-bar-segment {
+            height: 100%;
+            transition: width 0.3s;
+        }
+        
+        .progress-bar-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--mono-text);
+        }
+        
+        /* Tenant color indicator */
+        .tenant-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        /* Potential card */
+        .potential-card {
+            background: linear-gradient(135deg, var(--mono-surface) 0%, var(--mono-surface-2) 100%);
+            border: 1px solid var(--mono-green);
+            border-radius: var(--mono-radius);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .potential-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .potential-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--mono-green-bg);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--mono-green);
+        }
+        
+        .potential-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .potential-subtitle {
+            font-size: 13px;
+            color: var(--mono-text-secondary);
+        }
+        
+        .potential-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+        
+        .potential-item {
+            background: var(--mono-surface);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid var(--mono-border);
+            text-align: center;
+        }
+        
+        .potential-item-label {
+            font-size: 12px;
+            color: var(--mono-text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .potential-item-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .potential-item-detail {
+            font-size: 13px;
+            color: var(--mono-text-secondary);
+        }
+        
+        /* Risk indicator */
+        .risk-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--mono-surface-2);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .risk-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--mono-surface-3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .risk-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+        
+        .risk-percent {
+            font-size: 14px;
+            font-weight: 600;
+            min-width: 50px;
+            text-align: right;
+        }
+        
+        /* Matrix table */
+        .matrix-table th.sticky-col,
+        .matrix-table td.sticky-col {
             position: sticky;
             left: 0;
-            background-color: white;
+            background-color: var(--mono-surface);
             z-index: 10;
-            border-right: 2px solid #dee2e6;
-            min-width: 200px;
+            border-right: 2px solid var(--mono-border);
+            min-width: 180px;
         }
+        
         .matrix-table thead th.sticky-col {
-            background-color: #f8f9fa;
+            background-color: var(--mono-surface-2);
         }
-        .matrix-total-row {
-            font-weight: 600;
-            background-color: #f8f9fa;
+        
+        .matrix-cell-highlight {
+            background: var(--mono-yellow-bg) !important;
         }
-        .percentage-bar {
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            background-color: var(--bs-primary);
-            opacity: 0.1;
-            z-index: 0;
+        
+        /* Filter input */
+        .filter-input {
+            background: var(--mono-surface-2);
+            border: 1px solid var(--mono-border);
+            color: var(--mono-text);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            width: 80px;
         }
-        .percentage-text {
+        
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--mono-green);
+        }
+        
+        .filter-btn {
+            background: var(--mono-green);
+            border: none;
+            color: var(--mono-bg);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--mono-surface);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--mono-surface-3);
+            border-radius: 4px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .stats-value {
+                font-size: 24px;
+            }
+            
+            .potential-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .section-body {
+                padding: 12px;
+            }
+            
+            .data-table td, .data-table th {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+            
+            .page-title {
+                font-size: 22px;
+            }
+        }
+        
+        /* Chart container */
+        .chart-container {
             position: relative;
-            z-index: 1;
+            height: 300px;
+            width: 100%;
         }
-
+        
+        /* Alerts/Notifications */
+        .alert-card {
+            background: var(--mono-surface);
+            border-radius: var(--mono-radius);
+            border: 1px solid var(--mono-border);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        
+        .alert-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--mono-border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .alert-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .alert-icon.warning {
+            background: var(--mono-orange-bg);
+            color: var(--mono-orange);
+        }
+        
+        .alert-icon.danger {
+            background: var(--mono-red-bg);
+            color: var(--mono-red);
+        }
+        
+        .alert-icon.info {
+            background: var(--mono-blue-bg);
+            color: var(--mono-blue);
+        }
+        
+        .alert-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .alert-subtitle {
+            font-size: 13px;
+            color: var(--mono-text-secondary);
+        }
+        
+        .alert-body {
+            padding: 16px 20px;
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--mono-surface-2);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .alert-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .alert-item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .alert-badge.red {
+            background: var(--mono-red-bg);
+            color: var(--mono-red);
+        }
+        
+        .alert-badge.orange {
+            background: var(--mono-orange-bg);
+            color: var(--mono-orange);
+        }
+        
+        .alert-badge.yellow {
+            background: var(--mono-yellow-bg);
+            color: var(--mono-yellow);
+        }
+        
+        /* Export buttons */
+        .export-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-export {
+            background: var(--mono-surface-2);
+            border: 1px solid var(--mono-border);
+            color: var(--mono-text);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 14px;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-export:hover {
+            background: var(--mono-surface-3);
+        }
+        
+        .btn-export.excel {
+            border-color: #10B981;
+        }
+        
+        .btn-export.excel:hover {
+            background: rgba(16, 185, 129, 0.15);
+        }
+        
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 0.3cm;
+                margin: 0.5cm;
             }
-            .btn-print {
+            
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            
+            .btn-pdf, .btn-export, .navbar, .export-buttons {
                 display: none !important;
             }
+            
+            .stats-card, .section, .potential-card, .alert-card {
+                background: white !important;
+                border: 1px solid #ddd !important;
+                color: black !important;
+            }
+            
+            .chart-container {
+                height: 250px !important;
+            }
+            
             .page-break {
                 page-break-before: always;
             }
         }
     </style>
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-dark bg-dark">
+<body>
+    <nav class="navbar">
         <div class="container">
             <a class="navbar-brand" href="#" onclick="goBack(); return false;">
-                <i class="bi bi-arrow-left me-2"></i>Повернутися на карту
+                <i class="bi bi-arrow-left"></i>
+                Повернутися на карту
             </a>
-            <button class="btn btn-outline-light btn-print" onclick="generatePDF()">
-                <i class="bi bi-file-pdf me-2"></i>Зберегти PDF
-            </button>
+            <div class="export-buttons">
+                <button class="btn-export excel" onclick="exportToExcel()">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    <span class="d-none d-sm-inline">Excel</span>
+                </button>
+                <button class="btn-export" onclick="generatePDF()">
+                    <i class="bi bi-file-pdf"></i>
+                    <span class="d-none d-sm-inline">PDF</span>
+                </button>
+            </div>
         </div>
     </nav>
 
     <div class="container py-4">
-        <h1 class="mb-4">Статистика по раді: <span id="councilName">Не вибрано</span></h1>
+        <h1 class="page-title">Статистика: <span id="councilName">Завантаження...</span></h1>
+
+        <!-- Сповіщення про договори -->
+        <div class="alert-card" id="alertsCard" style="display: none;">
+            <div class="alert-header">
+                <div class="alert-icon warning">
+                    <i class="bi bi-bell"></i>
+                </div>
+                <div>
+                    <div class="alert-title">Увага! Потрібна дія</div>
+                    <div class="alert-subtitle">Договори, які потребують уваги найближчим часом</div>
+                </div>
+            </div>
+            <div class="alert-body" id="alertsBody">
+                <!-- Заповнюється динамічно -->
+            </div>
+        </div>
+
+        <!-- Потенціал для нових договорів -->
+        <div class="potential-card" id="potentialCard">
+            <div class="potential-header">
+                <div class="potential-icon">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div>
+                    <div class="potential-title">Потенціал для нових договорів</div>
+                    <div class="potential-subtitle">Ділянки, які можна взяти в оренду зараз або найближчим часом</div>
+                </div>
+            </div>
+            <div class="potential-grid" id="potentialGrid">
+                <!-- Заповнюється динамічно -->
+            </div>
+        </div>
+
+        <!-- Графіки -->
+        <div class="row mb-4 g-3">
+            <div class="col-lg-6">
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="bi bi-bar-chart"></i>
+                            Динаміка реєстрації договорів
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="chart-container">
+                            <canvas id="registrationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="bi bi-pie-chart"></i>
+                            Розподіл площі по орендарях
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="chart-container">
+                            <canvas id="tenantsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Загальна статистика -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="stats-card h-100">
-                    <div class="d-flex flex-column gap-3">
-                        <div>
-                            <div class="stats-label">Загальна площа</div>
-                            <div class="stats-value text-primary" id="totalArea">0 га</div>
-                        </div>
-                        <div class="border-top pt-2">
-                            <div class="stats-label">Кількість ділянок</div>
-                            <div class="stats-value text-primary" id="totalParcels">0</div>
-                        </div>
+        <div class="row mb-4 g-3">
+            <div class="col-md-3 col-6">
+                <div class="stats-card">
+                    <div class="stats-card-title">
+                        <i class="bi bi-geo-alt"></i> Загальна площа
                     </div>
+                    <div class="stats-value" id="totalArea">0<span class="stats-value-unit">га</span></div>
+                    <div class="stats-subtitle"><span id="totalParcels">0</span> ділянок</div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="stats-card h-100">
-                    <div class="d-flex flex-column gap-3">
-                        <div>
-                            <div class="stats-label">Площа вільних від оренди</div>
-                            <div class="stats-value text-warning" id="freeArea">0 га</div>
-                        </div>
-                        <div class="border-top pt-2">
-                            <div class="stats-label">Кількість вільних ділянок</div>
-                            <div class="stats-value text-warning" id="freeParcels">0</div>
-                        </div>
+            <div class="col-md-3 col-6">
+                <div class="stats-card">
+                    <div class="stats-card-title">
+                        <i class="bi bi-unlock"></i> Вільні від оренди
                     </div>
+                    <div class="stats-value" style="color: var(--mono-yellow);" id="freeArea">0<span class="stats-value-unit">га</span></div>
+                    <div class="stats-subtitle"><span id="freeParcels">0</span> ділянок</div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="stats-card h-100">
-                    <div class="d-flex flex-column gap-3">
-                        <div>
-                            <div class="stats-label">Кількість орендарів</div>
-                            <div class="stats-value text-secondary" id="tenantsCount">0</div>
-                        </div>
-                        <div class="border-top pt-2">
-                            <div class="stats-label">Кількість власників</div>
-                            <div class="stats-value text-secondary" id="ownersCount">0</div>
-                        </div>
+            <div class="col-md-3 col-6">
+                <div class="stats-card">
+                    <div class="stats-card-title">
+                        <i class="bi bi-people"></i> Орендарі
                     </div>
+                    <div class="stats-value" style="color: var(--mono-blue);" id="tenantsCount">0</div>
+                    <div class="stats-subtitle">активних компаній</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stats-card">
+                    <div class="stats-card-title">
+                        <i class="bi bi-cash-stack"></i> НГО
+                    </div>
+                    <div class="stats-value" style="color: var(--mono-green);" id="totalNGO">0<span class="stats-value-unit">грн</span></div>
+                    <div class="stats-subtitle">нормативна оцінка</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Концентрація орендарів -->
+        <div class="section mb-4">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="bi bi-pie-chart"></i>
+                    Концентрація орендарів (топ-5)
+                </div>
+            </div>
+            <div class="section-body" id="concentrationBody">
+            </div>
+        </div>
+
+        <!-- Прогноз завершення договорів -->
+        <div class="section mb-4">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="bi bi-calendar-event"></i>
+                    Прогноз завершення договорів (5 років)
+                </div>
+            </div>
+            <div class="section-body">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Рік</th>
+                                <th class="text-end">Договорів</th>
+                                <th class="text-end">Площа (га)</th>
+                                <th class="text-end">% від орендованої</th>
+                                <th style="width: 30%;">Розподіл</th>
+                            </tr>
+                        </thead>
+                        <tbody id="forecastTableBody"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
         <!-- Статистика реєстрації -->
-        <div class="stats-card mb-4">
-            <h3 class="table-title">Статистика реєстрації договорів по роках</h3>
-            <div class="table-responsive">
-                <table class="table table-bordered data-table">
-                    <thead>
-                        <tr>
-                            <th class="text-start">Рік</th>
-                            <th class="text-end">Всього договорів</th>
-                            <th class="text-end">Загальна площа (га)</th>
-                            <th class="text-end">Активні договори / Площа (га)</th>
-                            <th class="text-end">Неактивні договори / Площа (га)</th>
-                            <th class="text-end" style="width: 30%;">Розподіл</th>
-                        </tr>
-                    </thead>
-                    <tbody id="registrationTableBody"></tbody>
-                </table>
+        <div class="section mb-4 page-break">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="bi bi-graph-up"></i>
+                    Статистика реєстрації договорів
+                </div>
+            </div>
+            <div class="section-body">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Рік</th>
+                                <th class="text-end">Всього</th>
+                                <th class="text-end">Площа (га)</th>
+                                <th class="text-end">Активні / Площа</th>
+                                <th class="text-end">Неактивні / Площа</th>
+                                <th style="width: 25%;">Розподіл</th>
+                            </tr>
+                        </thead>
+                        <tbody id="registrationTableBody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <!-- Таблиця орендарів -->
-        <div class="stats-card mb-4 page-break">
-            <h3 class="table-title">Інформація по орендарях</h3>
-            <div class="table-responsive">
-                <table class="table table-bordered data-table">
-                    <thead>
-                        <tr>
-                            <th class="text-start">Орендар</th>
-                            <th class="text-end">Кількість ділянок</th>
-                            <th class="text-end">Загальна площа (га)</th>
-                            <th class="text-end">% від загальної площі</th>
-                            <th class="text-end">Середня площа ділянки (га)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detailsTableBody"></tbody>
-                </table>
+        <div class="section mb-4">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="bi bi-building"></i>
+                    Орендарі
+                </div>
+            </div>
+            <div class="section-body">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Орендар</th>
+                                <th class="text-end">Ділянок</th>
+                                <th class="text-end">Площа (га)</th>
+                                <th class="text-end">% площі</th>
+                                <th class="text-end">Сер. площа</th>
+                                <th class="text-end">НГО (грн)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tenantsTableBody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <!-- Таблиця власників -->
-        <div class="stats-card mb-4 page-break">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="table-title mb-0">Інформація по власниках</h3>
-                <div class="d-flex align-items-center">
-                    <span class="me-2">Показати власників з кількістю ділянок більше:</span>
-                    <div class="input-group" style="width: 150px;">
-                        <input type="number" class="form-control form-control-sm" id="minParcelsFilter" value="5" min="1">
-                        <button class="btn btn-outline-primary btn-sm" onclick="updateOwnersTable()">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                    </div>
+        <div class="section mb-4 page-break">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="bi bi-person"></i>
+                    Власники
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 13px; color: var(--mono-text-secondary);">Мін. ділянок:</span>
+                    <input type="number" class="filter-input" id="minParcelsFilter" value="3" min="1">
+                    <button class="filter-btn" onclick="updateOwnersTable()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
                 </div>
             </div>
-            <div class="table-responsive">
-                <table class="table table-bordered data-table">
-                    <thead>
-                        <tr>
-                            <th class="text-start">Власник</th>
-                            <th class="text-end">Кількість ділянок</th>
-                            <th class="text-end">Загальна площа (га)</th>
-                            <th class="text-end">Середня площа ділянки (га)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ownersTableBody"></tbody>
-                </table>
+            <div class="section-body">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Власник</th>
+                                <th class="text-end">Ділянок</th>
+                                <th class="text-end">Площа (га)</th>
+                                <th class="text-end">Сер. площа</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ownersTableBody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- Матрична таблиця договорів -->
-        <div class="stats-card matrix-container page-break">
-            <h3 class="table-title">Завершення договорів оренди</h3>
-            <div class="matrix-wrapper">
+        <!-- Матрична таблиця завершення -->
+        <div class="section page-break">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="bi bi-table"></i>
+                    Матриця завершення договорів
+                </div>
+            </div>
+            <div class="section-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered data-table matrix-table">
+                    <table class="data-table matrix-table">
                         <thead>
-                            <tr>
-                                <th class="text-start sticky-col">Орендар</th>
+                            <tr id="matrixHeader">
+                                <th class="sticky-col">Орендар</th>
                             </tr>
                         </thead>
                         <tbody id="matrixTableBody"></tbody>
@@ -229,26 +880,38 @@
             </div>
         </div>
     </div>
+
     <script>
-        // Функція для отримання client ID з URL або localStorage
+        // Tenant colors
+        const tenantColors = {};
+        const colorPalette = [
+            '#1B9688', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5',
+            '#2196F3', '#00BCD4', '#009688', '#4CAF50', '#8BC34A',
+            '#CDDC39', '#FFC107', '#FF9800', '#FF5722', '#795548'
+        ];
+        let colorIndex = 0;
+        
+        function getColor(tenant) {
+            if (!tenant) return '#3A3A3C';
+            if (!tenantColors[tenant]) {
+                tenantColors[tenant] = colorPalette[colorIndex % colorPalette.length];
+                colorIndex++;
+            }
+            return tenantColors[tenant];
+        }
+
         function getClientId() {
             const urlParams = new URLSearchParams(window.location.search);
             let id = urlParams.get('id');
-            
-            // Якщо id немає в URL, спробуємо отримати з localStorage
             if (!id) {
                 const storedId = localStorage.getItem('client_id');
                 if (storedId) {
                     id = storedId;
-                    console.log('Client ID відновлено з localStorage в statistics.html:', id);
-                    
-                    // Оновлюємо URL без перезавантаження сторінки
                     const currentUrl = new URL(window.location);
                     currentUrl.searchParams.set('id', id);
                     window.history.replaceState({}, '', currentUrl);
                 }
             }
-            
             return id;
         }
 
@@ -256,111 +919,74 @@
         const selectedFile = urlParams.get('file');
         const id = getClientId();
         const councilName = selectedFile ? selectedFile.replace('.geojson', '') : 'Не вибрано';
-        document.getElementById('councilName').textContent = councilName;
-
         const dataPath = id ? `data/${id}/` : 'data/';
+
+        let globalStats = null;
+        const currentYear = new Date().getFullYear();
+
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toFixed(0);
+        }
 
         function generatePDF() {
             const opt = {
                 margin: 0.5,
                 filename: `Статистика_${councilName}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2,
-                    useCORS: true,
-                    letterRendering: true,
-                    scrollY: -window.scrollY,
-                    windowWidth: document.documentElement.clientWidth,
-                    windowHeight: document.documentElement.clientHeight,
-                    logging: true
-                },
+                html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'cm', format: 'a4', orientation: 'landscape' },
-                pagebreak: { 
-                    mode: ['avoid-all', 'css', 'legacy'],
-                    before: '.page-break',
-                    avoid: ['.matrix-table', '.matrix-table thead', '.matrix-table tbody', '.matrix-wrapper']
-                }
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break' }
             };
-
-            const style = document.createElement('style');
-            style.textContent = `
-                @media print {
-                    .matrix-table { page-break-inside: avoid !important; }
-                    .matrix-wrapper { page-break-inside: avoid !important; }
-                    .matrix-table thead { display: table-header-group !important; }
-                    .matrix-table tbody { display: table-row-group !important; }
-                }
-            `;
-            document.head.appendChild(style);
-
-            html2pdf().set(opt).from(document.body).save()
-                .then(() => {
-                    console.log('PDF generated successfully');
-                    document.head.removeChild(style);
-                })
-                .catch(err => {
-                    console.error('Error generating PDF:', err);
-                    alert('Помилка при генерації PDF. Спробуйте ще раз.');
-                    document.head.removeChild(style);
-                });
+            html2pdf().set(opt).from(document.body).save();
         }
 
         async function loadAndProcessData() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const selectedFile = urlParams.get('file');
-            
             if (!selectedFile) {
-                console.error('Файл не вибрано');
+                document.getElementById('councilName').textContent = 'Файл не вибрано';
                 return;
             }
-        
+
             try {
-                // Показуємо індикатор завантаження
                 document.getElementById('councilName').textContent = 'Завантаження...';
-                
                 const response = await fetch(`${dataPath}${selectedFile}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
                 const data = await response.json();
+                document.getElementById('councilName').textContent = councilName;
                 
-                // Оновлюємо назву після успішного завантаження
-                document.getElementById('councilName').textContent = selectedFile.replace('.geojson', '');
-                
-                // Фільтруємо тільки оригінальні записи
                 data.features = data.features.filter(f => f.properties.type === 'original');
                 processData(data);
             } catch (error) {
-                console.error('Помилка завантаження даних:', error);
+                console.error('Помилка:', error);
                 document.getElementById('councilName').textContent = 'Помилка завантаження';
-                alert('Помилка завантаження даних. Спробуйте ще раз.');
             }
         }
 
         function processData(data) {
-            if (!data.features || !Array.isArray(data.features)) {
-                console.error('Некоректний формат даних');
-                return;
-            }
-
             const features = data.features;
             const uniqueOwners = new Set();
             
             const stats = features.reduce((acc, feature) => {
-                const area = parseFloat(feature.properties['Площа розрахована'] || 0);
-                const tenant = feature.properties['Орендар'];
-                const owner = feature.properties['Власник'];
-                const expiryYear = feature.properties['Рік завершення'];
-                const registrationDate = feature.properties['Дата реєстрації'];
+                const props = feature.properties;
+                const area = parseFloat(props['Площа розрахована'] || props['Площа ДЗК'] || 0);
+                const tenant = props['Орендар'];
+                const owner = props['Власник'];
+                const expiryYear = props['Рік завершення'];
+                const registrationDate = props['Дата реєстрації'];
+                const ngo = parseFloat(String(props['НГО'] || '0').replace(/\s/g, '')) || 0;
 
-                // Загальна статистика
                 acc.totalArea += area;
                 acc.totalParcels++;
+                acc.totalNGO += ngo;
                 
                 if (!tenant) {
                     acc.freeParcels++;
                     acc.freeArea += area;
+                    acc.freeNGO += ngo;
+                } else {
+                    acc.rentedArea += area;
                 }
 
                 if (owner && owner.trim() !== '') {
@@ -369,34 +995,13 @@
 
                 // Статистика реєстрації
                 if (registrationDate) {
-                    let year;
-                    if (registrationDate.includes('.')) {
-                        year = parseInt(registrationDate.split('.')[2]);
-                    } else if (registrationDate.includes('/')) {
-                        year = parseInt(registrationDate.split('/')[2]);
-                    } else if (registrationDate.length === 4) {
-                        year = parseInt(registrationDate);
-                    } else {
-                        const match = registrationDate.match(/\d{4}/);
-                        if (match) {
-                            year = parseInt(match[0]);
-                        }
-                    }
-
-                    if (!isNaN(year) && year > 1990 && year <= new Date().getFullYear()) {
+                    let year = extractYear(registrationDate);
+                    if (year && year > 1990 && year <= currentYear) {
                         if (!acc.registrationYears[year]) {
-                            acc.registrationYears[year] = {
-                                total: 0,
-                                totalArea: 0,
-                                active: 0,
-                                activeArea: 0,
-                                inactive: 0,
-                                inactiveArea: 0
-                            };
+                            acc.registrationYears[year] = { total: 0, totalArea: 0, active: 0, activeArea: 0, inactive: 0, inactiveArea: 0 };
                         }
                         acc.registrationYears[year].total++;
                         acc.registrationYears[year].totalArea += area;
-
                         if (tenant) {
                             acc.registrationYears[year].active++;
                             acc.registrationYears[year].activeArea += area;
@@ -410,22 +1015,17 @@
                 // Статистика по орендарях
                 if (tenant) {
                     if (!acc.tenants[tenant]) {
-                        acc.tenants[tenant] = {
-                            count: 0,
-                            area: 0
-                        };
+                        acc.tenants[tenant] = { count: 0, area: 0, ngo: 0 };
                     }
                     acc.tenants[tenant].count++;
                     acc.tenants[tenant].area += area;
+                    acc.tenants[tenant].ngo += ngo;
                 }
 
                 // Статистика по власниках
                 if (owner) {
                     if (!acc.owners[owner]) {
-                        acc.owners[owner] = {
-                            count: 0,
-                            area: 0
-                        };
+                        acc.owners[owner] = { count: 0, area: 0 };
                     }
                     acc.owners[owner].count++;
                     acc.owners[owner].area += area;
@@ -436,17 +1036,10 @@
                     const year = parseInt(expiryYear);
                     if (!isNaN(year)) {
                         if (!acc.expiryYears[year]) {
-                            acc.expiryYears[year] = {
-                                count: 0,
-                                area: 0,
-                                tenants: {}
-                            };
+                            acc.expiryYears[year] = { count: 0, area: 0, tenants: {} };
                         }
                         if (!acc.expiryYears[year].tenants[tenant]) {
-                            acc.expiryYears[year].tenants[tenant] = {
-                                count: 0,
-                                area: 0
-                            };
+                            acc.expiryYears[year].tenants[tenant] = { count: 0, area: 0 };
                         }
                         acc.expiryYears[year].count++;
                         acc.expiryYears[year].area += area;
@@ -457,270 +1050,696 @@
 
                 return acc;
             }, {
-                totalArea: 0,
-                totalParcels: 0,
-                freeParcels: 0,
-                freeArea: 0,
-                tenants: {},
-                owners: {},
-                expiryYears: {},
-                registrationYears: {}
+                totalArea: 0, totalParcels: 0, freeParcels: 0, freeArea: 0, freeNGO: 0,
+                rentedArea: 0, totalNGO: 0, tenants: {}, owners: {}, expiryYears: {}, registrationYears: {}
             });
 
             stats.uniqueOwnersCount = uniqueOwners.size;
+            globalStats = stats;
             updateUI(stats);
         }
 
-        // Функції оновлення UI залишаються без змін
-        let globalStats = null; // Додаємо глобальну змінну для зберігання статистики
+        function extractYear(dateStr) {
+            if (!dateStr) return null;
+            if (dateStr.includes('.')) return parseInt(dateStr.split('.')[2]);
+            if (dateStr.includes('/')) return parseInt(dateStr.split('/')[2]);
+            if (dateStr.length === 4) return parseInt(dateStr);
+            const match = dateStr.match(/\d{4}/);
+            return match ? parseInt(match[0]) : null;
+        }
 
         function updateUI(stats) {
-            globalStats = stats; // Зберігаємо статистику глобально
-            document.getElementById('totalArea').textContent = `${stats.totalArea.toFixed(2)} га`;
+            document.getElementById('totalArea').innerHTML = `${stats.totalArea.toFixed(0)}<span class="stats-value-unit">га</span>`;
             document.getElementById('totalParcels').textContent = stats.totalParcels;
+            document.getElementById('freeArea').innerHTML = `${stats.freeArea.toFixed(0)}<span class="stats-value-unit">га</span>`;
             document.getElementById('freeParcels').textContent = stats.freeParcels;
-            document.getElementById('freeArea').textContent = `${stats.freeArea.toFixed(2)} га`;
             document.getElementById('tenantsCount').textContent = Object.keys(stats.tenants).length;
-            document.getElementById('ownersCount').textContent = stats.uniqueOwnersCount;
+            document.getElementById('totalNGO').innerHTML = `${formatNumber(stats.totalNGO)}<span class="stats-value-unit">грн</span>`;
 
+            updateAlerts(stats, null);
+            updatePotentialCard(stats);
+            updateConcentration(stats);
+            updateForecastTable(stats);
             updateRegistrationTable(stats.registrationYears);
-            updateDetailsTable(stats.tenants, 'detailsTableBody', stats.totalArea);
-            updateOwnersTable(); // Змінюємо на нову функцію
+            updateTenantsTable(stats);
+            updateOwnersTable();
             updateMatrixTable(stats.expiryYears, stats.tenants);
+            updateRegistrationChart(stats.registrationYears);
+            updateTenantsChart(stats.tenants, stats.totalArea);
+        }
+
+        function updatePotentialCard(stats) {
+            const grid = document.getElementById('potentialGrid');
+            let html = '';
+            
+            html += `
+                <div class="potential-item">
+                    <div class="potential-item-label">🟢 Вільні зараз</div>
+                    <div class="potential-item-value" style="color: var(--mono-green);">${stats.freeParcels}</div>
+                    <div class="potential-item-detail">${stats.freeArea.toFixed(1)} га</div>
+                </div>`;
+            
+            let cumulativeCount = stats.freeParcels;
+            let cumulativeArea = stats.freeArea;
+            
+            // Прострочені
+            let expiredCount = 0, expiredArea = 0;
+            Object.entries(stats.expiryYears).forEach(([year, data]) => {
+                if (parseInt(year) < currentYear) {
+                    expiredCount += data.count;
+                    expiredArea += data.area;
+                }
+            });
+            
+            if (expiredCount > 0) {
+                cumulativeCount += expiredCount;
+                cumulativeArea += expiredArea;
+                html += `
+                    <div class="potential-item">
+                        <div class="potential-item-label">🔴 Прострочені</div>
+                        <div class="potential-item-value" style="color: var(--mono-red);">${expiredCount}</div>
+                        <div class="potential-item-detail">${expiredArea.toFixed(1)} га</div>
+                    </div>`;
+            }
+            
+            for (let year = currentYear; year <= currentYear + 2; year++) {
+                const yearData = stats.expiryYears[year] || { count: 0, area: 0 };
+                cumulativeCount += yearData.count;
+                cumulativeArea += yearData.area;
+                
+                const isCurrent = year === currentYear;
+                const color = isCurrent ? 'var(--mono-yellow)' : 'var(--mono-text)';
+                const icon = isCurrent ? '🟡' : '📅';
+                
+                html += `
+                    <div class="potential-item">
+                        <div class="potential-item-label">${icon} ${isCurrent ? 'Цього року' : year}</div>
+                        <div class="potential-item-value" style="color: ${color};">${yearData.count}</div>
+                        <div class="potential-item-detail">${yearData.area.toFixed(1)} га</div>
+                    </div>`;
+            }
+            
+            html += `
+                <div class="potential-item" style="border-color: var(--mono-green);">
+                    <div class="potential-item-label">🎯 Всього потенціал</div>
+                    <div class="potential-item-value" style="color: var(--mono-green);">${cumulativeCount}</div>
+                    <div class="potential-item-detail">${cumulativeArea.toFixed(1)} га</div>
+                </div>`;
+            
+            grid.innerHTML = html;
+        }
+
+        function updateConcentration(stats) {
+            const container = document.getElementById('concentrationBody');
+            const sorted = Object.entries(stats.tenants).sort((a, b) => b[1].area - a[1].area).slice(0, 5);
+            
+            let html = '';
+            sorted.forEach(([tenant, data]) => {
+                const percent = stats.rentedArea > 0 ? (data.area / stats.rentedArea * 100).toFixed(1) : 0;
+                const color = getColor(tenant);
+                
+                html += `
+                    <div class="risk-indicator">
+                        <span class="tenant-indicator" style="background-color: ${color};"></span>
+                        <span style="flex: 1; font-size: 14px; color: ${color};">${tenant}</span>
+                        <div class="risk-bar">
+                            <div class="risk-bar-fill" style="width: ${percent}%; background-color: ${color};"></div>
+                        </div>
+                        <span class="risk-percent">${percent}%</span>
+                    </div>`;
+            });
+            
+            container.innerHTML = html || '<p style="color: var(--mono-text-secondary);">Немає даних</p>';
+        }
+
+        function updateForecastTable(stats) {
+            const tbody = document.getElementById('forecastTableBody');
+            let html = '';
+            let totalCount = 0, totalArea = 0;
+            
+            // Прострочені
+            let expiredCount = 0, expiredArea = 0;
+            Object.entries(stats.expiryYears).forEach(([year, data]) => {
+                if (parseInt(year) < currentYear) {
+                    expiredCount += data.count;
+                    expiredArea += data.area;
+                }
+            });
+            
+            if (expiredCount > 0) {
+                const percent = stats.rentedArea > 0 ? (expiredArea / stats.rentedArea * 100).toFixed(1) : 0;
+                html += `
+                    <tr>
+                        <td class="year-expired">⚠️ Прострочені</td>
+                        <td class="text-end">${expiredCount}</td>
+                        <td class="text-end">${expiredArea.toFixed(1)}</td>
+                        <td class="text-end">${percent}%</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill">
+                                    <div class="progress-bar-segment" style="width: ${percent}%; background: var(--mono-red);"></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                totalCount += expiredCount;
+                totalArea += expiredArea;
+            }
+            
+            for (let year = currentYear; year <= currentYear + 5; year++) {
+                const yearData = stats.expiryYears[year] || { count: 0, area: 0 };
+                const percent = stats.rentedArea > 0 ? (yearData.area / stats.rentedArea * 100).toFixed(1) : 0;
+                
+                totalCount += yearData.count;
+                totalArea += yearData.area;
+                
+                const yearClass = year === currentYear ? 'year-current' : 'year-future';
+                const barColor = year === currentYear ? 'var(--mono-yellow)' : 'var(--mono-green)';
+                
+                html += `
+                    <tr>
+                        <td class="${yearClass}">${year}</td>
+                        <td class="text-end">${yearData.count}</td>
+                        <td class="text-end">${yearData.area.toFixed(1)}</td>
+                        <td class="text-end">${percent}%</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill">
+                                    <div class="progress-bar-segment" style="width: ${percent}%; background: ${barColor};"></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+            }
+            
+            const totalPercent = stats.rentedArea > 0 ? (totalArea / stats.rentedArea * 100).toFixed(1) : 0;
+            html += `
+                <tr class="total-row">
+                    <td>Всього</td>
+                    <td class="text-end">${totalCount}</td>
+                    <td class="text-end">${totalArea.toFixed(1)}</td>
+                    <td class="text-end">${totalPercent}%</td>
+                    <td></td>
+                </tr>`;
+            
+            tbody.innerHTML = html;
         }
 
         function updateRegistrationTable(registrationYears) {
-    const tbody = document.getElementById('registrationTableBody');
-    tbody.innerHTML = '';
-
-    const years = Object.keys(registrationYears).sort((a, b) => a - b);
-    const currentYear = new Date().getFullYear();
-
-    let totalRegistered = 0;
-    let totalArea = 0;
-    let totalActive = 0;
-    let totalActiveArea = 0;
-    let totalInactive = 0;
-    let totalInactiveArea = 0;
-
-    years.forEach(year => {
-        const yearData = registrationYears[year];
-        totalRegistered += yearData.total;
-        totalArea += yearData.totalArea;
-        totalActive += yearData.active;
-        totalActiveArea += yearData.activeArea;
-        totalInactive += yearData.inactive;
-        totalInactiveArea += yearData.inactiveArea;
-        
-        const row = document.createElement('tr');
-        
-        const activePercentage = ((yearData.active / yearData.total) * 100).toFixed(1);
-        const inactivePercentage = ((yearData.inactive / yearData.total) * 100).toFixed(1);
-
-        let yearClass = 'year-future';
-        if (parseInt(year) < currentYear) {
-            yearClass = 'year-expired';
-        } else if (parseInt(year) === currentYear) {
-            yearClass = 'year-current';
-        }
-
-        row.innerHTML = `
-            <td class="${yearClass}">${year}</td>
-            <td class="text-end">${yearData.total}</td>
-            <td class="text-end">${yearData.totalArea.toFixed(2)}</td>
-            <td class="text-end">${yearData.active} / ${yearData.activeArea.toFixed(2)}</td>
-            <td class="text-end">${yearData.inactive} / ${yearData.inactiveArea.toFixed(2)}</td>
-            <td class="text-end position-relative">
-                <div style="display: flex; height: 100%; width: 100%; position: absolute; left: 0; top: 0;">
-                    ${yearData.active > 0 ? `
-                        <div style="width: ${activePercentage}%; background-color: #10B981; opacity: 0.3;"></div>
-                    ` : ''}
-                    ${yearData.inactive > 0 ? `
-                        <div style="width: ${inactivePercentage}%; background-color: #EF4444; opacity: 0.3;"></div>
-                    ` : ''}
-                </div>
-                <span class="percentage-text">
-                    ${activePercentage}% / ${inactivePercentage}%
-                </span>
-            </td>
-        `;
-        
-        tbody.appendChild(row);
-    });
-
-    const totalActivePercentage = ((totalActive / totalRegistered) * 100).toFixed(1);
-    const totalInactivePercentage = ((totalInactive / totalRegistered) * 100).toFixed(1);
-    
-    const totalRow = document.createElement('tr');
-    totalRow.className = 'matrix-total-row';
-    totalRow.innerHTML = `
-        <td>Всього</td>
-        <td class="text-end">${totalRegistered}</td>
-        <td class="text-end">${totalArea.toFixed(2)}</td>
-        <td class="text-end">${totalActive} / ${totalActiveArea.toFixed(2)}</td>
-        <td class="text-end">${totalInactive} / ${totalInactiveArea.toFixed(2)}</td>
-        <td class="text-end position-relative">
-            <div style="display: flex; height: 100%; width: 100%; position: absolute; left: 0; top: 0;">
-                ${totalActive > 0 ? `
-                    <div style="width: ${totalActivePercentage}%; background-color: #10B981; opacity: 0.3;"></div>
-                ` : ''}
-                ${totalInactive > 0 ? `
-                    <div style="width: ${totalInactivePercentage}%; background-color: #EF4444; opacity: 0.3;"></div>
-                ` : ''}
-            </div>
-            <span class="percentage-text">
-                ${totalActivePercentage}% / ${totalInactivePercentage}%
-            </span>
-        </td>
-    `;
-    tbody.appendChild(totalRow);
-}
-
-function updateDetailsTable(data, tableId, totalArea = 0) {
-    const tbody = document.getElementById(tableId);
-    tbody.innerHTML = '';
-
-    Object.entries(data)
-        .filter(([_, data]) => {
-            if (tableId === 'ownersTableBody') {
-                return data.count > 5;
-            }
-            return true;
-        })
-        .sort((a, b) => b[1].area - a[1].area)
-        .forEach(([name, data]) => {
-            const row = document.createElement('tr');
-            const avgArea = data.area / data.count;
-            const percentage = totalArea ? ((data.area / totalArea) * 100).toFixed(2) : null;
-
-            if (tableId === 'detailsTableBody') {
-                row.innerHTML = `
-                    <td>${name}</td>
-                    <td class="text-end">${data.count}</td>
-                    <td class="text-end">${data.area.toFixed(2)}</td>
-                    <td class="text-end position-relative">
-                        <div class="percentage-bar" style="width: ${percentage}%"></div>
-                        <span class="percentage-text">${percentage}%</span>
-                    </td>
-                    <td class="text-end">${avgArea.toFixed(2)}</td>
-                `;
-            } else {
-                row.innerHTML = `
-                    <td>${name}</td>
-                    <td class="text-end">${data.count}</td>
-                    <td class="text-end">${data.area.toFixed(2)}</td>
-                    <td class="text-end">${avgArea.toFixed(2)}</td>
-                `;
-            }
-            tbody.appendChild(row);
-        });
-}
-
-function updateMatrixTable(expiryYears, tenants) {
-    const years = Object.keys(expiryYears).sort((a, b) => a - b);
-    const currentYear = new Date().getFullYear();
-    
-    const thead = document.querySelector('.matrix-table thead tr');
-    thead.innerHTML = '<th class="text-start sticky-col">Орендар</th>';
-    years.forEach(year => {
-        let yearClass = 'year-future';
-        if (parseInt(year) < currentYear) {
-            yearClass = 'year-expired';
-        } else if (parseInt(year) === currentYear) {
-            yearClass = 'year-current';
-        }
-        thead.innerHTML += `<th class="text-end ${yearClass}">${year}</th>`;
-    });
-
-    const tbody = document.getElementById('matrixTableBody');
-    tbody.innerHTML = '';
-
-    const yearTotals = {};
-    years.forEach(year => {
-        yearTotals[year] = 0;
-    });
-
-    Object.entries(tenants)
-        .sort((a, b) => b[1].area - a[1].area)
-        .forEach(([tenant, tenantData]) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `<td class="text-start sticky-col fw-medium">${tenant}</td>`;
+            const tbody = document.getElementById('registrationTableBody');
+            const years = Object.keys(registrationYears).sort((a, b) => a - b);
+            
+            let html = '';
+            let totals = { total: 0, totalArea: 0, active: 0, activeArea: 0, inactive: 0, inactiveArea: 0 };
             
             years.forEach(year => {
-                const areaForYear = expiryYears[year]?.tenants?.[tenant]?.area || 0;
-                yearTotals[year] += areaForYear;
+                const d = registrationYears[year];
+                Object.keys(totals).forEach(k => totals[k] += d[k] || 0);
                 
-                const cell = document.createElement('td');
-                cell.className = 'text-end';
+                const activePercent = d.total > 0 ? (d.active / d.total * 100).toFixed(0) : 0;
+                const inactivePercent = d.total > 0 ? (d.inactive / d.total * 100).toFixed(0) : 0;
                 
-                if (areaForYear > 0) {
-                    cell.innerHTML = areaForYear.toFixed(1);
-                    cell.style.backgroundColor = `rgba(255, 165, 0, ${areaForYear / tenantData.area * 0.5})`;
-                    cell.style.color = 'black';
-                } else {
-                    cell.innerHTML = '-';
-                }
-                
-                row.appendChild(cell);
+                html += `
+                    <tr>
+                        <td>${year}</td>
+                        <td class="text-end">${d.total}</td>
+                        <td class="text-end">${d.totalArea.toFixed(1)}</td>
+                        <td class="text-end">${d.active} / ${d.activeArea.toFixed(1)}</td>
+                        <td class="text-end">${d.inactive} / ${d.inactiveArea.toFixed(1)}</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill">
+                                    <div class="progress-bar-segment" style="width: ${activePercent}%; background: var(--mono-green);"></div>
+                                    <div class="progress-bar-segment" style="width: ${inactivePercent}%; background: var(--mono-red);"></div>
+                                </div>
+                                <span class="progress-bar-text">${activePercent}% / ${inactivePercent}%</span>
+                            </div>
+                        </td>
+                    </tr>`;
             });
             
-            tbody.appendChild(row);
-        });
+            const activePercent = totals.total > 0 ? (totals.active / totals.total * 100).toFixed(0) : 0;
+            const inactivePercent = totals.total > 0 ? (totals.inactive / totals.total * 100).toFixed(0) : 0;
+            
+            html += `
+                <tr class="total-row">
+                    <td>Всього</td>
+                    <td class="text-end">${totals.total}</td>
+                    <td class="text-end">${totals.totalArea.toFixed(1)}</td>
+                    <td class="text-end">${totals.active} / ${totals.activeArea.toFixed(1)}</td>
+                    <td class="text-end">${totals.inactive} / ${totals.inactiveArea.toFixed(1)}</td>
+                    <td>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill">
+                                <div class="progress-bar-segment" style="width: ${activePercent}%; background: var(--mono-green);"></div>
+                                <div class="progress-bar-segment" style="width: ${inactivePercent}%; background: var(--mono-red);"></div>
+                            </div>
+                            <span class="progress-bar-text">${activePercent}% / ${inactivePercent}%</span>
+                        </div>
+                    </td>
+                </tr>`;
+            
+            tbody.innerHTML = html;
+        }
 
-    const totalRow = document.createElement('tr');
-    totalRow.className = 'matrix-total-row';
-    totalRow.innerHTML = `<td class="text-start sticky-col border-top">Всього</td>`;
-    
-    years.forEach(year => {
-        const total = yearTotals[year];
-        totalRow.innerHTML += `
-            <td class="text-end border-top${total > 0 ? ' bg-warning' : ''}">${
-                total > 0 ? total.toFixed(1) : '-'
-            }</td>
-        `;
-    });
-    
-    tbody.appendChild(totalRow);
-}
+        function updateTenantsTable(stats) {
+            const tbody = document.getElementById('tenantsTableBody');
+            const sorted = Object.entries(stats.tenants).sort((a, b) => b[1].area - a[1].area);
+            
+            let html = '';
+            sorted.forEach(([tenant, data]) => {
+                const percent = (data.area / stats.totalArea * 100).toFixed(1);
+                const avgArea = (data.area / data.count).toFixed(2);
+                const color = getColor(tenant);
+                
+                html += `
+                    <tr>
+                        <td>
+                            <span class="tenant-indicator" style="background-color: ${color};"></span>
+                            <span style="color: ${color}; font-weight: 500;">${tenant}</span>
+                        </td>
+                        <td class="text-end">${data.count}</td>
+                        <td class="text-end">${data.area.toFixed(2)}</td>
+                        <td class="text-end">${percent}%</td>
+                        <td class="text-end">${avgArea}</td>
+                        <td class="text-end">${formatNumber(data.ngo)}</td>
+                    </tr>`;
+            });
+            
+            tbody.innerHTML = html || '<tr><td colspan="6" style="text-align: center; color: var(--mono-text-secondary);">Немає орендарів</td></tr>';
+        }
 
         function updateOwnersTable() {
             if (!globalStats) return;
             
-            const minParcels = parseInt(document.getElementById('minParcelsFilter').value) || 5;
+            const minParcels = parseInt(document.getElementById('minParcelsFilter').value) || 3;
             const tbody = document.getElementById('ownersTableBody');
-            tbody.innerHTML = '';
-
-            Object.entries(globalStats.owners)
+            const sorted = Object.entries(globalStats.owners)
                 .filter(([_, data]) => data.count >= minParcels)
-                .sort((a, b) => b[1].area - a[1].area)
-                .forEach(([name, data]) => {
-                    const row = document.createElement('tr');
-                    const avgArea = data.area / data.count;
-                    
-                    row.innerHTML = `
+                .sort((a, b) => b[1].area - a[1].area);
+            
+            let html = '';
+            sorted.forEach(([name, data]) => {
+                const avgArea = (data.area / data.count).toFixed(2);
+                html += `
+                    <tr>
                         <td>${name}</td>
                         <td class="text-end">${data.count}</td>
                         <td class="text-end">${data.area.toFixed(2)}</td>
-                        <td class="text-end">${avgArea.toFixed(2)}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
+                        <td class="text-end">${avgArea}</td>
+                    </tr>`;
+            });
+            
+            tbody.innerHTML = html || '<tr><td colspan="4" style="text-align: center; color: var(--mono-text-secondary);">Немає власників з такою кількістю ділянок</td></tr>';
         }
 
-        // Завантажуємо дані при завантаженні сторінки
-        document.addEventListener('DOMContentLoaded', loadAndProcessData);
+        function updateMatrixTable(expiryYears, tenants) {
+            const years = Object.keys(expiryYears).sort((a, b) => a - b).filter(y => parseInt(y) >= currentYear - 2);
+            const header = document.getElementById('matrixHeader');
+            const tbody = document.getElementById('matrixTableBody');
+            
+            let headerHtml = '<th class="sticky-col">Орендар</th>';
+            years.forEach(year => {
+                const yearClass = parseInt(year) < currentYear ? 'year-expired' : (parseInt(year) === currentYear ? 'year-current' : 'year-future');
+                headerHtml += `<th class="text-end ${yearClass}">${year}</th>`;
+            });
+            headerHtml += '<th class="text-end">Всього</th>';
+            header.innerHTML = headerHtml;
+            
+            let html = '';
+            const yearTotals = {};
+            years.forEach(y => yearTotals[y] = 0);
+            
+            Object.entries(tenants)
+                .sort((a, b) => b[1].area - a[1].area)
+                .forEach(([tenant, data]) => {
+                    const color = getColor(tenant);
+                    let rowTotal = 0;
+                    
+                    html += `<tr><td class="sticky-col"><span class="tenant-indicator" style="background-color: ${color};"></span><span style="color: ${color};">${tenant}</span></td>`;
+                    
+                    years.forEach(year => {
+                        const areaForYear = expiryYears[year]?.tenants?.[tenant]?.area || 0;
+                        yearTotals[year] += areaForYear;
+                        rowTotal += areaForYear;
+                        
+                        const highlight = areaForYear > 0 ? 'matrix-cell-highlight' : '';
+                        html += `<td class="text-end ${highlight}">${areaForYear > 0 ? areaForYear.toFixed(1) : '-'}</td>`;
+                    });
+                    
+                    html += `<td class="text-end" style="font-weight: 600;">${rowTotal > 0 ? rowTotal.toFixed(1) : '-'}</td></tr>`;
+                });
+            
+            let grandTotal = 0;
+            html += '<tr class="total-row"><td class="sticky-col">Всього</td>';
+            years.forEach(year => {
+                grandTotal += yearTotals[year];
+                html += `<td class="text-end">${yearTotals[year] > 0 ? yearTotals[year].toFixed(1) : '-'}</td>`;
+            });
+            html += `<td class="text-end">${grandTotal.toFixed(1)}</td></tr>`;
+            
+            tbody.innerHTML = html;
+        }
+
+        // ========== НОВІ ФУНКЦІЇ ==========
+        
+        // Графік динаміки реєстрації
+        let registrationChartInstance = null;
+        let tenantsChartInstance = null;
+        
+        function updateRegistrationChart(registrationYears) {
+            const ctx = document.getElementById('registrationChart');
+            if (!ctx) return;
+            
+            const years = Object.keys(registrationYears).sort((a, b) => a - b);
+            const activeData = years.map(y => registrationYears[y].active || 0);
+            const inactiveData = years.map(y => registrationYears[y].inactive || 0);
+            
+            if (registrationChartInstance) {
+                registrationChartInstance.destroy();
+            }
+            
+            registrationChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: [
+                        {
+                            label: 'Активні',
+                            data: activeData,
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                            borderColor: '#10B981',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Неактивні',
+                            data: inactiveData,
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderColor: '#EF4444',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { color: '#8E8E93', font: { size: 12 } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#8E8E93' }
+                        },
+                        y: {
+                            stacked: true,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#8E8E93' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateTenantsChart(tenants, totalArea) {
+            const ctx = document.getElementById('tenantsChart');
+            if (!ctx) return;
+            
+            const sorted = Object.entries(tenants).sort((a, b) => b[1].area - a[1].area);
+            const top5 = sorted.slice(0, 5);
+            const othersArea = sorted.slice(5).reduce((sum, [_, d]) => sum + d.area, 0);
+            
+            const labels = top5.map(([name, _]) => name.length > 20 ? name.substring(0, 20) + '...' : name);
+            const data = top5.map(([_, d]) => d.area);
+            const colors = top5.map(([name, _]) => getColor(name));
+            
+            if (othersArea > 0) {
+                labels.push('Інші');
+                data.push(othersArea);
+                colors.push('#636366');
+            }
+            
+            if (tenantsChartInstance) {
+                tenantsChartInstance.destroy();
+            }
+            
+            tenantsChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: '#1C1C1E',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#8E8E93',
+                                font: { size: 11 },
+                                boxWidth: 12,
+                                padding: 8
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const percent = (value / totalArea * 100).toFixed(1);
+                                    return `${context.label}: ${value.toFixed(1)} га (${percent}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Сповіщення про договори
+        function updateAlerts(stats, features) {
+            const alertsCard = document.getElementById('alertsCard');
+            const alertsBody = document.getElementById('alertsBody');
+            
+            const today = new Date();
+            const alerts = [];
+            
+            // Прострочені договори
+            let expiredCount = 0;
+            let expiredArea = 0;
+            Object.entries(stats.expiryYears).forEach(([year, data]) => {
+                if (parseInt(year) < currentYear) {
+                    expiredCount += data.count;
+                    expiredArea += data.area;
+                }
+            });
+            
+            if (expiredCount > 0) {
+                alerts.push({
+                    type: 'red',
+                    icon: 'exclamation-triangle',
+                    title: 'Прострочені договори',
+                    count: expiredCount,
+                    area: expiredArea.toFixed(1),
+                    description: 'Термін оренди вже закінчився'
+                });
+            }
+            
+            // Договори цього року
+            const thisYearData = stats.expiryYears[currentYear] || { count: 0, area: 0 };
+            if (thisYearData.count > 0) {
+                alerts.push({
+                    type: 'orange',
+                    icon: 'clock-history',
+                    title: `Закінчуються у ${currentYear}`,
+                    count: thisYearData.count,
+                    area: thisYearData.area.toFixed(1),
+                    description: 'Потрібно продовжити або переукласти'
+                });
+            }
+            
+            // Договори наступного року
+            const nextYearData = stats.expiryYears[currentYear + 1] || { count: 0, area: 0 };
+            if (nextYearData.count > 0) {
+                alerts.push({
+                    type: 'yellow',
+                    icon: 'calendar-event',
+                    title: `Закінчуються у ${currentYear + 1}`,
+                    count: nextYearData.count,
+                    area: nextYearData.area.toFixed(1),
+                    description: 'Підготуйтеся заздалегідь'
+                });
+            }
+            
+            // Вільні ділянки
+            if (stats.freeParcels > 0) {
+                alerts.push({
+                    type: 'yellow',
+                    icon: 'unlock',
+                    title: 'Вільні від оренди',
+                    count: stats.freeParcels,
+                    area: stats.freeArea.toFixed(1),
+                    description: 'Можна укласти нові договори'
+                });
+            }
+            
+            if (alerts.length === 0) {
+                alertsCard.style.display = 'none';
+                return;
+            }
+            
+            alertsCard.style.display = 'block';
+            
+            let html = '';
+            alerts.forEach(alert => {
+                html += `
+                    <div class="alert-item">
+                        <div class="alert-item-left">
+                            <i class="bi bi-${alert.icon}" style="font-size: 18px; color: var(--mono-${alert.type === 'red' ? 'red' : (alert.type === 'orange' ? 'orange' : 'yellow')});"></i>
+                            <div>
+                                <div style="font-weight: 500;">${alert.title}</div>
+                                <div style="font-size: 12px; color: var(--mono-text-secondary);">${alert.description}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="alert-badge ${alert.type}">${alert.count} ділянок</span>
+                            <div style="font-size: 12px; color: var(--mono-text-secondary); margin-top: 2px;">${alert.area} га</div>
+                        </div>
+                    </div>`;
+            });
+            
+            alertsBody.innerHTML = html;
+        }
+        
+        // Експорт в Excel
+        function exportToExcel() {
+            if (!globalStats) {
+                alert('Дані ще не завантажені');
+                return;
+            }
+            
+            const wb = XLSX.utils.book_new();
+            
+            // Лист 1: Загальна статистика
+            const summaryData = [
+                ['Статистика по раді:', councilName],
+                ['Дата звіту:', new Date().toLocaleDateString('uk-UA')],
+                [''],
+                ['Показник', 'Значення'],
+                ['Загальна площа (га)', globalStats.totalArea.toFixed(2)],
+                ['Кількість ділянок', globalStats.totalParcels],
+                ['Вільні від оренди (га)', globalStats.freeArea.toFixed(2)],
+                ['Кількість вільних ділянок', globalStats.freeParcels],
+                ['Кількість орендарів', Object.keys(globalStats.tenants).length],
+                ['НГО (грн)', globalStats.totalNGO.toFixed(0)]
+            ];
+            const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, ws1, 'Загальна статистика');
+            
+            // Лист 2: Орендарі
+            const tenantsData = [['Орендар', 'Кількість ділянок', 'Площа (га)', '% площі', 'Середня площа', 'НГО (грн)']];
+            Object.entries(globalStats.tenants)
+                .sort((a, b) => b[1].area - a[1].area)
+                .forEach(([name, data]) => {
+                    tenantsData.push([
+                        name,
+                        data.count,
+                        data.area.toFixed(2),
+                        (data.area / globalStats.totalArea * 100).toFixed(1) + '%',
+                        (data.area / data.count).toFixed(2),
+                        data.ngo.toFixed(0)
+                    ]);
+                });
+            const ws2 = XLSX.utils.aoa_to_sheet(tenantsData);
+            XLSX.utils.book_append_sheet(wb, ws2, 'Орендарі');
+            
+            // Лист 3: Прогноз завершення
+            const forecastData = [['Рік', 'Кількість договорів', 'Площа (га)', '% від орендованої']];
+            
+            // Прострочені
+            let expiredCount = 0, expiredArea = 0;
+            Object.entries(globalStats.expiryYears).forEach(([year, data]) => {
+                if (parseInt(year) < currentYear) {
+                    expiredCount += data.count;
+                    expiredArea += data.area;
+                }
+            });
+            if (expiredCount > 0) {
+                forecastData.push(['Прострочені', expiredCount, expiredArea.toFixed(2), 
+                    (expiredArea / globalStats.rentedArea * 100).toFixed(1) + '%']);
+            }
+            
+            for (let year = currentYear; year <= currentYear + 5; year++) {
+                const yearData = globalStats.expiryYears[year] || { count: 0, area: 0 };
+                forecastData.push([
+                    year,
+                    yearData.count,
+                    yearData.area.toFixed(2),
+                    globalStats.rentedArea > 0 ? (yearData.area / globalStats.rentedArea * 100).toFixed(1) + '%' : '0%'
+                ]);
+            }
+            const ws3 = XLSX.utils.aoa_to_sheet(forecastData);
+            XLSX.utils.book_append_sheet(wb, ws3, 'Прогноз завершення');
+            
+            // Лист 4: Матриця завершення
+            const years = Object.keys(globalStats.expiryYears).sort((a, b) => a - b).filter(y => parseInt(y) >= currentYear - 2);
+            const matrixData = [['Орендар', ...years, 'Всього']];
+            
+            Object.entries(globalStats.tenants)
+                .sort((a, b) => b[1].area - a[1].area)
+                .forEach(([tenant, data]) => {
+                    const row = [tenant];
+                    let rowTotal = 0;
+                    years.forEach(year => {
+                        const areaForYear = globalStats.expiryYears[year]?.tenants?.[tenant]?.area || 0;
+                        row.push(areaForYear > 0 ? areaForYear.toFixed(1) : '-');
+                        rowTotal += areaForYear;
+                    });
+                    row.push(rowTotal > 0 ? rowTotal.toFixed(1) : '-');
+                    matrixData.push(row);
+                });
+            const ws4 = XLSX.utils.aoa_to_sheet(matrixData);
+            XLSX.utils.book_append_sheet(wb, ws4, 'Матриця завершення');
+            
+            // Лист 5: Власники
+            const ownersData = [['Власник', 'Кількість ділянок', 'Площа (га)', 'Середня площа']];
+            Object.entries(globalStats.owners)
+                .sort((a, b) => b[1].area - a[1].area)
+                .forEach(([name, data]) => {
+                    ownersData.push([
+                        name,
+                        data.count,
+                        data.area.toFixed(2),
+                        (data.area / data.count).toFixed(2)
+                    ]);
+                });
+            const ws5 = XLSX.utils.aoa_to_sheet(ownersData);
+            XLSX.utils.book_append_sheet(wb, ws5, 'Власники');
+            
+            // Зберігаємо файл
+            XLSX.writeFile(wb, `Статистика_${councilName}.xlsx`);
+        }
 
         function goBack() {
-            // Використовуємо глобальну змінну id та selectedFile
             let returnUrl = 'index.html';
             if (id) returnUrl += `?id=${id}`;
             if (selectedFile) {
                 returnUrl += id ? '&' : '?';
                 returnUrl += `return_file=${encodeURIComponent(selectedFile)}`;
             }
-            
             window.location.href = returnUrl;
         }
+
+        document.addEventListener('DOMContentLoaded', loadAndProcessData);
     </script>
 </body>
 </html>

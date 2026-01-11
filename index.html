@@ -2,9 +2,8 @@
 <html lang="uk">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <!-- Додаткові viewport налаштування для iPad -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" media="(orientation: landscape) and (min-device-width: 768px)">
+    <!-- Єдиний оптимізований viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>АГРО-ПРОСТІР</title>
     
     <!-- PWA Meta Tags -->
@@ -156,10 +155,8 @@
         // Викликаємо перевірку якомога раніше
         checkPWARedirect();
         
-        // Додаткова перевірка для iOS
-        if (!ensureIOSPWARedirect()) {
-            console.log('🍎 iOS PWA: No redirect needed or not iOS PWA');
-        }
+        // Додаткова перевірка для iOS (викликається пізніше, коли функція буде визначена)
+        // ensureIOSPWARedirect буде викликана в DOMContentLoaded
         
         // Оновлюємо manifest link з client ID якщо він є
         function updateManifestLink() {
@@ -256,13 +253,35 @@
     </script>
 
     <style>
+        /* ===== MONOBANK-STYLE DESIGN SYSTEM ===== */
+        :root {
+            /* Кольорова палітра */
+            --mono-bg: #000000;
+            --mono-surface: #1C1C1E;
+            --mono-surface-elevated: #2C2C2E;
+            --mono-card: #1C1C1E;
+            --mono-primary: #10B981;
+            --mono-primary-soft: rgba(16, 185, 129, 0.15);
+            --mono-accent: #34D399;
+            --mono-text: #FFFFFF;
+            --mono-text-secondary: #ABABAB;
+            --mono-text-muted: #8E8E93;
+            --mono-border: rgba(255, 255, 255, 0.12);
+            --mono-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --mono-shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.3);
+            --mono-radius: 16px;
+            --mono-radius-sm: 12px;
+            --mono-radius-lg: 24px;
+            --mono-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         /* PWA та мобільні покращення */
         html, body {
     width: 100%;
     height: 100%;
     margin: 0;
     overflow: hidden;
-    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-touch-callout: none;
@@ -272,6 +291,7 @@
     -ms-user-select: none;
     user-select: none;
     overscroll-behavior: none;
+    background: var(--mono-bg);
 }
 
 /* Підтримка safe-area для iPhone з вирізом */
@@ -299,10 +319,10 @@ body {
     top: env(safe-area-inset-top);
     left: 0;
     right: 0;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    background: rgba(33, 37, 41, 0.95) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(28, 28, 30, 0.85) !important;
+    border-bottom: 1px solid var(--mono-border);
 }
 
 /* Покращення для touch взаємодії */
@@ -318,8 +338,8 @@ body {
 
 /* Мобільна навігація */
 .navbar .btn {
-    border-radius: 12px;
-    transition: all 0.2s ease;
+    border-radius: var(--mono-radius-sm);
+    transition: var(--mono-transition);
 }
 
 .navbar .btn:active {
@@ -327,36 +347,35 @@ body {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* PWA Install Button */
+/* ===== MONOBANK-STYLE PWA INSTALL BUTTON ===== */
 .pwa-install {
     position: fixed;
-    bottom: calc(20px + env(safe-area-inset-bottom));
-    right: 20px;
+    bottom: calc(90px + env(safe-area-inset-bottom));
+    right: 16px;
     z-index: 1001;
-    background: linear-gradient(45deg, #198754, #20c997);
+    background: var(--mono-primary);
     color: white;
     border: none;
-    border-radius: 50px;
-    padding: 15px 25px;
-    font-size: 16px;
+    border-radius: var(--mono-radius);
+    padding: 14px 24px;
+    font-size: 15px;
     font-weight: 600;
-    box-shadow: 0 8px 30px rgba(25, 135, 84, 0.6);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.4);
     display: none;
     align-items: center;
     gap: 10px;
-    transition: all 0.3s ease;
+    transition: var(--mono-transition);
     cursor: pointer;
-    animation: pulseInstall 2s infinite;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
 }
 
 .pwa-install:hover {
-    background: linear-gradient(45deg, #157347, #1abc9c);
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 12px 40px rgba(25, 135, 84, 0.8);
-    animation: none;
+    background: var(--mono-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.5);
+}
+
+.pwa-install:active {
+    transform: scale(0.98);
 }
 
 .pwa-install.show {
@@ -485,21 +504,73 @@ body {
     }
 }
 
+/* === ОПТИМІЗАЦІЯ ПРОДУКТИВНОСТІ ДЛЯ МОБІЛЬНИХ === */
+@media (max-width: 768px) {
+    /* Вимикаємо важкі анімації на мобільних */
+    .pwa-install {
+        animation: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    
+    .pwa-install.show {
+        animation: slideInRight 0.3s ease-out !important;
+    }
+    
+    /* Прибираємо blur ефекти на мобільних (дуже важкі для GPU) */
+    .navbar {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(33, 37, 41, 0.98) !important;
+    }
+    
+    .mobile-bottom-menu {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+    }
+    
+    .mobile-layers-panel {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+    }
+    
+    /* Оптимізуємо переходи */
+    * {
+        transition-duration: 0.15s !important;
+    }
+    
+    /* Вимикаємо складні box-shadow на мобільних */
+    .pwa-install {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+}
+
+/* Зменшуємо навантаження на слабких пристроях */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
 /* Loading Splash Screen */
+/* ===== MONOBANK-STYLE SPLASH SCREEN ===== */
 .splash-screen {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+    background: var(--mono-bg);
     z-index: 9999;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: white;
-    transition: opacity 0.5s ease;
+    color: var(--mono-text);
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .splash-screen.hidden {
@@ -508,40 +579,42 @@ body {
 }
 
 .splash-logo {
-    width: 80px;
-    height: 80px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--mono-primary) 0%, var(--mono-accent) 100%);
+    border-radius: var(--mono-radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20px;
-    animation: pulse 2s infinite;
+    margin-bottom: 24px;
+    box-shadow: 0 20px 60px rgba(16, 185, 129, 0.3);
 }
 
 .splash-logo i {
-    font-size: 40px;
+    font-size: 48px;
+    color: white;
 }
 
 .splash-title {
-    font-size: 24px;
-    font-weight: 500;
+    font-size: 28px;
+    font-weight: 700;
     margin-bottom: 8px;
+    letter-spacing: -0.5px;
 }
 
 .splash-subtitle {
-    font-size: 16px;
-    opacity: 0.8;
-    margin-bottom: 40px;
+    font-size: 15px;
+    color: var(--mono-text-secondary);
+    margin-bottom: 48px;
 }
 
 .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-top: 3px solid white;
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--mono-surface-elevated);
+    border-top: 3px solid var(--mono-primary);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: spin 0.8s linear infinite;
 }
 
 @keyframes pulse {
@@ -912,6 +985,311 @@ body {
     }
 }
 
+/* ===== MONOBANK-STYLE BOTTOM SHEET ===== */
+@media (max-width: 768px) {
+    /* Перетворюємо offcanvas на bottom sheet */
+    .offcanvas.offcanvas-start {
+        top: auto !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: 85vh !important;
+        border-radius: var(--mono-radius-lg) var(--mono-radius-lg) 0 0 !important;
+        background: var(--mono-surface) !important;
+        border: none !important;
+        border-top: 1px solid var(--mono-border) !important;
+        transform: translateY(100%) !important;
+        transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1) !important;
+    }
+    
+    .offcanvas.offcanvas-start.show {
+        transform: translateY(0) !important;
+    }
+    
+    /* Handle bar на top */
+    .offcanvas-header::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 36px;
+        height: 5px;
+        background: var(--mono-text-muted);
+        border-radius: 3px;
+    }
+    
+    .offcanvas-header {
+        position: relative;
+        padding-top: 24px !important;
+        border-bottom: none !important;
+    }
+    
+    .offcanvas-title {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: var(--mono-text) !important;
+    }
+    
+    .offcanvas-body {
+        padding: 0 20px 20px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Mono-style секції */
+    .offcanvas h6 {
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        color: var(--mono-text-secondary) !important;
+        margin-bottom: 16px !important;
+        padding-bottom: 0 !important;
+        border: none !important;
+    }
+    
+    /* Mono-style cards для секцій */
+    .offcanvas .mb-4 {
+        background: var(--mono-surface-elevated) !important;
+        border-radius: var(--mono-radius) !important;
+        padding: 16px !important;
+        margin-bottom: 16px !important;
+    }
+    
+    /* Mono-style inputs */
+    .offcanvas .form-select,
+    .offcanvas .form-control {
+        background: var(--mono-bg) !important;
+        border: none !important;
+        border-radius: var(--mono-radius-sm) !important;
+        color: var(--mono-text) !important;
+        padding: 14px 16px !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+        transition: var(--mono-transition) !important;
+    }
+    
+    .offcanvas .form-select:focus,
+    .offcanvas .form-control:focus {
+        box-shadow: 0 0 0 2px var(--mono-primary) !important;
+        outline: none !important;
+    }
+    
+    .offcanvas .form-label {
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+        color: var(--mono-text-secondary) !important;
+        margin-bottom: 8px !important;
+    }
+    
+    /* Mono-style кнопки */
+    .offcanvas .btn {
+        border-radius: var(--mono-radius-sm) !important;
+        padding: 14px 20px !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        border: none !important;
+        transition: var(--mono-transition) !important;
+    }
+    
+    .offcanvas .btn-outline-light {
+        background: var(--mono-surface-elevated) !important;
+        color: var(--mono-text) !important;
+    }
+    
+    .offcanvas .btn-outline-light:active {
+        background: var(--mono-bg) !important;
+        transform: scale(0.98);
+    }
+    
+    .offcanvas .btn-outline-primary {
+        background: var(--mono-primary-soft) !important;
+        color: var(--mono-primary) !important;
+    }
+    
+    .offcanvas .btn-outline-danger {
+        background: rgba(239, 68, 68, 0.15) !important;
+        color: #EF4444 !important;
+    }
+    
+    /* Іконки у кнопках */
+    .offcanvas .btn i {
+        font-size: 18px !important;
+    }
+    
+    /* Mono-style grid для кнопок */
+    .offcanvas .d-grid.gap-2 {
+        gap: 10px !important;
+    }
+}
+
+/* ===== MONOBANK-STYLE BOTTOM NAVIGATION ===== */
+@media (max-width: 768px) {
+    .mobile-bottom-menu {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: var(--mono-surface) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border-top: 1px solid var(--mono-border) !important;
+        padding: 8px 0 calc(8px + env(safe-area-inset-bottom)) !important;
+        z-index: 1000 !important;
+        display: flex !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+    }
+    
+    .mobile-menu-item {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        padding: 8px 16px !important;
+        border-radius: var(--mono-radius-sm) !important;
+        background: transparent !important;
+        border: none !important;
+        color: var(--mono-text-secondary) !important;
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        min-width: 64px !important;
+        transition: var(--mono-transition) !important;
+    }
+    
+    .mobile-menu-item i {
+        font-size: 22px !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .mobile-menu-item:active {
+        background: var(--mono-surface-elevated) !important;
+        transform: scale(0.95) !important;
+    }
+    
+    .mobile-menu-item.active {
+        color: var(--mono-primary) !important;
+    }
+    
+    /* Карта - відступ для bottom menu */
+    #map {
+        bottom: calc(70px + env(safe-area-inset-bottom)) !important;
+    }
+    
+    /* Мобільна панель шарів - Monobank style */
+    .mobile-layers-panel {
+        position: fixed !important;
+        bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+        left: 12px !important;
+        right: 12px !important;
+        background: var(--mono-surface) !important;
+        border-radius: var(--mono-radius) !important;
+        padding: 0 !important;
+        box-shadow: var(--mono-shadow) !important;
+        max-height: 60vh !important;
+        overflow: hidden !important;
+        z-index: 1001 !important;
+        border: 1px solid var(--mono-border) !important;
+        display: none;
+    }
+    
+    .mobile-layers-panel.show {
+        display: block !important;
+    }
+    
+    .mobile-layers-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 16px 20px !important;
+        border-bottom: 1px solid var(--mono-border) !important;
+        background: var(--mono-surface-elevated) !important;
+    }
+    
+    .mobile-layers-title {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        color: var(--mono-text) !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+    }
+    
+    .mobile-layers-title i {
+        color: var(--mono-primary) !important;
+        font-size: 20px !important;
+    }
+    
+    .mobile-layers-close {
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 8px !important;
+        background: var(--mono-surface) !important;
+        border: 1px solid var(--mono-border) !important;
+        color: var(--mono-text-secondary) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        transition: var(--mono-transition) !important;
+    }
+    
+    .mobile-layers-close:active {
+        background: var(--mono-bg) !important;
+        transform: scale(0.95) !important;
+    }
+    
+    #mobileLayersList {
+        padding: 12px 16px !important;
+        max-height: calc(60vh - 60px) !important;
+        overflow-y: auto !important;
+    }
+    
+    .mobile-layer-item {
+        display: flex !important;
+        align-items: center !important;
+        padding: 12px 0 !important;
+        border-bottom: 1px solid var(--mono-border) !important;
+    }
+    
+    .mobile-layer-item:last-child {
+        border-bottom: none !important;
+    }
+    
+    .mobile-layer-item label {
+        color: var(--mono-text) !important;
+        font-size: 15px !important;
+        font-weight: 500 !important;
+        display: flex !important;
+        align-items: center !important;
+        flex: 1 !important;
+        cursor: pointer !important;
+    }
+    
+    /* Custom checkbox у стилі Monobank */
+    .mobile-layer-item input[type="checkbox"] {
+        width: 22px !important;
+        height: 22px !important;
+        margin-right: 12px !important;
+        accent-color: var(--mono-primary) !important;
+        border-radius: 6px !important;
+        flex-shrink: 0 !important;
+    }
+    
+    /* Кольоровий індикатор для шарів */
+    .mobile-layer-color {
+        width: 14px !important;
+        height: 14px !important;
+        border-radius: 3px !important;
+        margin-right: 10px !important;
+        flex-shrink: 0 !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+    }
+}
+
 .offcanvas-title {
     font-size: 1.1rem;
 }
@@ -945,7 +1323,7 @@ body {
 /* Стилі для контактного телефону */
 .contact-phone a {
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: var(--mono-transition);
 }
 
 .contact-phone a:hover {
@@ -962,6 +1340,17 @@ body {
     
     .contact-phone .phone-text {
         display: none;
+    }
+    
+    /* Приховуємо зайві елементи на мобільних */
+    .data-freshness-indicator {
+        display: none !important;
+    }
+    
+    /* Navbar у стилі Monobank */
+    .navbar {
+        background: var(--mono-bg) !important;
+        border-bottom: 1px solid var(--mono-border) !important;
     }
 }
 
@@ -1150,14 +1539,27 @@ body {
             backdrop-filter: blur(10px);
         }
 
-        /* Покращуємо popup для мобільних */
+        /* ===== MONOBANK-STYLE POPUP ===== */
         .leaflet-popup-content-wrapper {
-            border-radius: 16px;
+            border-radius: 12px !important;
             max-width: calc(100vw - 32px) !important;
-            min-width: 260px;
-            backdrop-filter: blur(15px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 280px;
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+        
+        .leaflet-popup-content-wrapper,
+        .leaflet-popup-tip {
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        
+        .leaflet-popup-tip {
+            background: #1C1C1E !important;
+            border: none !important;
+            box-shadow: none !important;
         }
         
         .leaflet-popup {
@@ -1166,6 +1568,7 @@ body {
         
         .leaflet-popup-content {
             margin: 0 !important;
+            padding: 0 !important;
             max-height: 50vh;
             overflow-y: auto;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1185,19 +1588,35 @@ body {
             user-select: text !important;
         }
         
+        /* Кнопка закриття popup */
+        .leaflet-popup-close-button {
+            color: var(--mono-text-secondary) !important;
+            font-size: 20px !important;
+            padding: 8px !important;
+        }
+        
+        .leaflet-popup-close-button:hover {
+            color: var(--mono-text) !important;
+        }
+        
         /* Стилі для довгих назв полів */
         .popup-content .property-name {
             word-wrap: break-word;
             word-break: break-word;
             white-space: normal;
             hyphens: auto;
+            color: var(--mono-text-secondary) !important;
+        }
+        
+        .popup-content .property-value {
+            color: var(--mono-text) !important;
         }
         
         /* Іконки з текстом */
         .icon-text {
             font-size: 0.75rem;
             font-weight: 600;
-            color: #495057;
+            color: var(--mono-text-secondary);
             margin-left: 4px;
         }
         
@@ -1914,62 +2333,117 @@ body {
         }
     }
     
-    /* Форсуємо світлий текст для layers control незалежно від теми */
+    /* ===== MONOBANK-STYLE LAYERS CONTROL (DESKTOP) ===== */
     .leaflet-control-layers {
-        background: rgba(255, 255, 255, 0.95) !important;
-        color: #333 !important;
+        background: var(--mono-surface) !important;
+        color: var(--mono-text) !important;
+        border: 1px solid var(--mono-border) !important;
+        border-radius: var(--mono-radius) !important;
+        box-shadow: var(--mono-shadow) !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    .leaflet-control-layers-expanded {
+        padding: 12px 16px !important;
+        min-width: 220px !important;
+    }
+    
+    .leaflet-control-layers-list {
+        background: transparent !important;
     }
     
     .leaflet-control-layers label {
-        color: #333 !important;
+        color: var(--mono-text) !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 8px 0 !important;
+        margin: 0 !important;
+        border-bottom: 1px solid var(--mono-border) !important;
+        cursor: pointer !important;
+        transition: var(--mono-transition) !important;
+    }
+    
+    .leaflet-control-layers label:last-child {
+        border-bottom: none !important;
+    }
+    
+    .leaflet-control-layers label:hover {
+        background: var(--mono-surface-elevated) !important;
+        margin: 0 -16px !important;
+        padding: 8px 16px !important;
     }
     
     .leaflet-control-layers span:not(.color-box) {
-        color: #333 !important;
+        color: var(--mono-text) !important;
+    }
+    
+    .leaflet-control-layers input[type="checkbox"],
+    .leaflet-control-layers input[type="radio"] {
+        width: 18px !important;
+        height: 18px !important;
+        margin-right: 10px !important;
+        accent-color: var(--mono-primary) !important;
+        cursor: pointer !important;
     }
     
     .leaflet-layerstree-header-name {
-        color: #333 !important;
+        color: var(--mono-text) !important;
     }
     
     .leaflet-layerstree-header label {
-        color: #333 !important;
+        color: var(--mono-text) !important;
+    }
+    
+    /* Секційні заголовки */
+    .leaflet-control-layers-separator {
+        border-top: 1px solid var(--mono-border) !important;
+        margin: 8px 0 !important;
+    }
+    
+    .leaflet-control-layers-base {
+        padding-bottom: 8px !important;
+    }
+    
+    .leaflet-control-layers-overlays {
+        padding-top: 8px !important;
     }
     
     /* Зберігаємо кольорові квадратики */
     .leaflet-control-layers .color-box {
         color: transparent !important;
-        width: 12px !important;
-        height: 12px !important;
+        width: 14px !important;
+        height: 14px !important;
         display: inline-block !important;
-        margin-right: 5px !important;
-        border: 1px solid rgba(0,0,0,0.2) !important;
-        /* НЕ перевизначаємо background-color - залишаємо inline стилі */
+        margin-right: 8px !important;
+        border-radius: 3px !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        flex-shrink: 0 !important;
     }
     
-    /* Зберігаємо toggle іконку */
+    /* Toggle кнопка - Monobank style з SVG іконкою */
     .leaflet-control-layers-toggle {
-        background-image: url("data:image/svg+xml,%3csvg width='26' height='26' viewBox='0 0 26 26' xmlns='http://www.w3.org/2000/svg'%3e%3cpath fill='%23333' fill-rule='evenodd' d='M6 4h14v2H6V4zm0 4h10v2H6V8zm0 4h14v2H6v-2zm0 4h10v2H6v-2z'/%3e%3c/svg%3e") !important;
+        background-color: var(--mono-surface) !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='%23FFFFFF' viewBox='0 0 16 16'%3E%3Cpath d='M8.235 1.559a.5.5 0 0 0-.47 0l-7.5 4a.5.5 0 0 0 0 .882L3.188 8 .264 9.559a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882L12.813 8l2.922-1.559a.5.5 0 0 0 0-.882l-7.5-4zM8 9.433 1.562 6 8 2.567 14.438 6 8 9.433z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
-        background-position: 50% 50% !important;
-        background-size: 20px 20px !important;
-        width: 36px !important;
-        height: 36px !important;
+        background-position: center !important;
+        background-size: 22px 22px !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: var(--mono-radius-sm) !important;
+        border: 1px solid var(--mono-border) !important;
+        transition: var(--mono-transition) !important;
     }
     
-    /* Видаляємо додатковий контент */
-    .leaflet-control-layers-toggle:after {
-        display: none !important;
-    }
-    
-    /* Відновлюємо стандартну іконку Leaflet layers control */
-    .leaflet-control-layers-toggle {
-        background-image: url("data:image/svg+xml,%3csvg width='26' height='26' viewBox='0 0 26 26' xmlns='http://www.w3.org/2000/svg'%3e%3cpath fill='%23333' d='M4 6h18v2H4zm0 4h12v2H4zm0 4h18v2H4zm0 4h12v2H4z'/%3e%3c/svg%3e") !important;
+    .leaflet-control-layers-toggle:hover {
+        background-color: var(--mono-surface-elevated) !important;
     }
     
     /* Забезпечуємо правильний колір тексту для layer names */
     .layer-name {
-        color: #333 !important;
+        color: var(--mono-text) !important;
     }
     
     /* Додаткові мобільні покращення для layers control */
@@ -1989,21 +2463,21 @@ body {
             display: none !important;
         }
         
-        /* Створюємо мобільне меню внизу */
+        /* Створюємо мобільне меню внизу - MONOBANK STYLE */
         .mobile-bottom-menu {
             position: fixed;
             bottom: env(safe-area-inset-bottom);
             left: 0;
             right: 0;
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--mono-surface);
             backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            border-top: 1px solid var(--mono-border);
             padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
             z-index: 1000;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
         }
         
         .mobile-menu-item {
@@ -2011,40 +2485,41 @@ body {
             flex-direction: column;
             align-items: center;
             padding: 8px;
-            border-radius: 12px;
+            border-radius: var(--mono-radius-sm);
             background: transparent;
             border: none;
-            color: #333;
-            font-size: 12px;
+            color: var(--mono-text-secondary);
+            font-size: 11px;
+            font-weight: 500;
             min-width: 60px;
-            transition: all 0.2s ease;
+            transition: var(--mono-transition);
             touch-action: manipulation;
         }
         
         .mobile-menu-item:active {
-            background: rgba(0, 0, 0, 0.1);
+            background: var(--mono-surface-elevated);
             transform: scale(0.95);
         }
         
         .mobile-menu-item i {
-            font-size: 20px;
+            font-size: 22px;
             margin-bottom: 4px;
         }
         
         .mobile-menu-item.active {
-            background: rgba(25, 135, 84, 0.1);
-            color: #198754;
+            background: var(--mono-primary-soft);
+            color: var(--mono-primary);
         }
         
         .mobile-menu-item.locating {
-            background: rgba(255, 193, 7, 0.1);
-            color: #ffc107;
+            background: rgba(245, 158, 11, 0.15);
+            color: #F59E0B;
             animation: pulse 2s infinite;
         }
         
         .mobile-menu-item.located {
-            background: rgba(25, 135, 84, 0.2);
-            color: #198754;
+            background: var(--mono-primary-soft);
+            color: var(--mono-primary);
         }
         
         /* Додаємо відступ знизу для карти щоб не перекривала меню */
@@ -2052,38 +2527,80 @@ body {
             bottom: calc(80px + env(safe-area-inset-bottom)) !important;
         }
         
-        /* Мобільна панель шарів */
+        /* Мобільна панель шарів - MONOBANK STYLE */
         .mobile-layers-panel {
             position: fixed;
             bottom: calc(80px + env(safe-area-inset-bottom));
-            left: 16px;
-            right: 16px;
-            background: rgba(255, 255, 255, 0.95);
+            left: 12px;
+            right: 12px;
+            background: var(--mono-surface);
             backdrop-filter: blur(20px);
-            border-radius: 16px;
-            padding: 16px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            border-radius: var(--mono-radius);
+            padding: 0;
+            box-shadow: var(--mono-shadow);
             max-height: 60vh;
-            overflow-y: auto;
+            overflow: hidden;
             display: none;
             z-index: 1001;
+            border: 1px solid var(--mono-border);
         }
         
         .mobile-layers-panel.show {
             display: block;
         }
         
-        .mobile-layers-panel h6 {
-            margin: 0 0 12px 0;
-            color: #333;
+        .mobile-layers-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--mono-border);
+            background: var(--mono-surface-elevated);
+        }
+        
+        .mobile-layers-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--mono-text);
+            font-size: 16px;
             font-weight: 600;
+        }
+        
+        .mobile-layers-title i {
+            color: var(--mono-primary);
+            font-size: 20px;
+        }
+        
+        .mobile-layers-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--mono-surface);
+            border: 1px solid var(--mono-border);
+            color: var(--mono-text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .mobile-layers-close:active {
+            background: var(--mono-bg);
+            transform: scale(0.95);
+        }
+        
+        #mobileLayersList {
+            padding: 12px 16px;
+            max-height: calc(60vh - 60px);
+            overflow-y: auto;
         }
         
         .mobile-layer-item {
             display: flex;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 12px 0;
+            border-bottom: 1px solid var(--mono-border);
         }
         
         .mobile-layer-item:last-child {
@@ -2091,13 +2608,16 @@ body {
         }
         
         .mobile-layer-item input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
             margin-right: 12px;
-            transform: scale(1.2);
+            accent-color: var(--mono-primary);
         }
         
         .mobile-layer-item label {
-            color: #333 !important;
-            font-size: 14px;
+            color: var(--mono-text) !important;
+            font-size: 15px;
+            font-weight: 500;
             flex: 1;
             display: flex;
             align-items: center;
@@ -2107,10 +2627,11 @@ body {
             width: 14px;
             height: 14px;
             display: inline-block;
-            margin-right: 8px;
-            border-radius: 2px;
+            margin-right: 10px;
+            border-radius: 3px;
             vertical-align: middle;
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            flex-shrink: 0;
         }
         
         /* Стилі для мобільного пошуку в overlay */
@@ -2173,54 +2694,112 @@ body {
             display: none !important;
         }
         
-        /* Стилі для мобільного модального вікна */
+        /* ===== MONOBANK-STYLE MOBILE MODAL ===== */
+        #mobileModal .modal-dialog {
+            margin: 0 !important;
+            max-width: 100% !important;
+            height: 100% !important;
+        }
+        
+        #mobileModal .modal-content {
+            background: var(--mono-bg) !important;
+            border: none !important;
+            border-radius: 0 !important;
+            height: 100% !important;
+        }
+        
+        #mobileModal .modal-header {
+            background: var(--mono-surface) !important;
+            border-bottom: 1px solid var(--mono-border) !important;
+            padding: 16px 20px !important;
+        }
+        
+        #mobileModal .modal-title {
+            color: var(--mono-text) !important;
+            font-size: 1.25rem !important;
+            font-weight: 600 !important;
+        }
+        
+        #mobileModal .btn-close {
+            filter: invert(1) !important;
+            opacity: 0.7 !important;
+        }
+        
         #mobileModal .modal-body {
             padding: 0;
-            background: #f8f9fa;
+            background: var(--mono-bg);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         #mobileModal .popup-content {
-            padding: 20px;
-            background: white;
+            padding: 0;
+            background: transparent;
             margin: 0;
-            border-radius: 0;
-            max-height: none;
-            overflow: visible;
         }
         
         #mobileModal .popup-content table {
-            font-size: 14px !important;
-            border-radius: 8px;
+            font-size: 15px !important;
+            border-radius: var(--mono-radius) !important;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: var(--mono-surface) !important;
+            border: 1px solid var(--mono-border) !important;
+            width: 100% !important;
         }
         
         #mobileModal .property-name {
             font-size: 13px !important;
-            padding: 12px 16px !important;
-            width: auto !important;
-            min-width: auto !important;
-            white-space: normal !important;
+            padding: 14px 16px !important;
+            background: var(--mono-surface-elevated) !important;
+            color: var(--mono-text-secondary) !important;
+            font-weight: 500 !important;
+            border-bottom: 1px solid var(--mono-border) !important;
+            border-right: 1px solid var(--mono-border) !important;
         }
         
         #mobileModal .property-value {
-            font-size: 14px !important;
-            padding: 12px 16px !important;
-            line-height: 1.4 !important;
-            max-height: none !important;
-            white-space: normal !important;
+            font-size: 15px !important;
+            padding: 14px 16px !important;
+            color: var(--mono-text) !important;
+            font-weight: 500 !important;
+            background: var(--mono-surface) !important;
+            border-bottom: 1px solid var(--mono-border) !important;
+        }
+        
+        #mobileModal tr:last-child .property-name,
+        #mobileModal tr:last-child .property-value {
+            border-bottom: none !important;
         }
         
         #mobileModal .mobile-header {
-            display: none; /* Приховуємо в модалі, бо є заголовок модалю */
+            display: none;
         }
         
         #mobileModal .popup-link {
-            margin: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin: 16px;
+            padding: 16px;
+            background: var(--mono-surface);
+            border-radius: var(--mono-radius-sm);
+            border: 1px solid var(--mono-border);
+        }
+        
+        #mobileModal .popup-link a {
+            color: var(--mono-primary) !important;
+        }
+        
+        #mobileModal .modal-footer {
+            background: var(--mono-surface) !important;
+            border-top: 1px solid var(--mono-border) !important;
+            padding: 12px 20px calc(12px + env(safe-area-inset-bottom)) !important;
+        }
+        
+        #mobileModal .modal-footer .btn {
+            background: var(--mono-surface-elevated) !important;
+            border: none !important;
+            color: var(--mono-text) !important;
+            border-radius: var(--mono-radius-sm) !important;
+            padding: 12px 24px !important;
+            font-weight: 600 !important;
         }
         
         /* Додаткові мобільні оптимізації */
@@ -2500,6 +3079,34 @@ body {
     .popup-content {
         cursor: text !important;
     }
+    
+    /* ========================================
+       ФІНАЛЬНЕ ВИПРАВЛЕННЯ: Видаляємо білу рамку popup
+       Має бути в самому кінці для максимальної специфічності
+       ======================================== */
+    .leaflet-popup-content-wrapper {
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        border-radius: 12px !important;
+    }
+    
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+        background: transparent !important;
+        color: inherit !important;
+        box-shadow: none !important;
+    }
+    
+    .leaflet-popup-tip {
+        background: #1C1C1E !important;
+    }
+    
+    .leaflet-popup-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
@@ -2528,168 +3135,175 @@ body {
     </button>
 
     <!-- Оставляем тільки один navbar -->
-    <nav class="navbar navbar-dark bg-dark fixed-top py-1">
-        <div class="container-fluid px-2">
+    <nav class="navbar navbar-dark fixed-top py-1" style="background: var(--mono-surface) !important; border-bottom: 1px solid var(--mono-border);">
+        <div class="container-fluid px-3">
             <!-- Кнопка для відкриття бокового меню -->
-            <button class="btn btn-outline-light btn-sm" 
+            <button class="btn btn-sm" 
+                    style="background: var(--mono-surface-elevated); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); width: 40px; height: 40px;" 
                     type="button" 
                     data-bs-toggle="offcanvas" 
                     data-bs-target="#mainMenu"
-                    aria-controls="mainMenu"
-                    style="width: 32px; height: 32px;">
-                <i class="bi bi-list"></i>
+                    aria-controls="mainMenu">
+                <i class="bi bi-list" style="font-size: 18px;"></i>
             </button>
 
-            <!-- Кнопка замовлення доступу по центру -->
+            <!-- Логотип по центру -->
             <div class="d-flex justify-content-center flex-grow-1">
+                <span style="color: var(--mono-text); font-size: 17px; font-weight: 600; letter-spacing: -0.3px;">
+                    <i class="bi bi-geo-alt-fill me-1" style="color: var(--mono-primary);"></i>АГРО-ПРОСТІР
+                </span>
+            </div>
+
+            <!-- Контейнер для правої частини navbar -->
+            <div class="d-flex align-items-center gap-2">
+                <!-- Кнопка замовлення (десктоп - повна) -->
                 <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGQcVSh5EnTCa6eJKT9KYX6HleJnXveBcyrCEgaKvlQgRInQ/viewform" 
-                   class="btn btn-success btn-sm pulse-button" 
+                   class="btn btn-sm d-none d-md-flex" 
+                   style="background: var(--mono-primary); border: none; color: white; border-radius: var(--mono-radius-sm); padding: 8px 16px; font-weight: 600;"
                    target="_blank"
                    title="Замовити доступ безкоштовно">
                     <i class="bi bi-gift me-1"></i>Замовити
                 </a>
-            </div>
-
-            <!-- Контейнер для правої частини navbar -->
-            <div class="d-flex align-items-center">
-                <!-- Індикатор актуальності даних -->
-                <div class="data-freshness-indicator d-flex align-items-center me-3">
-                    <i class="bi bi-clock-history text-light me-1"></i>
-                    <small class="text-light" id="dataFreshnessText"></small>
-                </div>
+                
+                <!-- Кнопка замовлення (мобільний - іконка) -->
+                <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGQcVSh5EnTCa6eJKT9KYX6HleJnXveBcyrCEgaKvlQgRInQ/viewform" 
+                   class="btn btn-sm d-flex d-md-none align-items-center justify-content-center" 
+                   style="background: var(--mono-primary); border: none; color: white; border-radius: var(--mono-radius-sm); width: 40px; height: 40px;"
+                   target="_blank"
+                   title="Замовити доступ безкоштовно">
+                    <i class="bi bi-gift" style="font-size: 16px;"></i>
+                </a>
                 
                 <!-- Контактний телефон -->
-                <div class="contact-phone d-flex align-items-center">
-                    <a href="tel:+380638805745" class="btn btn-outline-light btn-sm d-flex align-items-center" 
-                       title="Зателефонувати +38 063 880 57 45">
-                        <i class="bi bi-telephone me-1"></i>
-                        <span class="phone-text d-none d-lg-inline">+38 063 880 57 45</span>
-                    </a>
-                </div>
+                <a href="tel:+380638805745" 
+                   class="btn btn-sm d-flex align-items-center justify-content-center" 
+                   style="background: var(--mono-surface-elevated); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); width: 40px; height: 40px;"
+                   title="Зателефонувати">
+                    <i class="bi bi-telephone" style="font-size: 16px;"></i>
+                </a>
             </div>
         </div>
     </nav>
 
     <!-- Бокове меню -->
-    <div class="offcanvas offcanvas-start bg-dark text-light" tabindex="-1" id="mainMenu">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title">Головне меню</h5>
+    <div class="offcanvas offcanvas-start text-light" tabindex="-1" id="mainMenu" style="background: var(--mono-surface) !important;">
+        <div class="offcanvas-header" style="border-bottom: 1px solid var(--mono-border);">
+            <h5 class="offcanvas-title" style="font-weight: 700; font-size: 1.4rem;">Меню</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
             <!-- Секція вибору області перегляду -->
-            <div class="mb-4">
-                <h6 class="border-bottom border-secondary pb-2 mb-3">Вибір області перегляду</h6>
+            <div class="mb-4" style="background: var(--mono-surface-elevated); border-radius: var(--mono-radius); padding: 16px;">
+                <h6 style="color: var(--mono-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">Фільтри</h6>
                 <div class="mb-3">
-                    <label for="fileSelect" class="form-label">
-                        <i class="bi bi-geo-alt me-1"></i>
+                    <label for="fileSelect" class="form-label" style="color: var(--mono-text); font-weight: 500;">
+                        <i class="bi bi-geo-alt me-1" style="color: var(--mono-primary);"></i>
                         Рада
                     </label>
-                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="fileSelect">
+                    <select class="form-select form-select-sm" id="fileSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px; width: 100%;">
                         <option>Виберіть раду</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label for="fieldSelect" class="form-label">
-                        <i class="bi bi-grid-3x3-gap me-1"></i>
+                    <label for="fieldSelect" class="form-label" style="color: var(--mono-text); font-weight: 500;">
+                        <i class="bi bi-grid-3x3-gap me-1" style="color: var(--mono-primary);"></i>
                         Поле обробітку
                     </label>
-                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="fieldSelect">
+                    <select class="form-select form-select-sm" id="fieldSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px; width: 100%;">
                         <option value="">Всі поля</option>
                     </select>
                 </div>
                 <!-- Додаємо новий select для фільтрації за роком -->
                 <div class="mb-3">
-                    <label for="expiryYearSelect" class="form-label">
-                        <i class="bi bi-calendar-x me-1"></i>
+                    <label for="expiryYearSelect" class="form-label" style="color: var(--mono-text); font-weight: 500;">
+                        <i class="bi bi-calendar-x me-1" style="color: var(--mono-primary);"></i>
                         Завершення оренди
                     </label>
-                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="expiryYearSelect">
+                    <select class="form-select form-select-sm" id="expiryYearSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
                         <option value="">Всі роки</option>
                     </select>
                 </div>
                 <!-- Додаємо новий select для фільтрації за датою реєстрації -->
                 <div class="mb-3">
-                    <label for="registrationYearSelect" class="form-label">
-                        <i class="bi bi-calendar-check me-1"></i>
+                    <label for="registrationYearSelect" class="form-label" style="color: var(--mono-text); font-weight: 500;">
+                        <i class="bi bi-calendar-check me-1" style="color: var(--mono-primary);"></i>
                         Дата реєстрації оренди
                     </label>
-                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="registrationYearSelect">
+                    <select class="form-select form-select-sm" id="registrationYearSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
                         <option value="">Всі роки</option>
                     </select>
                 </div>
                 <!-- Фільтр за цільовим використанням -->
                 <div class="mb-3">
-                    <label for="landUseSelect" class="form-label">
-                        <i class="bi bi-signpost-split me-1"></i>
+                    <label for="landUseSelect" class="form-label" style="color: var(--mono-text); font-weight: 500;">
+                        <i class="bi bi-signpost-split me-1" style="color: var(--mono-primary);"></i>
                         Цільове використання
                     </label>
-                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="landUseSelect">
+                    <select class="form-select form-select-sm" id="landUseSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
                         <option value="">Всі типи</option>
                     </select>
                 </div>
                 <!-- Фільтр за площею земельної ділянки -->
                 <div class="mb-3">
-                    <label class="form-label">
-                        <i class="bi bi-rulers me-1"></i>
+                    <label class="form-label" style="color: var(--mono-text); font-weight: 500;">
+                        <i class="bi bi-rulers me-1" style="color: var(--mono-primary);"></i>
                         Площа ДЗК (га)
                     </label>
                     <div class="row g-2">
                         <div class="col-6">
-                            <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary" id="areaMinInput" placeholder="Від" step="0.01" min="0">
+                            <input type="number" class="form-control form-control-sm" id="areaMinInput" placeholder="Від" step="0.01" min="0" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
                         </div>
                         <div class="col-6">
-                            <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary" id="areaMaxInput" placeholder="До" step="0.01" min="0">
+                            <input type="number" class="form-control form-control-sm" id="areaMaxInput" placeholder="До" step="0.01" min="0" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
                         </div>
                     </div>
-                    <button class="btn btn-outline-primary btn-sm w-100 mt-2" id="applyAreaFilterBtn">
-                        <i class="bi bi-funnel me-1"></i>Застосувати фільтр площі
+                    <button class="btn btn-sm w-100 mt-2" id="applyAreaFilterBtn" style="background: var(--mono-primary-soft); color: var(--mono-primary); border: none; border-radius: var(--mono-radius-sm); padding: 12px; font-weight: 600;">
+                        <i class="bi bi-funnel me-1"></i>Застосувати
                     </button>
                 </div>
                 <!-- Кнопка скидання всіх фільтрів -->
-                <div class="mb-3">
-                    <button class="btn btn-outline-danger btn-sm w-100" id="resetAllFiltersBtn">
-                        <i class="bi bi-x-circle me-1"></i>Скинути всі фільтри
-                    </button>
-                </div>
+                <button class="btn btn-sm w-100" id="resetAllFiltersBtn" style="background: rgba(239, 68, 68, 0.15); color: #EF4444; border: none; border-radius: var(--mono-radius-sm); padding: 12px; font-weight: 600;">
+                    <i class="bi bi-x-circle me-1"></i>Скинути фільтри
+                </button>
             </div>
             <!-- Секція інструментів -->
-            <div class="mb-4">
-                <h6 class="border-bottom border-secondary pb-2 mb-3">Інструменти</h6>
+            <div class="mb-4" style="background: var(--mono-surface-elevated); border-radius: var(--mono-radius); padding: 16px;">
+                <h6 style="color: var(--mono-text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">Інструменти</h6>
                 <div class="d-grid gap-2">
-                    <button class="btn btn-outline-light text-start" id="cadastralSearchButton">
-                        <i class="bi bi-search me-2"></i>
+                    <button class="btn text-start" id="cadastralSearchButton" style="background: var(--mono-bg); color: var(--mono-text); border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
+                        <i class="bi bi-search me-2" style="color: var(--mono-primary);"></i>
                         Пошук за списком номерів
                     </button>
-                    <button class="btn btn-outline-light text-start" id="statisticsButton">
-                        <i class="bi bi-pie-chart-fill me-2"></i>
+                    <button class="btn text-start" id="statisticsButton" style="background: var(--mono-bg); color: var(--mono-text); border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
+                        <i class="bi bi-pie-chart-fill me-2" style="color: var(--mono-primary);"></i>
                         Статистика
                     </button>
-                    <button class="btn btn-outline-light text-start" id="exportButton">
-                        <i class="bi bi-table me-2"></i>
+                    <button class="btn text-start" id="exportButton" style="background: var(--mono-bg); color: var(--mono-text); border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
+                        <i class="bi bi-table me-2" style="color: var(--mono-primary);"></i>
                         Експорт в Excel
-                    </button>                    <button class="btn btn-outline-light text-start" id="freshnessButton">
-                        <i class="bi bi-building-fill me-2"></i>
+                    </button>
+                    <button class="btn text-start" id="freshnessButton" style="background: var(--mono-bg); color: var(--mono-text); border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
+                        <i class="bi bi-building-fill me-2" style="color: var(--mono-primary);"></i>
                         Моє підприємство
                     </button>
-                    <button class="btn btn-outline-light text-start" id="exchangeButton">
-                        <i class="bi bi-arrow-left-right me-2"></i>
+                    <button class="btn text-start" id="exchangeButton" style="background: var(--mono-bg); color: var(--mono-text); border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
+                        <i class="bi bi-arrow-left-right me-2" style="color: var(--mono-primary);"></i>
                         Пропозиція обміну
                     </button>
-                    <button class="btn btn-outline-warning text-start" id="resetClientIdButton" style="display: none;">
+                    <button class="btn text-start" id="resetClientIdButton" style="display: none; background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
                         <i class="bi bi-arrow-clockwise me-2"></i>
                         Скинути клієнтський ID
                     </button>
-                    <button class="btn btn-outline-info text-start" id="debugButton" style="display: none;">
+                    <button class="btn text-start" id="debugButton" style="display: none; background: rgba(59, 130, 246, 0.15); color: #3B82F6; border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
                         <i class="bi bi-bug me-2"></i>
                         Показати дебаг інформацію
                     </button>
                     <div id="selectionTools" style="display: none;">
-                        <button class="btn btn-outline-warning text-start w-100 mb-2" data-action="clear-selection">
+                        <button class="btn text-start w-100 mb-2" data-action="clear-selection" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
                             <i class="bi bi-trash3 me-2"></i>
                             Очистити виділення
                         </button>
-                        <button class="btn btn-outline-success text-start w-100" data-action="export-selected">
+                        <button class="btn text-start w-100" data-action="export-selected" style="background: var(--mono-primary-soft); color: var(--mono-primary); border: none; border-radius: var(--mono-radius-sm); padding: 14px 16px; font-weight: 500;">
                             <i class="bi bi-file-earmark-excel me-2"></i>
                             Експортувати виділені
                         </button>
@@ -2698,10 +3312,19 @@ body {
             </div>
             
             <!-- Контактна інформація -->
-            <div class="mt-auto pt-3 border-top border-secondary">
+            <div class="mt-auto pt-3" style="border-top: 1px solid var(--mono-border);">
+                <!-- Кнопка замовлення доступу (для мобільного) -->
+                <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGQcVSh5EnTCa6eJKT9KYX6HleJnXveBcyrCEgaKvlQgRInQ/viewform" 
+                   class="btn w-100 mb-3 d-md-none" 
+                   style="background: linear-gradient(135deg, var(--mono-primary) 0%, #059669 100%); border: none; color: white; border-radius: var(--mono-radius-sm); padding: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;"
+                   target="_blank">
+                    <i class="bi bi-gift" style="font-size: 18px;"></i>
+                    <span>Замовити доступ безкоштовно</span>
+                </a>
+                
                 <div class="text-center">
-                    <small class="text-muted d-block mb-2">Контактна інформація</small>
-                    <a href="tel:+380638805745" class="btn btn-outline-light btn-sm w-100">
+                    <small style="color: var(--mono-text-secondary); display: block; margin-bottom: 12px;">Контакти</small>
+                    <a href="tel:+380638805745" class="btn w-100" style="background: var(--mono-surface-elevated); color: var(--mono-text); border: 1px solid var(--mono-border); border-radius: var(--mono-radius-sm); padding: 14px; font-weight: 600;">
                         <i class="bi bi-telephone me-2"></i>
                         +38 063 880 57 45
                     </a>
@@ -2735,13 +3358,15 @@ body {
     
     <!-- Мобільна панель шарів -->
     <div class="mobile-layers-panel" id="mobileLayersPanel">
-        <h6>
-            <i class="bi bi-layers me-2"></i>
-            Шари карти
-            <button class="btn btn-sm btn-outline-secondary float-end" id="closeMobileLayersBtn">
-                <i class="bi bi-x"></i>
+        <div class="mobile-layers-header">
+            <div class="mobile-layers-title">
+                <i class="bi bi-layers"></i>
+                <span>Шари карти</span>
+            </div>
+            <button class="mobile-layers-close" id="closeMobileLayersBtn">
+                <i class="bi bi-x-lg"></i>
             </button>
-        </h6>
+        </div>
         <div id="mobileLayersList">
             <!-- Тут будуть шари -->
         </div>
@@ -2949,7 +3574,7 @@ body {
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    background: rgba(0, 0, 0, 0.8);
+                    background: rgba(0, 0, 0, 0.85);
                     z-index: 10000;
                     display: flex;
                     align-items: flex-end;
@@ -2960,11 +3585,11 @@ body {
                 const modalContent = document.createElement('div');
                 modalContent.className = 'mobile-modal-content';
                 modalContent.style.cssText = `
-                    background: white;
+                    background: #1C1C1E;
                     width: 100%;
                     max-height: 85vh;
-                    border-radius: 20px 20px 0 0;
-                    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3);
+                    border-radius: 24px 24px 0 0;
+                    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
                     overflow: hidden;
                     transform: translateY(100%);
                     animation: modalSlideUp 0.3s ease-out forwards;
@@ -2975,9 +3600,9 @@ body {
                 // Хедер з кнопкою закриття
                 const header = document.createElement('div');
                 header.style.cssText = `
-                    background: linear-gradient(135deg, #28a745, #1e7e34);
-                    padding: 16px 20px;
-                    border-bottom: 1px solid #dee2e6;
+                    background: #2C2C2E;
+                    padding: 20px 20px 16px 20px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
@@ -2991,16 +3616,16 @@ body {
                     margin: 0;
                     font-size: 18px;
                     font-weight: 600;
-                    color: white !important;
+                    color: #FFFFFF !important;
                 `;
                 
                 // Індикатор для драгу (як у нативних додатках)
                 const dragIndicator = document.createElement('div');
                 dragIndicator.style.cssText = `
-                    width: 40px;
-                    height: 4px;
-                    background: rgba(255, 255, 255, 0.7);
-                    border-radius: 2px;
+                    width: 36px;
+                    height: 5px;
+                    background: #636366;
+                    border-radius: 3px;
                     position: absolute;
                     top: 8px;
                     left: 50%;
@@ -3010,10 +3635,10 @@ body {
                 const closeBtn = document.createElement('button');
                 closeBtn.innerHTML = '✕';
                 closeBtn.style.cssText = `
-                    background: rgba(255, 255, 255, 0.2);
+                    background: #3A3A3C;
                     border: none;
-                    font-size: 24px;
-                    color: #ffffff;
+                    font-size: 18px;
+                    color: #ABABAB;
                     cursor: pointer;
                     padding: 0;
                     width: 32px;
@@ -3026,11 +3651,11 @@ body {
                 `;
                 
                 closeBtn.addEventListener('mousedown', function() {
-                    this.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                    this.style.backgroundColor = '#4A4A4C';
                 });
                 
                 closeBtn.addEventListener('mouseup', function() {
-                    this.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                    this.style.backgroundColor = '#3A3A3C';
                 });
                 
                 // Контент
@@ -3038,8 +3663,8 @@ body {
                 body.style.cssText = `
                     flex: 1;
                     overflow-y: auto;
-                    padding: 20px;
-                    background: white;
+                    padding: 0;
+                    background: #000000;
                     -webkit-overflow-scrolling: touch;
                     -webkit-user-select: text;
                     -moz-user-select: text;
@@ -3084,15 +3709,26 @@ body {
                         .mobile-modal-content h3,
                         .mobile-modal-content h4,
                         .mobile-modal-content h5 {
-                            color: #212529 !important;
+                            color: #FFFFFF !important;
                             margin-bottom: 16px !important;
                             font-weight: 600 !important;
                         }
                         
-                        .mobile-modal-content p,
-                        .mobile-modal-content span,
-                        .mobile-modal-content div {
-                            color: #495057 !important;
+                        /* Білий колір за замовчуванням для popup контенту, але дозволяємо inline стилі */
+                        .mobile-modal-content .popup-content {
+                            color: #FFFFFF;
+                        }
+                        
+                        .mobile-modal-content .popup-content div:not([style*="color"]) {
+                            color: #FFFFFF;
+                        }
+                        
+                        .mobile-modal-content .popup-content span:not([style*="color"]) {
+                            color: #FFFFFF;
+                        }
+                        
+                        .mobile-modal-content p {
+                            color: #ABABAB !important;
                             line-height: 1.6 !important;
                         }
                         
@@ -3100,7 +3736,7 @@ body {
                             display: flex;
                             justify-content: space-between;
                             padding: 12px 0;
-                            border-bottom: 1px solid #f1f3f4;
+                            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                         }
                         
                         .mobile-modal-content .info-row:last-child {
@@ -3109,15 +3745,91 @@ body {
                         
                         .mobile-modal-content .info-label {
                             font-weight: 500 !important;
-                            color: #6c757d !important;
+                            color: #8E8E93 !important;
                             flex-shrink: 0;
                         }
                         
                         .mobile-modal-content .info-value {
-                            font-weight: 400 !important;
-                            color: #212529 !important;
+                            font-weight: 500 !important;
+                            color: #FFFFFF !important;
                             text-align: right;
                             word-break: break-word;
+                        }
+                        
+                        /* Перевизначаємо кольори таблиці */
+                        .mobile-modal-content table {
+                            background: #1C1C1E !important;
+                            border-radius: 16px !important;
+                            overflow: hidden;
+                            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                        }
+                        
+                        .mobile-modal-content .property-name {
+                            background: #2C2C2E !important;
+                            color: #ABABAB !important;
+                        }
+                        
+                        /* Стилі для кнопок в popup */
+                        .mobile-modal-content button {
+                            color: #FFFFFF !important;
+                        }
+                        
+                        /* Стилі для details/summary */
+                        .mobile-modal-content details summary {
+                            color: #ABABAB !important;
+                        }
+                        
+                        .mobile-modal-content .property-value {
+                            background: #1C1C1E !important;
+                            color: #FFFFFF !important;
+                        }
+                        
+                        .mobile-modal-content tr {
+                            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+                        }
+                        
+                        .mobile-modal-content tr:last-child {
+                            border-bottom: none !important;
+                        }
+                        
+                        .mobile-modal-content a {
+                            color: #10B981 !important;
+                        }
+                        
+                        /* ===== ВАЖЛИВО: Стилі для нового popup формату ===== */
+                        .mobile-modal-content .popup-content {
+                            color: #FFFFFF !important;
+                            padding: 0 !important;
+                            margin: 0 !important;
+                            background: transparent !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content > div {
+                            color: inherit !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content [style*="color: #FFFFFF"] {
+                            color: #FFFFFF !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content [style*="color: #ABABAB"] {
+                            color: #ABABAB !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content [style*="color: #8E8E93"] {
+                            color: #8E8E93 !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content [style*="color: #10B981"] {
+                            color: #10B981 !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content [style*="color: #EF4444"] {
+                            color: #EF4444 !important;
+                        }
+                        
+                        .mobile-modal-content .popup-content [style*="color: #F59E0B"] {
+                            color: #F59E0B !important;
                         }
                         
                         /* Дозволяємо виділення тексту */
@@ -3198,7 +3910,13 @@ body {
         
         // Функція для обробки контенту модального вікна
         function processModalContent(content) {
-            // Якщо контент вже є HTML
+            // Якщо контент вже в новому форматі (має секції з ДІЛЯНКА, ПЛОЩА і т.д.) - не змінюємо
+            if (typeof content === 'string' && (content.includes('ДІЛЯНКА') || content.includes('popup-content'))) {
+                // Просто повертаємо як є - це новий формат popup
+                return content;
+            }
+            
+            // Якщо контент вже є HTML (старий формат)
             if (typeof content === 'string' && content.includes('<')) {
                 // Покращуємо структуру для мобільного відображення
                 let processed = content;
@@ -4581,12 +5299,12 @@ body {
         // Функція для витягування назви шару
         function extractLayerName(layerName) {
             // Перевіряємо чи є площа в назві (для орендарів)
-            if (window.tenantAreas && tenantAreas[layerName]) {
+            if (typeof tenantAreas !== 'undefined' && tenantAreas[layerName]) {
                 return `${layerName} (${tenantAreas[layerName].toFixed(2)} га)`;
             }
             
             // Для вільних від оренди
-            if (layerName === 'вільні від оренди' && window.freeArea) {
+            if (layerName === 'вільні від оренди' && typeof freeArea !== 'undefined' && freeArea > 0) {
                 return `вільні від оренди (${freeArea.toFixed(2)} га)`;
             }
             
@@ -5303,12 +6021,16 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 info.onAdd = function() {
                     const div = L.DomUtil.create('div', 'selection-info');
                     div.id = 'selectionInfo';
-                    div.style.background = 'white';
-                    div.style.color = 'black';
-                    div.style.padding = '6px';
-                    div.style.border = '2px солід #666';
-                    div.style.borderRadius = '4px';
-                    div.style.maxWidth = '300px';
+                    div.style.cssText = `
+                        background: #1C1C1E;
+                        color: #FFFFFF;
+                        padding: 12px 14px;
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        border-radius: 12px;
+                        max-width: 300px;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+                        font-size: 13px;
+                    `;
                     return div;
                 };
                 info.addTo(map);
@@ -5317,19 +6039,18 @@ function addPolygonToMap(geoJSON, originalProperties) {
             // Формируем HTML для арендаторов
             let tenantsInfo = '';
             tenantAreas.forEach((area, tenant) => {
-                const color = tenant === "Без орендаря" ? "#ffffff" : getColor(tenant);
+                const color = tenant === "Без орендаря" ? "#3A3A3C" : getColor(tenant);
                 tenantsInfo += `
-                    <div style="display: flex; align-items: center; margin-top: 3px;">
+                    <div style="display: flex; align-items: center; margin-top: 6px;">
                         <span style="
                             display: inline-block;
                             width: 12px;
                             height: 12px;
-                            margin-right: 5px;
+                            margin-right: 8px;
                             background-color: ${color};
-                            border: 1px solid #666;
-                            border-radius: 2px;
+                            border-radius: 3px;
                         "></span>
-                        <span>${tenant}: ${area.toFixed(4)} га</span>
+                        <span style="color: #FFFFFF;">${tenant}: <strong>${area.toFixed(4)}</strong> га</span>
                     </div>`;
             });
             
@@ -5337,44 +6058,46 @@ function addPolygonToMap(geoJSON, originalProperties) {
             let statusInfo = '';
             statusAreas.forEach((area, status) => {
                 const statusText = status.toLowerCase();
-                const color = statusText === 'обробляється' ? '#198754' : 
-                            statusText === 'не обробляється' ? '#dc3545' : 
-                            '#666666';
+                const color = statusText === 'обробляється' ? '#10B981' : 
+                            statusText === 'не обробляється' ? '#EF4444' : 
+                            '#8E8E93';
                 statusInfo += `
-                    <div style="display: flex; align-items: center; margin-top: 3px;">
+                    <div style="display: flex; align-items: center; margin-top: 6px;">
                         <span style="
                             display: inline-block;
                             width: 12px; 
                             height: 12px;
-                            margin-right: 5px;
+                            margin-right: 8px;
                             background-color: ${color};
-                            border: 1px solid #666;
-                            border-radius: 2px;
+                            border-radius: 3px;
                         "></span>
-                        <span>${status}: ${area.toFixed(4)} га</span>
+                        <span style="color: #FFFFFF;">${status}: <strong>${area.toFixed(4)}</strong> га</span>
                     </div>`;
             });
             
             // Обновляем содержимое инфобокса
             document.getElementById('selectionInfo').innerHTML = `
                 <div style="max-height: 300px; overflow-y: auto;">
-                    <div>
-                        <b>Виділено ділянок:</b> ${uniqueFeatures.size}<br>
-                        <div style="margin-top: 3px;">
-                            <b>Загальна площа:</b> ${totalSelectedArea.toFixed(4)} га
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Виділено</span>
+                            <span style="background: rgba(16, 185, 129, 0.15); color: #10B981; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600;">${uniqueFeatures.size}</span>
+                        </div>
+                        <div style="color: #FFFFFF; font-size: 18px; font-weight: 700; margin-top: 4px;">
+                            ${totalSelectedArea.toFixed(4)} <span style="font-size: 14px; color: #8E8E93; font-weight: 400;">га</span>
                         </div>
                     </div>
-                    <hr style="margin: 4px 0">
+                    <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 0;"></div>
                     <div>
-                        <strong>Розподіл по орендарях:</strong>
+                        <div style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Орендарі</div>
                         ${tenantsInfo}
                     </div>
-                    <hr style="margin: 4px 0">
+                    <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 0;"></div>
                     <div>
-                        <strong>Розподіл за статусами:</strong>
+                        <div style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Статуси</div>
                         ${statusInfo}
                     </div>
-                    <div style="margin-top: 3px; font-size: 0.9em; color: #666; text-align: right;">
+                    <div style="margin-top: 10px; font-size: 11px; color: #8E8E93; text-align: right;">
                         Площа частин: ${totalPartsArea.toFixed(4)} га
                     </div>
                 </div>`;
@@ -5818,141 +6541,232 @@ function addPolygonToMap(geoJSON, originalProperties) {
 
         function onEachFeature(feature, layer) {
     if (feature.properties) {
-        // Проверяем тип объекта и логируем
+        // Перевіряємо тип об'єкта
         if (feature.properties.type !== 'split') {
             return;
         }
         
-        createPopupContent(feature, layer);
+        // Обробляємо площу та орендаря
         processAreaAndTenant(feature, layer);
-        // Добавляем обработчик клика для выделения/ Додаємо e як другий параметр
+        
+        // Створюємо popup одразу (потрібно для коректної роботи)
+        createPopupContent(feature, layer);
+        
+        // Обробник кліку для виділення
         layer.on('click', function(e) {
             if (!e.originalEvent.target.closest('.leaflet-popup')) {
-                toggleFeatureSelection(layer, e); // Додаємо e як другий параметр
+                toggleFeatureSelection(layer, e);
             }
         });
     }
 }
 
         function createPopupContent(feature, layer) {
-            let popupContent = '<div class="popup-content">';
+            const props = feature.properties;
+            const cadastralNumber = props["Кадастровий номер"] || '';
+            const tenant = props["Орендар"] || props["Орендар частини"] || '';
+            const expiryDate = props["Дата завершення"] || '';
+            const registrationDate = props["Дата реєстрації оренди"] || props["Дата реєстрації"] || '';
+            // Виправлено: використовуємо "Площа ДЗК" замість "Площа земельної ділянки"
+            const areaDZK = parseFloat(props["Площа ДЗК"]) || parseFloat(props["Площа земельної ділянки"]) || 0;
+            const areaCalc = parseFloat(props["Площа розрахована"]) || parseFloat(props["Площа частини"]) || 0;
             
-            popupContent += '<table style="width: 100%; border-collapse: separate; border-spacing: 0; margin: 0; background: transparent; border: none; border-radius: 0; overflow: visible;">';
-            
-            // Показуємо всі поля і на мобільних і на десктопах - тільки змінюємо вигляд
-            const orderedKeys = [
-                "Кадастровий номер",
-                "Номер земельної ділянки", 
-                "Площа земельної ділянки",
-                "Площа розрахована",
-                "Площа частини",
-                "Цільове призначення",
-                "Форма власності",
-                "Власник",
-                "Орендар",
-                "Орендар частини", 
-                "Дата реєстрації оренди",
-                "Дата завершення",
-                "Вид обмеження",
-                "Статус",
-                "Назва поля"
-            ];
-            
-            // Обрабатываем каждое поле и добавляем в таблицу
-            const tableRows = [];
-            orderedKeys.forEach(key => {
-                if (feature.properties.hasOwnProperty(key)) {
-                    let value = feature.properties[key] || '';
-                    
-                    // Форматируем числовые значения площадей с точностью до 4 знаков
-                    if ((key === "Площа розрахована" || key === "Площа частини") && !isNaN(parseFloat(value))) {
-                        value = parseFloat(value).toFixed(4) + " га";
+            // Визначаємо статус оренди
+            let rentalStatus = { text: 'ВІЛЬНО', color: '#8E8E93', bg: 'rgba(142, 142, 147, 0.15)', icon: 'circle' };
+            if (tenant) {
+                const today = new Date();
+                let expiryDateObj = null;
+                
+                if (expiryDate) {
+                    // Парсимо дату (формат DD.MM.YYYY)
+                    const parts = expiryDate.split('.');
+                    if (parts.length === 3) {
+                        expiryDateObj = new Date(parts[2], parts[1] - 1, parts[0]);
                     }
+                }
+                
+                if (expiryDateObj) {
+                    const diffMs = expiryDateObj - today;
+                    const diffMonths = diffMs / (1000 * 60 * 60 * 24 * 30);
                     
-                    // Покращуємо відображення дат для мобільних
-                    if ((key === "Дата реєстрації оренди" || key === "Дата завершення") && value) {
-                        // Форматуємо дату якщо це можливо
-                        try {
-                            const date = new Date(value);
-                            if (!isNaN(date.getTime())) {
-                                value = date.toLocaleDateString('uk-UA');
-                            }
-                        } catch (e) {
-                            // Залишаємо оригінальне значення якщо не вдалося форматувати
-                        }
-                    }
-                    
-                    // Скорочуємо довгі значення для мобільних
-                    if (window.innerWidth <= 768 && typeof value === 'string' && value.length > 50) {
-                        value = `<span title="${value}">${value.substring(0, 47)}...</span>`;
-                    }
-                    
-                    // Додаємо іконки та короткі пояснення для всіх полів
-                    let displayKey = key;
-                    if (window.innerWidth <= 768) {
-                        // Для мобільних використовуємо повні назви без скорочень
-                        displayKey = key;
+                    if (diffMs < 0) {
+                        rentalStatus = { text: 'ПРОСТРОЧЕНО', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.15)', icon: 'exclamation-circle' };
+                    } else if (diffMonths <= 6) {
+                        rentalStatus = { text: 'ЗАКІНЧУЄТЬСЯ', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.15)', icon: 'clock-history' };
                     } else {
-                        // Повні назви з іконками для десктопу
-                        const iconNames = {
-                            "Кадастровий номер": '<i class="bi bi-hash"></i> Кадастровий',
-                            "Номер земельної ділянки": '<i class="bi bi-123"></i> Номер земельної ділянки',
-                            "Площа земельної ділянки": '<i class="bi bi-square"></i> Площа земельної ділянки',
-                            "Площа розрахована": '<i class="bi bi-calculator"></i> Площа',
-                            "Площа частини": '<i class="bi bi-bounding-box"></i> Площа частини',
-                            "Цільове призначення": '<i class="bi bi-bullseye"></i> Цільове призначення',
-                            "Форма власності": '<i class="bi bi-building"></i> Форма власності',
-                            "Власник": '<i class="bi bi-person-check"></i> Власник',
-                            "Орендар": '<i class="bi bi-person-workspace"></i> Орендар',
-                            "Орендар частини": '<i class="bi bi-person-workspace"></i> Орендар частини',
-                            "Дата реєстрації оренди": '<i class="bi bi-calendar-check"></i> Реєстрація',
-                            "Дата завершення": '<i class="bi bi-calendar-x"></i> Завершення',
-                            "Вид обмеження": '<i class="bi bi-shield-exclamation"></i> Обмеження',
-                            "Статус": '<i class="bi bi-info-circle"></i> Статус',
-                            "Назва поля": '<i class="bi bi-geo"></i> Назва поля'
-                        };
-                        displayKey = iconNames[key] || key;
+                        rentalStatus = { text: 'ДІЮЧИЙ', color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)', icon: 'check-circle' };
                     }
-                    
-                    tableRows.push({ displayKey, value });
-                }
-            });
-            
-            // Створюємо рядки таблиці з правильними заокругленими кутами
-            tableRows.forEach((row, index) => {
-                const isFirst = index === 0;
-                const isLast = index === tableRows.length - 1;
-                
-                let propertyNameStyle = "background: rgba(25,135,84,0.05) !important; color: #333 !important; border: none !important; border-right: 1px solid rgba(0,0,0,0.08) !important; padding: 8px 12px !important; font-weight: 600 !important; text-align: left !important; vertical-align: middle !important; margin: 0 !important;";
-                let propertyValueStyle = "border: none !important; padding: 8px 12px !important; background: white !important; vertical-align: middle !important; margin: 0 !important;";
-                
-                // Додаємо верхні заокруглені кути до першого рядка (тепер немає заголовка)
-                if (isFirst) {
-                    propertyNameStyle += " border-top-left-radius: 8px !important;";
-                    propertyValueStyle += " border-top-right-radius: 8px !important;";
-                }
-                
-                if (isLast) {
-                    propertyNameStyle += " border-bottom-left-radius: 8px !important;";
-                    propertyValueStyle += " border-bottom-right-radius: 8px !important;";
                 } else {
-                    propertyValueStyle += " border-bottom: 1px solid rgba(0,0,0,0.08) !important;";
+                    rentalStatus = { text: 'ДІЮЧИЙ', color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)', icon: 'check-circle' };
                 }
-                
-                popupContent += `<tr>
-                    <td class="property-name" style="${propertyNameStyle}">${row.displayKey}:</td>
-                    <td class="property-value" style="${propertyValueStyle}">${row.value}</td>
-                </tr>`;
-            });
-            
-            popupContent += '</table>';
-            
-            // Отримуємо кадастровий номер для посилань
-            const cadastralNumber = feature.properties["Кадастровий номер"];
-            if (cadastralNumber) {
-                const publicUrl = 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber;
-                popupContent += createPopupLinks(publicUrl, feature.properties["Дата оновлення"]);
             }
+            
+            // Розраховуємо час до закінчення
+            let countdown = '';
+            if (expiryDate && tenant) {
+                const parts = expiryDate.split('.');
+                if (parts.length === 3) {
+                    const expiryDateObj = new Date(parts[2], parts[1] - 1, parts[0]);
+                    const today = new Date();
+                    const diffMs = expiryDateObj - today;
+                    
+                    if (diffMs > 0) {
+                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                        const years = Math.floor(diffDays / 365);
+                        const months = Math.floor((diffDays % 365) / 30);
+                        
+                        if (years > 0) {
+                            countdown = `${years} р. ${months} міс.`;
+                        } else if (months > 0) {
+                            countdown = `${months} міс.`;
+                        } else {
+                            countdown = `${diffDays} дн.`;
+                        }
+                    } else {
+                        const overdueDays = Math.abs(Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+                        countdown = `прострочено ${overdueDays} дн.`;
+                    }
+                }
+            }
+            
+            // Різниця площ
+            let areaDiff = '';
+            let areaDiffColor = '#8E8E93';
+            if (areaDZK > 0 && areaCalc > 0) {
+                const diff = ((areaCalc - areaDZK) / areaDZK * 100).toFixed(1);
+                if (diff > 0) {
+                    areaDiff = `+${diff}%`;
+                    areaDiffColor = '#10B981';
+                } else if (diff < 0) {
+                    areaDiff = `${diff}%`;
+                    areaDiffColor = '#EF4444';
+                }
+            }
+            
+            // Створюємо popup контент
+            let popupContent = `<div class="popup-content" style="padding: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">`;
+            
+            // СЕКЦІЯ: Ділянка (об'єднано зі статусом)
+            popupContent += `
+                <div style="padding: 12px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="background: ${rentalStatus.bg}; color: ${rentalStatus.color}; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; letter-spacing: 0.3px;">
+                            <i class="bi bi-${rentalStatus.icon}" style="margin-right: 3px;"></i>${rentalStatus.text}
+                        </span>
+                        ${countdown ? `<span style="color: #8E8E93; font-size: 11px;"><i class="bi bi-hourglass-split" style="margin-right: 3px;"></i>${countdown}</span>` : ''}
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="color: #FFFFFF; font-size: 14px; font-weight: 600; font-family: 'SF Mono', monospace;">${cadastralNumber}</span>
+                        <button onclick="navigator.clipboard.writeText('${cadastralNumber}'); this.innerHTML='<i class=\\'bi bi-check\\' style=\\'color:#10B981\\'></i>'; setTimeout(() => this.innerHTML='<i class=\\'bi bi-copy\\'></i>', 1500);" 
+                                style="background: #3A3A3C; border: none; color: #ABABAB; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                            <i class="bi bi-copy"></i>
+                        </button>
+                    </div>
+                    ${props["Назва поля"] ? `<div style="color: #8E8E93; font-size: 12px; margin-top: 4px;"><i class="bi bi-signpost" style="margin-right: 3px; color: #10B981;"></i>${props["Назва поля"]}</div>` : ''}
+                </div>`;
+            
+            // СЕКЦІЯ: Площа
+            popupContent += `
+                <div style="padding: 12px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <div style="color: #8E8E93; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                        <i class="bi bi-rulers" style="margin-right: 4px;"></i>ПЛОЩА
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="color: #FFFFFF; font-size: 20px; font-weight: 700;">${areaDZK.toFixed(4)} <span style="font-size: 14px; color: #ABABAB;">га</span></div>
+                            <div style="color: #ABABAB; font-size: 12px;">за ДЗК</div>
+                        </div>
+                        ${areaCalc > 0 ? `
+                        <div style="text-align: right;">
+                            <div style="color: #FFFFFF; font-size: 16px; font-weight: 600;">${areaCalc.toFixed(4)} <span style="font-size: 12px; color: #ABABAB;">га</span></div>
+                            <div style="color: ${areaDiffColor}; font-size: 12px; font-weight: 500;">${areaDiff} розрах.</div>
+                        </div>` : ''}
+                    </div>
+                </div>`;
+            
+            // СЕКЦІЯ: Власність
+            if (props["Власник"] || props["Форма власності"]) {
+                popupContent += `
+                    <div style="padding: 12px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <div style="color: #8E8E93; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                            <i class="bi bi-person" style="margin-right: 4px;"></i>ВЛАСНІСТЬ
+                        </div>
+                        ${props["Власник"] ? `<div style="color: #FFFFFF; font-size: 14px; font-weight: 500; margin-bottom: 4px;">${props["Власник"]}</div>` : ''}
+                        ${props["Форма власності"] ? `<div style="color: #ABABAB; font-size: 12px;">${props["Форма власності"]}</div>` : ''}
+                    </div>`;
+            }
+            
+            // СЕКЦІЯ: Оренда
+            if (tenant || registrationDate || expiryDate) {
+                // Отримуємо колір орендаря з карти
+                const tenantColor = tenant ? getColor(tenant) : '#FFFFFF';
+                
+                popupContent += `
+                    <div style="padding: 12px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: #8E8E93; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="bi bi-file-earmark-text" style="margin-right: 4px;"></i>ОРЕНДА
+                            </span>
+                        </div>
+                        ${tenant ? `<div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <span style="display: inline-block; width: 10px; height: 10px; background-color: ${tenantColor}; border-radius: 3px; margin-right: 8px;"></span>
+                            <span style="color: ${tenantColor}; font-size: 14px; font-weight: 600;">${tenant}</span>
+                        </div>` : ''}
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                            ${registrationDate ? `
+                            <div>
+                                <div style="color: #8E8E93; font-size: 11px;">Реєстрація</div>
+                                <div style="color: #FFFFFF; font-size: 13px; font-weight: 500;">${registrationDate}</div>
+                            </div>` : ''}
+                            ${expiryDate ? `
+                            <div style="text-align: right;">
+                                <div style="color: #8E8E93; font-size: 11px;">Завершення</div>
+                                <div style="color: ${rentalStatus.color}; font-size: 13px; font-weight: 500;">${expiryDate}</div>
+                            </div>` : ''}
+                        </div>
+                    </div>`;
+            }
+            
+            // СЕКЦІЯ: Додатково (згорнута)
+            const additionalFields = [];
+            if (props["Цільове призначення"]) additionalFields.push({ label: 'Цільове призначення', value: props["Цільове призначення"] });
+            if (props["Вид обмеження"]) additionalFields.push({ label: 'Обмеження', value: props["Вид обмеження"] });
+            if (props["Номер земельної ділянки"]) additionalFields.push({ label: 'Номер ділянки', value: props["Номер земельної ділянки"] });
+            
+            if (additionalFields.length > 0) {
+                popupContent += `
+                    <details style="background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <summary style="padding: 12px 14px; color: #ABABAB; font-size: 12px; cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;">
+                            <span><i class="bi bi-three-dots" style="margin-right: 4px;"></i>Додатково</span>
+                            <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
+                        </summary>
+                        <div style="padding: 0 14px 12px 14px;">
+                            ${additionalFields.map(f => `
+                                <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <span style="color: #8E8E93; font-size: 12px;">${f.label}</span>
+                                    <span style="color: #FFFFFF; font-size: 12px; text-align: right; max-width: 60%;">${f.value}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </details>`;
+            }
+            
+            // Quick Actions (компактні)
+            const publicUrl = cadastralNumber ? 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber : '';
+            popupContent += `
+                <div style="padding: 10px 14px; background: #2C2C2E; border-radius: 0 0 12px 12px; display: flex; gap: 8px;">
+                    <button onclick="navigator.clipboard.writeText('${cadastralNumber}'); this.querySelector('span').textContent='✓';" 
+                            style="flex: 1; background: #3A3A3C; border: none; color: #FFFFFF; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="bi bi-copy" style="font-size: 14px; color: #10B981;"></i>
+                        <span>Копіювати</span>
+                    </button>
+                    ${publicUrl ? `
+                    <a href="${publicUrl}" target="_blank" 
+                       style="flex: 1; background: #3A3A3C; border: none; color: #FFFFFF; padding: 8px; border-radius: 8px; text-decoration: none; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="bi bi-box-arrow-up-right" style="font-size: 14px; color: #3B82F6;"></i>
+                        <span>Відкрити ДЗК</span>
+                    </a>` : ''}
+                </div>`;
             
             popupContent += '</div>';
             
@@ -5967,7 +6781,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 layer.bindPopup('', { maxWidth: 1, className: 'hidden-popup' });
             } else {
                 // Для десктопу - звичайний попап
-                const popupOptions = { maxWidth: 350 };
+                const popupOptions = { maxWidth: 380, minWidth: 320 };
                 layer.bindPopup(popupContent, popupOptions);
             }
         }
@@ -6159,10 +6973,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
         }
 
         function createPopupLinks(publicUrl, updateDate) {
-            let content = '<div class="popup-link d-flex justify-content-between align-items-center">';
-            content += `<a href="${publicUrl}" target="_blank" title="інформація з сервісів ДЗК">`;
+            let content = '<div class="popup-link d-flex justify-content-between align-items-center" style="padding: 12px 14px; background: #2C2C2E; border-radius: 12px; margin-top: 8px;">';
+            content += `<a href="${publicUrl}" target="_blank" title="інформація з сервісів ДЗК" style="color: #10B981; font-size: 20px;">`;
             content += '<i class="bi bi-info-circle"></i></a>';
-            content += '<div class="text-end">';
+            content += '<div class="text-end" style="color: #ABABAB; font-size: 13px;">';
             if (updateDate) {
                 const [day, month, year] = updateDate.split('.').map(Number);
                 const updateDateTime = new Date(year, month - 1, day);
@@ -6170,7 +6984,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
                 twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
                 content += updateDate;
                 if (updateDateTime < twoMonthsAgo) {
-                    content += ' <i class="bi bi-exclamation-triangle-fill text-warning" ' +
+                    content += ' <i class="bi bi-exclamation-triangle-fill" style="color: #F59E0B;" ' +
                               'title="Інформація може бути застарілою"></i>';
                 }
             }
@@ -6257,6 +7071,14 @@ function addPolygonToMap(geoJSON, originalProperties) {
         function updateDataFreshnessIndicator(data) {
             const indicator = document.getElementById('dataFreshnessText');
             const icon = document.querySelector('.data-freshness-indicator i');
+            const freshnessContainer = document.querySelector('.data-freshness-indicator');
+            
+            // Якщо елементів немає (наприклад, на мобільних), просто виходимо
+            if (!indicator || !icon || !freshnessContainer) {
+                console.log('Data freshness indicator not found, skipping update');
+                return;
+            }
+            
             const datesInfo = data.features.reduce((acc, f) => {
                 const date = f.properties?.["Дата оновлення"];
                 if (!date) {
@@ -6271,14 +7093,14 @@ function addPolygonToMap(geoJSON, originalProperties) {
             const totalRecords = data.features.length;
             const { dates, noDate } = datesInfo;
             if (dates.length === 0 && noDate === totalRecords) {
-                document.querySelector('.data-freshness-indicator').classList.add('freshness-бад');
+                freshnessContainer.classList.add('freshness-бад');
                 icon.title = `Записів без дати оновлення: ${noDate}`;
                 return;
             }
             if (dates.length === 0 && noDate === 0) {
                 indicator.textContent = 'Немає даних';
                 icon.className = 'bi bi-clock-history text-light me-1';
-                document.querySelector('.data-freshness-indicator').classList.remove('freshness-бад');
+                freshnessContainer.classList.remove('freshness-бад');
                 return;
             }
             const now = new Date();
@@ -6303,10 +7125,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
             } else {
                 text = `Застаріло ${oldPercent}%`;
                 className = 'freshness-бад';
-                document.querySelector('.data-freshness-indicator').classList.add('freshness-бад');
+                freshnessContainer.classList.add('freshness-бад');
             }
             if (className !== 'freshness-бад') {
-                document.querySelector('.data-freshness-indicator').classList.remove('freshness-бад');
+                freshnessContainer.classList.remove('freshness-бад');
             }
             const tooltip = `Актуально (до 1 міс): ${freshPercent}%\n` +
                            `До 2 міс: ${mediumPercent}%\n` +
@@ -7850,12 +8672,16 @@ function analyzeExchange() {
                     info.onAdd = function() {
                         const div = L.DomUtil.create('div', 'selection-info');
                         div.id = 'selectionInfo';
-                        div.style.background = 'white';
-                        div.style.color = 'black';
-                        div.style.padding = '6px';
-                        div.style.border = '2px solid #666';
-                        div.style.borderRadius = '4px';
-                        div.style.maxWidth = '300px';
+                        div.style.cssText = `
+                            background: #1C1C1E;
+                            color: #FFFFFF;
+                            padding: 12px 14px;
+                            border: 1px solid rgba(255, 255, 255, 0.08);
+                            border-radius: 12px;
+                            max-width: 300px;
+                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+                            font-size: 13px;
+                        `;
                         return div;
                     };
                     info.addTo(map);
@@ -7864,19 +8690,18 @@ function analyzeExchange() {
                 // Формируем информацию по арендаторам (показываем общую площадь)
                 let tenantsInfo = '';
                 tenantAreas.forEach((data, tenant) => {
-                    const color = tenant === "Без орендаря" ? "#ffffff" : getColor(tenant);
+                    const color = tenant === "Без орендаря" ? "#3A3A3C" : getColor(tenant);
                     tenantsInfo += `
-                        <div style="display: flex; align-items: center; margin-top: 3px;">
+                        <div style="display: flex; align-items: center; margin-top: 6px;">
                             <span style="
                                 display: inline-block;
                                 width: 12px;
                                 height: 12px;
-                                margin-right: 5px;
+                                margin-right: 8px;
                                 background-color: ${color};
-                                border: 1px solid #666;
-                                border-radius: 2px;
+                                border-radius: 3px;
                             "></span>
-                            <span>${tenant}: ${data.totalArea.toFixed(4)} га</span>
+                            <span style="color: #FFFFFF;">${tenant}: <strong>${data.totalArea.toFixed(4)}</strong> га</span>
                         </div>`;
                 });
                 
@@ -7884,43 +8709,46 @@ function analyzeExchange() {
                 let statusInfo = '';
                 statusAreas.forEach((area, status) => {
                     const statusText = status.toLowerCase();
-                    const color = statusText === 'обробляється' ? '#198754' : 
-                                 statusText === 'не обробляється' ? '#dc3545' : 
-                                 '#666666';
+                    const color = statusText === 'обробляється' ? '#10B981' : 
+                                 statusText === 'не обробляється' ? '#EF4444' : 
+                                 '#8E8E93';
                     statusInfo += `
-                        <div style="display: flex; align-items: center; margin-top: 3px;">
+                        <div style="display: flex; align-items: center; margin-top: 6px;">
                             <span style="
                                 display: inline-block;
                                 width: 12px;
                                 height: 12px;
-                                margin-right: 5px;
+                                margin-right: 8px;
                                 background-color: ${color};
-                                border: 1px solid #666;
-                                border-radius: 2px;
+                                border-radius: 3px;
                             "></span>
-                            <span>${status}: ${area.toFixed(4)} га</span>
+                            <span style="color: #FFFFFF;">${status}: <strong>${area.toFixed(4)}</strong> га</span>
                         </div>`;
                 });
 
                 // Обновляем HTML содержимое
                 document.getElementById('selectionInfo').innerHTML = `
                     <div style="max-height: 300px; overflow-y: auto;">
-                        <div>
-                            <b>Виділено ділянок:</b> ${uniqueFeatures.size}<br>
-                            <div style="margin-top: 3px;">
-                                <b>Загальна площа:</b> ${totalSelectedArea.toFixed(4)} га
+                        <div style="margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Виділено</span>
+                                <span style="background: rgba(16, 185, 129, 0.15); color: #10B981; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600;">${uniqueFeatures.size}</span>
+                            </div>
+                            <div style="color: #FFFFFF; font-size: 18px; font-weight: 700; margin-top: 4px;">
+                                ${totalSelectedArea.toFixed(4)} <span style="font-size: 14px; color: #8E8E93; font-weight: 400;">га</span>
                             </div>
                         </div>
-                        <hr style="margin: 4px 0">
+                        <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 0;"></div>
                         <div>
+                            <div style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Орендарі</div>
                             ${tenantsInfo}
                         </div>
-                        <hr style="margin: 4px 0">
+                        <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 0;"></div>
                         <div>
-                            <strong>Розподіл за статусами:</strong>
+                            <div style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Статуси</div>
                             ${statusInfo}
                         </div>
-                        <div style="margin-top: 3px; font-size: 0.9em; color: #666; text-align: right;">
+                        <div style="margin-top: 10px; font-size: 11px; color: #8E8E93; text-align: right;">
                             Площа частин: ${totalPartsArea.toFixed(4)} га
                         </div>
                     </div>`;
