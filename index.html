@@ -2916,6 +2916,34 @@ body {
     .popup-content {
         cursor: text !important;
     }
+    
+    /* ========================================
+       ФІНАЛЬНЕ ВИПРАВЛЕННЯ: Видаляємо білу рамку popup
+       Має бути в самому кінці для максимальної специфічності
+       ======================================== */
+    .leaflet-popup-content-wrapper {
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        border-radius: 12px !important;
+    }
+    
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+        background: transparent !important;
+        color: inherit !important;
+        box-shadow: none !important;
+    }
+    
+    .leaflet-popup-tip {
+        background: #1C1C1E !important;
+    }
+    
+    .leaflet-popup-content {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
