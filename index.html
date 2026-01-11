@@ -155,10 +155,8 @@
         // Викликаємо перевірку якомога раніше
         checkPWARedirect();
         
-        // Додаткова перевірка для iOS
-        if (!ensureIOSPWARedirect()) {
-            console.log('🍎 iOS PWA: No redirect needed or not iOS PWA');
-        }
+        // Додаткова перевірка для iOS (викликається пізніше, коли функція буде визначена)
+        // ensureIOSPWARedirect буде викликана в DOMContentLoaded
         
         // Оновлюємо manifest link з client ID якщо він є
         function updateManifestLink() {
