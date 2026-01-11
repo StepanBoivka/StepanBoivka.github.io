@@ -1187,19 +1187,65 @@ body {
         right: 12px !important;
         background: var(--mono-surface) !important;
         border-radius: var(--mono-radius) !important;
-        padding: 20px !important;
+        padding: 0 !important;
         box-shadow: var(--mono-shadow) !important;
-        max-height: 50vh !important;
-        overflow-y: auto !important;
+        max-height: 60vh !important;
+        overflow: hidden !important;
         z-index: 1001 !important;
         border: 1px solid var(--mono-border) !important;
+        display: none;
     }
     
-    .mobile-layers-panel h6 {
+    .mobile-layers-panel.show {
+        display: block !important;
+    }
+    
+    .mobile-layers-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 16px 20px !important;
+        border-bottom: 1px solid var(--mono-border) !important;
+        background: var(--mono-surface-elevated) !important;
+    }
+    
+    .mobile-layers-title {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
         color: var(--mono-text) !important;
-        font-size: 1.1rem !important;
+        font-size: 16px !important;
         font-weight: 600 !important;
-        margin-bottom: 16px !important;
+    }
+    
+    .mobile-layers-title i {
+        color: var(--mono-primary) !important;
+        font-size: 20px !important;
+    }
+    
+    .mobile-layers-close {
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 8px !important;
+        background: var(--mono-surface) !important;
+        border: 1px solid var(--mono-border) !important;
+        color: var(--mono-text-secondary) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        transition: var(--mono-transition) !important;
+    }
+    
+    .mobile-layers-close:active {
+        background: var(--mono-bg) !important;
+        transform: scale(0.95) !important;
+    }
+    
+    #mobileLayersList {
+        padding: 12px 16px !important;
+        max-height: calc(60vh - 60px) !important;
+        overflow-y: auto !important;
     }
     
     .mobile-layer-item {
@@ -1217,15 +1263,30 @@ body {
         color: var(--mono-text) !important;
         font-size: 15px !important;
         font-weight: 500 !important;
+        display: flex !important;
+        align-items: center !important;
+        flex: 1 !important;
+        cursor: pointer !important;
     }
     
     /* Custom checkbox у стилі Monobank */
     .mobile-layer-item input[type="checkbox"] {
         width: 22px !important;
         height: 22px !important;
-        margin-right: 14px !important;
+        margin-right: 12px !important;
         accent-color: var(--mono-primary) !important;
         border-radius: 6px !important;
+        flex-shrink: 0 !important;
+    }
+    
+    /* Кольоровий індикатор для шарів */
+    .mobile-layer-color {
+        width: 14px !important;
+        height: 14px !important;
+        border-radius: 3px !important;
+        margin-right: 10px !important;
+        flex-shrink: 0 !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
     }
 }
 
@@ -2272,62 +2333,125 @@ body {
         }
     }
     
-    /* Форсуємо світлий текст для layers control незалежно від теми */
+    /* ===== MONOBANK-STYLE LAYERS CONTROL (DESKTOP) ===== */
     .leaflet-control-layers {
-        background: rgba(255, 255, 255, 0.95) !important;
-        color: #333 !important;
+        background: var(--mono-surface) !important;
+        color: var(--mono-text) !important;
+        border: 1px solid var(--mono-border) !important;
+        border-radius: var(--mono-radius) !important;
+        box-shadow: var(--mono-shadow) !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    .leaflet-control-layers-expanded {
+        padding: 12px 16px !important;
+        min-width: 220px !important;
+    }
+    
+    .leaflet-control-layers-list {
+        background: transparent !important;
     }
     
     .leaflet-control-layers label {
-        color: #333 !important;
+        color: var(--mono-text) !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 8px 0 !important;
+        margin: 0 !important;
+        border-bottom: 1px solid var(--mono-border) !important;
+        cursor: pointer !important;
+        transition: var(--mono-transition) !important;
+    }
+    
+    .leaflet-control-layers label:last-child {
+        border-bottom: none !important;
+    }
+    
+    .leaflet-control-layers label:hover {
+        background: var(--mono-surface-elevated) !important;
+        margin: 0 -16px !important;
+        padding: 8px 16px !important;
     }
     
     .leaflet-control-layers span:not(.color-box) {
-        color: #333 !important;
+        color: var(--mono-text) !important;
+    }
+    
+    .leaflet-control-layers input[type="checkbox"],
+    .leaflet-control-layers input[type="radio"] {
+        width: 18px !important;
+        height: 18px !important;
+        margin-right: 10px !important;
+        accent-color: var(--mono-primary) !important;
+        cursor: pointer !important;
     }
     
     .leaflet-layerstree-header-name {
-        color: #333 !important;
+        color: var(--mono-text) !important;
     }
     
     .leaflet-layerstree-header label {
-        color: #333 !important;
+        color: var(--mono-text) !important;
+    }
+    
+    /* Секційні заголовки */
+    .leaflet-control-layers-separator {
+        border-top: 1px solid var(--mono-border) !important;
+        margin: 8px 0 !important;
+    }
+    
+    .leaflet-control-layers-base {
+        padding-bottom: 8px !important;
+    }
+    
+    .leaflet-control-layers-overlays {
+        padding-top: 8px !important;
     }
     
     /* Зберігаємо кольорові квадратики */
     .leaflet-control-layers .color-box {
         color: transparent !important;
-        width: 12px !important;
-        height: 12px !important;
+        width: 14px !important;
+        height: 14px !important;
         display: inline-block !important;
-        margin-right: 5px !important;
-        border: 1px solid rgba(0,0,0,0.2) !important;
-        /* НЕ перевизначаємо background-color - залишаємо inline стилі */
+        margin-right: 8px !important;
+        border-radius: 3px !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        flex-shrink: 0 !important;
     }
     
-    /* Зберігаємо toggle іконку */
+    /* Toggle кнопка - Monobank style */
     .leaflet-control-layers-toggle {
-        background-image: url("data:image/svg+xml,%3csvg width='26' height='26' viewBox='0 0 26 26' xmlns='http://www.w3.org/2000/svg'%3e%3cpath fill='%23333' fill-rule='evenodd' d='M6 4h14v2H6V4zm0 4h10v2H6V8zm0 4h14v2H6v-2zm0 4h10v2H6v-2z'/%3e%3c/svg%3e") !important;
-        background-repeat: no-repeat !important;
-        background-position: 50% 50% !important;
-        background-size: 20px 20px !important;
-        width: 36px !important;
-        height: 36px !important;
+        background-color: var(--mono-surface) !important;
+        background-image: none !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: var(--mono-radius-sm) !important;
+        border: 1px solid var(--mono-border) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: var(--mono-transition) !important;
     }
     
-    /* Видаляємо додатковий контент */
+    .leaflet-control-layers-toggle:hover {
+        background-color: var(--mono-surface-elevated) !important;
+    }
+    
     .leaflet-control-layers-toggle:after {
-        display: none !important;
-    }
-    
-    /* Відновлюємо стандартну іконку Leaflet layers control */
-    .leaflet-control-layers-toggle {
-        background-image: url("data:image/svg+xml,%3csvg width='26' height='26' viewBox='0 0 26 26' xmlns='http://www.w3.org/2000/svg'%3e%3cpath fill='%23333' d='M4 6h18v2H4zm0 4h12v2H4zm0 4h18v2H4zm0 4h12v2H4z'/%3e%3c/svg%3e") !important;
+        content: "\\F509" !important;
+        font-family: "bootstrap-icons" !important;
+        font-size: 20px !important;
+        color: var(--mono-text) !important;
+        display: block !important;
     }
     
     /* Забезпечуємо правильний колір тексту для layer names */
     .layer-name {
-        color: #333 !important;
+        color: var(--mono-text) !important;
     }
     
     /* Додаткові мобільні покращення для layers control */
@@ -3195,13 +3319,15 @@ body {
     
     <!-- Мобільна панель шарів -->
     <div class="mobile-layers-panel" id="mobileLayersPanel">
-        <h6>
-            <i class="bi bi-layers me-2"></i>
-            Шари карти
-            <button class="btn btn-sm btn-outline-secondary float-end" id="closeMobileLayersBtn">
-                <i class="bi bi-x"></i>
+        <div class="mobile-layers-header">
+            <div class="mobile-layers-title">
+                <i class="bi bi-layers"></i>
+                <span>Шари карти</span>
+            </div>
+            <button class="mobile-layers-close" id="closeMobileLayersBtn">
+                <i class="bi bi-x-lg"></i>
             </button>
-        </h6>
+        </div>
         <div id="mobileLayersList">
             <!-- Тут будуть шари -->
         </div>
