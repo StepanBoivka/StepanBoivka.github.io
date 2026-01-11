@@ -7,6 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
             --mono-bg: #000000;
@@ -25,6 +27,8 @@
             --mono-yellow-bg: rgba(245, 158, 11, 0.15);
             --mono-blue: #3B82F6;
             --mono-blue-bg: rgba(59, 130, 246, 0.15);
+            --mono-orange: #F97316;
+            --mono-orange-bg: rgba(249, 115, 22, 0.15);
             --mono-radius: 12px;
             --mono-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
@@ -433,6 +437,143 @@
             }
         }
         
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        /* Alerts/Notifications */
+        .alert-card {
+            background: var(--mono-surface);
+            border-radius: var(--mono-radius);
+            border: 1px solid var(--mono-border);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        
+        .alert-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--mono-border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .alert-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .alert-icon.warning {
+            background: var(--mono-orange-bg);
+            color: var(--mono-orange);
+        }
+        
+        .alert-icon.danger {
+            background: var(--mono-red-bg);
+            color: var(--mono-red);
+        }
+        
+        .alert-icon.info {
+            background: var(--mono-blue-bg);
+            color: var(--mono-blue);
+        }
+        
+        .alert-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .alert-subtitle {
+            font-size: 13px;
+            color: var(--mono-text-secondary);
+        }
+        
+        .alert-body {
+            padding: 16px 20px;
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--mono-surface-2);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .alert-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .alert-item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .alert-badge.red {
+            background: var(--mono-red-bg);
+            color: var(--mono-red);
+        }
+        
+        .alert-badge.orange {
+            background: var(--mono-orange-bg);
+            color: var(--mono-orange);
+        }
+        
+        .alert-badge.yellow {
+            background: var(--mono-yellow-bg);
+            color: var(--mono-yellow);
+        }
+        
+        /* Export buttons */
+        .export-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-export {
+            background: var(--mono-surface-2);
+            border: 1px solid var(--mono-border);
+            color: var(--mono-text);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 14px;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-export:hover {
+            background: var(--mono-surface-3);
+        }
+        
+        .btn-export.excel {
+            border-color: #10B981;
+        }
+        
+        .btn-export.excel:hover {
+            background: rgba(16, 185, 129, 0.15);
+        }
+        
         @media print {
             @page {
                 size: A4 landscape;
@@ -444,14 +585,18 @@
                 color: black !important;
             }
             
-            .btn-pdf, .navbar {
+            .btn-pdf, .btn-export, .navbar, .export-buttons {
                 display: none !important;
             }
             
-            .stats-card, .section, .potential-card {
+            .stats-card, .section, .potential-card, .alert-card {
                 background: white !important;
                 border: 1px solid #ddd !important;
                 color: black !important;
+            }
+            
+            .chart-container {
+                height: 250px !important;
             }
             
             .page-break {
@@ -467,14 +612,37 @@
                 <i class="bi bi-arrow-left"></i>
                 Повернутися на карту
             </a>
-            <button class="btn-pdf" onclick="generatePDF()">
-                <i class="bi bi-file-pdf me-2"></i>Зберегти PDF
-            </button>
+            <div class="export-buttons">
+                <button class="btn-export excel" onclick="exportToExcel()">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    <span class="d-none d-sm-inline">Excel</span>
+                </button>
+                <button class="btn-export" onclick="generatePDF()">
+                    <i class="bi bi-file-pdf"></i>
+                    <span class="d-none d-sm-inline">PDF</span>
+                </button>
+            </div>
         </div>
     </nav>
 
     <div class="container py-4">
         <h1 class="page-title">Статистика: <span id="councilName">Завантаження...</span></h1>
+
+        <!-- Сповіщення про договори -->
+        <div class="alert-card" id="alertsCard" style="display: none;">
+            <div class="alert-header">
+                <div class="alert-icon warning">
+                    <i class="bi bi-bell"></i>
+                </div>
+                <div>
+                    <div class="alert-title">Увага! Потрібна дія</div>
+                    <div class="alert-subtitle">Договори, які потребують уваги найближчим часом</div>
+                </div>
+            </div>
+            <div class="alert-body" id="alertsBody">
+                <!-- Заповнюється динамічно -->
+            </div>
+        </div>
 
         <!-- Потенціал для нових договорів -->
         <div class="potential-card" id="potentialCard">
@@ -489,6 +657,40 @@
             </div>
             <div class="potential-grid" id="potentialGrid">
                 <!-- Заповнюється динамічно -->
+            </div>
+        </div>
+
+        <!-- Графіки -->
+        <div class="row mb-4 g-3">
+            <div class="col-lg-6">
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="bi bi-bar-chart"></i>
+                            Динаміка реєстрації договорів
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="chart-container">
+                            <canvas id="registrationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="bi bi-pie-chart"></i>
+                            Розподіл площі по орендарях
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="chart-container">
+                            <canvas id="tenantsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -874,6 +1076,7 @@
             document.getElementById('tenantsCount').textContent = Object.keys(stats.tenants).length;
             document.getElementById('totalNGO').innerHTML = `${formatNumber(stats.totalNGO)}<span class="stats-value-unit">грн</span>`;
 
+            updateAlerts(stats, null);
             updatePotentialCard(stats);
             updateConcentration(stats);
             updateForecastTable(stats);
@@ -881,6 +1084,8 @@
             updateTenantsTable(stats);
             updateOwnersTable();
             updateMatrixTable(stats.expiryYears, stats.tenants);
+            updateRegistrationChart(stats.registrationYears);
+            updateTenantsChart(stats.tenants, stats.totalArea);
         }
 
         function updatePotentialCard(stats) {
@@ -1194,6 +1399,334 @@
             html += `<td class="text-end">${grandTotal.toFixed(1)}</td></tr>`;
             
             tbody.innerHTML = html;
+        }
+
+        // ========== НОВІ ФУНКЦІЇ ==========
+        
+        // Графік динаміки реєстрації
+        let registrationChartInstance = null;
+        let tenantsChartInstance = null;
+        
+        function updateRegistrationChart(registrationYears) {
+            const ctx = document.getElementById('registrationChart');
+            if (!ctx) return;
+            
+            const years = Object.keys(registrationYears).sort((a, b) => a - b);
+            const activeData = years.map(y => registrationYears[y].active || 0);
+            const inactiveData = years.map(y => registrationYears[y].inactive || 0);
+            
+            if (registrationChartInstance) {
+                registrationChartInstance.destroy();
+            }
+            
+            registrationChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: [
+                        {
+                            label: 'Активні',
+                            data: activeData,
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                            borderColor: '#10B981',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Неактивні',
+                            data: inactiveData,
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderColor: '#EF4444',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { color: '#8E8E93', font: { size: 12 } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#8E8E93' }
+                        },
+                        y: {
+                            stacked: true,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#8E8E93' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateTenantsChart(tenants, totalArea) {
+            const ctx = document.getElementById('tenantsChart');
+            if (!ctx) return;
+            
+            const sorted = Object.entries(tenants).sort((a, b) => b[1].area - a[1].area);
+            const top5 = sorted.slice(0, 5);
+            const othersArea = sorted.slice(5).reduce((sum, [_, d]) => sum + d.area, 0);
+            
+            const labels = top5.map(([name, _]) => name.length > 20 ? name.substring(0, 20) + '...' : name);
+            const data = top5.map(([_, d]) => d.area);
+            const colors = top5.map(([name, _]) => getColor(name));
+            
+            if (othersArea > 0) {
+                labels.push('Інші');
+                data.push(othersArea);
+                colors.push('#636366');
+            }
+            
+            if (tenantsChartInstance) {
+                tenantsChartInstance.destroy();
+            }
+            
+            tenantsChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: '#1C1C1E',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#8E8E93',
+                                font: { size: 11 },
+                                boxWidth: 12,
+                                padding: 8
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const percent = (value / totalArea * 100).toFixed(1);
+                                    return `${context.label}: ${value.toFixed(1)} га (${percent}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Сповіщення про договори
+        function updateAlerts(stats, features) {
+            const alertsCard = document.getElementById('alertsCard');
+            const alertsBody = document.getElementById('alertsBody');
+            
+            const today = new Date();
+            const alerts = [];
+            
+            // Прострочені договори
+            let expiredCount = 0;
+            let expiredArea = 0;
+            Object.entries(stats.expiryYears).forEach(([year, data]) => {
+                if (parseInt(year) < currentYear) {
+                    expiredCount += data.count;
+                    expiredArea += data.area;
+                }
+            });
+            
+            if (expiredCount > 0) {
+                alerts.push({
+                    type: 'red',
+                    icon: 'exclamation-triangle',
+                    title: 'Прострочені договори',
+                    count: expiredCount,
+                    area: expiredArea.toFixed(1),
+                    description: 'Термін оренди вже закінчився'
+                });
+            }
+            
+            // Договори цього року
+            const thisYearData = stats.expiryYears[currentYear] || { count: 0, area: 0 };
+            if (thisYearData.count > 0) {
+                alerts.push({
+                    type: 'orange',
+                    icon: 'clock-history',
+                    title: `Закінчуються у ${currentYear}`,
+                    count: thisYearData.count,
+                    area: thisYearData.area.toFixed(1),
+                    description: 'Потрібно продовжити або переукласти'
+                });
+            }
+            
+            // Договори наступного року
+            const nextYearData = stats.expiryYears[currentYear + 1] || { count: 0, area: 0 };
+            if (nextYearData.count > 0) {
+                alerts.push({
+                    type: 'yellow',
+                    icon: 'calendar-event',
+                    title: `Закінчуються у ${currentYear + 1}`,
+                    count: nextYearData.count,
+                    area: nextYearData.area.toFixed(1),
+                    description: 'Підготуйтеся заздалегідь'
+                });
+            }
+            
+            // Вільні ділянки
+            if (stats.freeParcels > 0) {
+                alerts.push({
+                    type: 'yellow',
+                    icon: 'unlock',
+                    title: 'Вільні від оренди',
+                    count: stats.freeParcels,
+                    area: stats.freeArea.toFixed(1),
+                    description: 'Можна укласти нові договори'
+                });
+            }
+            
+            if (alerts.length === 0) {
+                alertsCard.style.display = 'none';
+                return;
+            }
+            
+            alertsCard.style.display = 'block';
+            
+            let html = '';
+            alerts.forEach(alert => {
+                html += `
+                    <div class="alert-item">
+                        <div class="alert-item-left">
+                            <i class="bi bi-${alert.icon}" style="font-size: 18px; color: var(--mono-${alert.type === 'red' ? 'red' : (alert.type === 'orange' ? 'orange' : 'yellow')});"></i>
+                            <div>
+                                <div style="font-weight: 500;">${alert.title}</div>
+                                <div style="font-size: 12px; color: var(--mono-text-secondary);">${alert.description}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="alert-badge ${alert.type}">${alert.count} ділянок</span>
+                            <div style="font-size: 12px; color: var(--mono-text-secondary); margin-top: 2px;">${alert.area} га</div>
+                        </div>
+                    </div>`;
+            });
+            
+            alertsBody.innerHTML = html;
+        }
+        
+        // Експорт в Excel
+        function exportToExcel() {
+            if (!globalStats) {
+                alert('Дані ще не завантажені');
+                return;
+            }
+            
+            const wb = XLSX.utils.book_new();
+            
+            // Лист 1: Загальна статистика
+            const summaryData = [
+                ['Статистика по раді:', councilName],
+                ['Дата звіту:', new Date().toLocaleDateString('uk-UA')],
+                [''],
+                ['Показник', 'Значення'],
+                ['Загальна площа (га)', globalStats.totalArea.toFixed(2)],
+                ['Кількість ділянок', globalStats.totalParcels],
+                ['Вільні від оренди (га)', globalStats.freeArea.toFixed(2)],
+                ['Кількість вільних ділянок', globalStats.freeParcels],
+                ['Кількість орендарів', Object.keys(globalStats.tenants).length],
+                ['НГО (грн)', globalStats.totalNGO.toFixed(0)]
+            ];
+            const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, ws1, 'Загальна статистика');
+            
+            // Лист 2: Орендарі
+            const tenantsData = [['Орендар', 'Кількість ділянок', 'Площа (га)', '% площі', 'Середня площа', 'НГО (грн)']];
+            Object.entries(globalStats.tenants)
+                .sort((a, b) => b[1].area - a[1].area)
+                .forEach(([name, data]) => {
+                    tenantsData.push([
+                        name,
+                        data.count,
+                        data.area.toFixed(2),
+                        (data.area / globalStats.totalArea * 100).toFixed(1) + '%',
+                        (data.area / data.count).toFixed(2),
+                        data.ngo.toFixed(0)
+                    ]);
+                });
+            const ws2 = XLSX.utils.aoa_to_sheet(tenantsData);
+            XLSX.utils.book_append_sheet(wb, ws2, 'Орендарі');
+            
+            // Лист 3: Прогноз завершення
+            const forecastData = [['Рік', 'Кількість договорів', 'Площа (га)', '% від орендованої']];
+            
+            // Прострочені
+            let expiredCount = 0, expiredArea = 0;
+            Object.entries(globalStats.expiryYears).forEach(([year, data]) => {
+                if (parseInt(year) < currentYear) {
+                    expiredCount += data.count;
+                    expiredArea += data.area;
+                }
+            });
+            if (expiredCount > 0) {
+                forecastData.push(['Прострочені', expiredCount, expiredArea.toFixed(2), 
+                    (expiredArea / globalStats.rentedArea * 100).toFixed(1) + '%']);
+            }
+            
+            for (let year = currentYear; year <= currentYear + 5; year++) {
+                const yearData = globalStats.expiryYears[year] || { count: 0, area: 0 };
+                forecastData.push([
+                    year,
+                    yearData.count,
+                    yearData.area.toFixed(2),
+                    globalStats.rentedArea > 0 ? (yearData.area / globalStats.rentedArea * 100).toFixed(1) + '%' : '0%'
+                ]);
+            }
+            const ws3 = XLSX.utils.aoa_to_sheet(forecastData);
+            XLSX.utils.book_append_sheet(wb, ws3, 'Прогноз завершення');
+            
+            // Лист 4: Матриця завершення
+            const years = Object.keys(globalStats.expiryYears).sort((a, b) => a - b).filter(y => parseInt(y) >= currentYear - 2);
+            const matrixData = [['Орендар', ...years, 'Всього']];
+            
+            Object.entries(globalStats.tenants)
+                .sort((a, b) => b[1].area - a[1].area)
+                .forEach(([tenant, data]) => {
+                    const row = [tenant];
+                    let rowTotal = 0;
+                    years.forEach(year => {
+                        const areaForYear = globalStats.expiryYears[year]?.tenants?.[tenant]?.area || 0;
+                        row.push(areaForYear > 0 ? areaForYear.toFixed(1) : '-');
+                        rowTotal += areaForYear;
+                    });
+                    row.push(rowTotal > 0 ? rowTotal.toFixed(1) : '-');
+                    matrixData.push(row);
+                });
+            const ws4 = XLSX.utils.aoa_to_sheet(matrixData);
+            XLSX.utils.book_append_sheet(wb, ws4, 'Матриця завершення');
+            
+            // Лист 5: Власники
+            const ownersData = [['Власник', 'Кількість ділянок', 'Площа (га)', 'Середня площа']];
+            Object.entries(globalStats.owners)
+                .sort((a, b) => b[1].area - a[1].area)
+                .forEach(([name, data]) => {
+                    ownersData.push([
+                        name,
+                        data.count,
+                        data.area.toFixed(2),
+                        (data.area / data.count).toFixed(2)
+                    ]);
+                });
+            const ws5 = XLSX.utils.aoa_to_sheet(ownersData);
+            XLSX.utils.book_append_sheet(wb, ws5, 'Власники');
+            
+            // Зберігаємо файл
+            XLSX.writeFile(wb, `Статистика_${councilName}.xlsx`);
         }
 
         function goBack() {
