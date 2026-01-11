@@ -3355,7 +3355,7 @@ body {
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    background: rgba(0, 0, 0, 0.8);
+                    background: rgba(0, 0, 0, 0.85);
                     z-index: 10000;
                     display: flex;
                     align-items: flex-end;
@@ -3366,11 +3366,11 @@ body {
                 const modalContent = document.createElement('div');
                 modalContent.className = 'mobile-modal-content';
                 modalContent.style.cssText = `
-                    background: white;
+                    background: #1C1C1E;
                     width: 100%;
                     max-height: 85vh;
-                    border-radius: 20px 20px 0 0;
-                    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3);
+                    border-radius: 24px 24px 0 0;
+                    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
                     overflow: hidden;
                     transform: translateY(100%);
                     animation: modalSlideUp 0.3s ease-out forwards;
@@ -3381,9 +3381,9 @@ body {
                 // Хедер з кнопкою закриття
                 const header = document.createElement('div');
                 header.style.cssText = `
-                    background: linear-gradient(135deg, #28a745, #1e7e34);
-                    padding: 16px 20px;
-                    border-bottom: 1px solid #dee2e6;
+                    background: #2C2C2E;
+                    padding: 20px 20px 16px 20px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
@@ -3397,16 +3397,16 @@ body {
                     margin: 0;
                     font-size: 18px;
                     font-weight: 600;
-                    color: white !important;
+                    color: #FFFFFF !important;
                 `;
                 
                 // Індикатор для драгу (як у нативних додатках)
                 const dragIndicator = document.createElement('div');
                 dragIndicator.style.cssText = `
-                    width: 40px;
-                    height: 4px;
-                    background: rgba(255, 255, 255, 0.7);
-                    border-radius: 2px;
+                    width: 36px;
+                    height: 5px;
+                    background: #636366;
+                    border-radius: 3px;
                     position: absolute;
                     top: 8px;
                     left: 50%;
@@ -3416,10 +3416,10 @@ body {
                 const closeBtn = document.createElement('button');
                 closeBtn.innerHTML = '✕';
                 closeBtn.style.cssText = `
-                    background: rgba(255, 255, 255, 0.2);
+                    background: #3A3A3C;
                     border: none;
-                    font-size: 24px;
-                    color: #ffffff;
+                    font-size: 18px;
+                    color: #ABABAB;
                     cursor: pointer;
                     padding: 0;
                     width: 32px;
@@ -3432,11 +3432,11 @@ body {
                 `;
                 
                 closeBtn.addEventListener('mousedown', function() {
-                    this.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                    this.style.backgroundColor = '#4A4A4C';
                 });
                 
                 closeBtn.addEventListener('mouseup', function() {
-                    this.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                    this.style.backgroundColor = '#3A3A3C';
                 });
                 
                 // Контент
@@ -3444,8 +3444,8 @@ body {
                 body.style.cssText = `
                     flex: 1;
                     overflow-y: auto;
-                    padding: 20px;
-                    background: white;
+                    padding: 16px;
+                    background: #000000;
                     -webkit-overflow-scrolling: touch;
                     -webkit-user-select: text;
                     -moz-user-select: text;
@@ -3490,7 +3490,7 @@ body {
                         .mobile-modal-content h3,
                         .mobile-modal-content h4,
                         .mobile-modal-content h5 {
-                            color: #212529 !important;
+                            color: #FFFFFF !important;
                             margin-bottom: 16px !important;
                             font-weight: 600 !important;
                         }
@@ -3498,7 +3498,7 @@ body {
                         .mobile-modal-content p,
                         .mobile-modal-content span,
                         .mobile-modal-content div {
-                            color: #495057 !important;
+                            color: #ABABAB !important;
                             line-height: 1.6 !important;
                         }
                         
@@ -3506,7 +3506,7 @@ body {
                             display: flex;
                             justify-content: space-between;
                             padding: 12px 0;
-                            border-bottom: 1px solid #f1f3f4;
+                            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                         }
                         
                         .mobile-modal-content .info-row:last-child {
@@ -3515,15 +3515,45 @@ body {
                         
                         .mobile-modal-content .info-label {
                             font-weight: 500 !important;
-                            color: #6c757d !important;
+                            color: #8E8E93 !important;
                             flex-shrink: 0;
                         }
                         
                         .mobile-modal-content .info-value {
-                            font-weight: 400 !important;
-                            color: #212529 !important;
+                            font-weight: 500 !important;
+                            color: #FFFFFF !important;
                             text-align: right;
                             word-break: break-word;
+                        }
+                        
+                        /* Перевизначаємо кольори таблиці */
+                        .mobile-modal-content table {
+                            background: #1C1C1E !important;
+                            border-radius: 16px !important;
+                            overflow: hidden;
+                            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                        }
+                        
+                        .mobile-modal-content .property-name {
+                            background: #2C2C2E !important;
+                            color: #ABABAB !important;
+                        }
+                        
+                        .mobile-modal-content .property-value {
+                            background: #1C1C1E !important;
+                            color: #FFFFFF !important;
+                        }
+                        
+                        .mobile-modal-content tr {
+                            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+                        }
+                        
+                        .mobile-modal-content tr:last-child {
+                            border-bottom: none !important;
+                        }
+                        
+                        .mobile-modal-content a {
+                            color: #10B981 !important;
                         }
                         
                         /* Дозволяємо виділення тексту */
