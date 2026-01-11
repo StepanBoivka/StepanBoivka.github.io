@@ -253,13 +253,35 @@
     </script>
 
     <style>
+        /* ===== MONOBANK-STYLE DESIGN SYSTEM ===== */
+        :root {
+            /* Кольорова палітра */
+            --mono-bg: #1C1C1E;
+            --mono-surface: #2C2C2E;
+            --mono-surface-elevated: #3A3A3C;
+            --mono-card: #2C2C2E;
+            --mono-primary: #10B981;
+            --mono-primary-soft: rgba(16, 185, 129, 0.15);
+            --mono-accent: #34D399;
+            --mono-text: #FFFFFF;
+            --mono-text-secondary: #8E8E93;
+            --mono-text-muted: #636366;
+            --mono-border: rgba(255, 255, 255, 0.08);
+            --mono-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --mono-shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.2);
+            --mono-radius: 20px;
+            --mono-radius-sm: 12px;
+            --mono-radius-lg: 28px;
+            --mono-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         /* PWA та мобільні покращення */
         html, body {
     width: 100%;
     height: 100%;
     margin: 0;
     overflow: hidden;
-    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-touch-callout: none;
@@ -269,6 +291,7 @@
     -ms-user-select: none;
     user-select: none;
     overscroll-behavior: none;
+    background: var(--mono-bg);
 }
 
 /* Підтримка safe-area для iPhone з вирізом */
@@ -296,10 +319,10 @@ body {
     top: env(safe-area-inset-top);
     left: 0;
     right: 0;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    background: rgba(33, 37, 41, 0.95) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(28, 28, 30, 0.85) !important;
+    border-bottom: 1px solid var(--mono-border);
 }
 
 /* Покращення для touch взаємодії */
@@ -315,8 +338,8 @@ body {
 
 /* Мобільна навігація */
 .navbar .btn {
-    border-radius: 12px;
-    transition: all 0.2s ease;
+    border-radius: var(--mono-radius-sm);
+    transition: var(--mono-transition);
 }
 
 .navbar .btn:active {
@@ -324,36 +347,35 @@ body {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* PWA Install Button */
+/* ===== MONOBANK-STYLE PWA INSTALL BUTTON ===== */
 .pwa-install {
     position: fixed;
-    bottom: calc(20px + env(safe-area-inset-bottom));
-    right: 20px;
+    bottom: calc(90px + env(safe-area-inset-bottom));
+    right: 16px;
     z-index: 1001;
-    background: linear-gradient(45deg, #198754, #20c997);
+    background: var(--mono-primary);
     color: white;
     border: none;
-    border-radius: 50px;
-    padding: 15px 25px;
-    font-size: 16px;
+    border-radius: var(--mono-radius);
+    padding: 14px 24px;
+    font-size: 15px;
     font-weight: 600;
-    box-shadow: 0 8px 30px rgba(25, 135, 84, 0.6);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.4);
     display: none;
     align-items: center;
     gap: 10px;
-    transition: all 0.3s ease;
+    transition: var(--mono-transition);
     cursor: pointer;
-    animation: pulseInstall 2s infinite;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
 }
 
 .pwa-install:hover {
-    background: linear-gradient(45deg, #157347, #1abc9c);
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 12px 40px rgba(25, 135, 84, 0.8);
-    animation: none;
+    background: var(--mono-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.5);
+}
+
+.pwa-install:active {
+    transform: scale(0.98);
 }
 
 .pwa-install.show {
@@ -534,20 +556,21 @@ body {
 }
 
 /* Loading Splash Screen */
+/* ===== MONOBANK-STYLE SPLASH SCREEN ===== */
 .splash-screen {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+    background: var(--mono-bg);
     z-index: 9999;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: white;
-    transition: opacity 0.5s ease;
+    color: var(--mono-text);
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .splash-screen.hidden {
@@ -556,40 +579,42 @@ body {
 }
 
 .splash-logo {
-    width: 80px;
-    height: 80px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--mono-primary) 0%, var(--mono-accent) 100%);
+    border-radius: var(--mono-radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20px;
-    animation: pulse 2s infinite;
+    margin-bottom: 24px;
+    box-shadow: 0 20px 60px rgba(16, 185, 129, 0.3);
 }
 
 .splash-logo i {
-    font-size: 40px;
+    font-size: 48px;
+    color: white;
 }
 
 .splash-title {
-    font-size: 24px;
-    font-weight: 500;
+    font-size: 28px;
+    font-weight: 700;
     margin-bottom: 8px;
+    letter-spacing: -0.5px;
 }
 
 .splash-subtitle {
-    font-size: 16px;
-    opacity: 0.8;
-    margin-bottom: 40px;
+    font-size: 15px;
+    color: var(--mono-text-secondary);
+    margin-bottom: 48px;
 }
 
 .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-top: 3px solid white;
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--mono-surface-elevated);
+    border-top: 3px solid var(--mono-primary);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: spin 0.8s linear infinite;
 }
 
 @keyframes pulse {
@@ -960,6 +985,250 @@ body {
     }
 }
 
+/* ===== MONOBANK-STYLE BOTTOM SHEET ===== */
+@media (max-width: 768px) {
+    /* Перетворюємо offcanvas на bottom sheet */
+    .offcanvas.offcanvas-start {
+        top: auto !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: 85vh !important;
+        border-radius: var(--mono-radius-lg) var(--mono-radius-lg) 0 0 !important;
+        background: var(--mono-surface) !important;
+        border: none !important;
+        border-top: 1px solid var(--mono-border) !important;
+        transform: translateY(100%) !important;
+        transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1) !important;
+    }
+    
+    .offcanvas.offcanvas-start.show {
+        transform: translateY(0) !important;
+    }
+    
+    /* Handle bar на top */
+    .offcanvas-header::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 36px;
+        height: 5px;
+        background: var(--mono-text-muted);
+        border-radius: 3px;
+    }
+    
+    .offcanvas-header {
+        position: relative;
+        padding-top: 24px !important;
+        border-bottom: none !important;
+    }
+    
+    .offcanvas-title {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: var(--mono-text) !important;
+    }
+    
+    .offcanvas-body {
+        padding: 0 20px 20px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Mono-style секції */
+    .offcanvas h6 {
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        color: var(--mono-text-secondary) !important;
+        margin-bottom: 16px !important;
+        padding-bottom: 0 !important;
+        border: none !important;
+    }
+    
+    /* Mono-style cards для секцій */
+    .offcanvas .mb-4 {
+        background: var(--mono-surface-elevated) !important;
+        border-radius: var(--mono-radius) !important;
+        padding: 16px !important;
+        margin-bottom: 16px !important;
+    }
+    
+    /* Mono-style inputs */
+    .offcanvas .form-select,
+    .offcanvas .form-control {
+        background: var(--mono-bg) !important;
+        border: none !important;
+        border-radius: var(--mono-radius-sm) !important;
+        color: var(--mono-text) !important;
+        padding: 14px 16px !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+        transition: var(--mono-transition) !important;
+    }
+    
+    .offcanvas .form-select:focus,
+    .offcanvas .form-control:focus {
+        box-shadow: 0 0 0 2px var(--mono-primary) !important;
+        outline: none !important;
+    }
+    
+    .offcanvas .form-label {
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+        color: var(--mono-text-secondary) !important;
+        margin-bottom: 8px !important;
+    }
+    
+    /* Mono-style кнопки */
+    .offcanvas .btn {
+        border-radius: var(--mono-radius-sm) !important;
+        padding: 14px 20px !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        border: none !important;
+        transition: var(--mono-transition) !important;
+    }
+    
+    .offcanvas .btn-outline-light {
+        background: var(--mono-surface-elevated) !important;
+        color: var(--mono-text) !important;
+    }
+    
+    .offcanvas .btn-outline-light:active {
+        background: var(--mono-bg) !important;
+        transform: scale(0.98);
+    }
+    
+    .offcanvas .btn-outline-primary {
+        background: var(--mono-primary-soft) !important;
+        color: var(--mono-primary) !important;
+    }
+    
+    .offcanvas .btn-outline-danger {
+        background: rgba(239, 68, 68, 0.15) !important;
+        color: #EF4444 !important;
+    }
+    
+    /* Іконки у кнопках */
+    .offcanvas .btn i {
+        font-size: 18px !important;
+    }
+    
+    /* Mono-style grid для кнопок */
+    .offcanvas .d-grid.gap-2 {
+        gap: 10px !important;
+    }
+}
+
+/* ===== MONOBANK-STYLE BOTTOM NAVIGATION ===== */
+@media (max-width: 768px) {
+    .mobile-bottom-menu {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: var(--mono-surface) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border-top: 1px solid var(--mono-border) !important;
+        padding: 8px 0 calc(8px + env(safe-area-inset-bottom)) !important;
+        z-index: 1000 !important;
+        display: flex !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+    }
+    
+    .mobile-menu-item {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        padding: 8px 16px !important;
+        border-radius: var(--mono-radius-sm) !important;
+        background: transparent !important;
+        border: none !important;
+        color: var(--mono-text-secondary) !important;
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        min-width: 64px !important;
+        transition: var(--mono-transition) !important;
+    }
+    
+    .mobile-menu-item i {
+        font-size: 22px !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .mobile-menu-item:active {
+        background: var(--mono-surface-elevated) !important;
+        transform: scale(0.95) !important;
+    }
+    
+    .mobile-menu-item.active {
+        color: var(--mono-primary) !important;
+    }
+    
+    /* Карта - відступ для bottom menu */
+    #map {
+        bottom: calc(70px + env(safe-area-inset-bottom)) !important;
+    }
+    
+    /* Мобільна панель шарів - Monobank style */
+    .mobile-layers-panel {
+        position: fixed !important;
+        bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+        left: 12px !important;
+        right: 12px !important;
+        background: var(--mono-surface) !important;
+        border-radius: var(--mono-radius) !important;
+        padding: 20px !important;
+        box-shadow: var(--mono-shadow) !important;
+        max-height: 50vh !important;
+        overflow-y: auto !important;
+        z-index: 1001 !important;
+        border: 1px solid var(--mono-border) !important;
+    }
+    
+    .mobile-layers-panel h6 {
+        color: var(--mono-text) !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 16px !important;
+    }
+    
+    .mobile-layer-item {
+        display: flex !important;
+        align-items: center !important;
+        padding: 12px 0 !important;
+        border-bottom: 1px solid var(--mono-border) !important;
+    }
+    
+    .mobile-layer-item:last-child {
+        border-bottom: none !important;
+    }
+    
+    .mobile-layer-item label {
+        color: var(--mono-text) !important;
+        font-size: 15px !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Custom checkbox у стилі Monobank */
+    .mobile-layer-item input[type="checkbox"] {
+        width: 22px !important;
+        height: 22px !important;
+        margin-right: 14px !important;
+        accent-color: var(--mono-primary) !important;
+        border-radius: 6px !important;
+    }
+}
+
 .offcanvas-title {
     font-size: 1.1rem;
 }
@@ -993,7 +1262,7 @@ body {
 /* Стилі для контактного телефону */
 .contact-phone a {
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: var(--mono-transition);
 }
 
 .contact-phone a:hover {
@@ -1010,6 +1279,17 @@ body {
     
     .contact-phone .phone-text {
         display: none;
+    }
+    
+    /* Приховуємо зайві елементи на мобільних */
+    .data-freshness-indicator {
+        display: none !important;
+    }
+    
+    /* Navbar у стилі Monobank */
+    .navbar {
+        background: var(--mono-bg) !important;
+        border-bottom: 1px solid var(--mono-border) !important;
     }
 }
 
@@ -2221,54 +2501,112 @@ body {
             display: none !important;
         }
         
-        /* Стилі для мобільного модального вікна */
+        /* ===== MONOBANK-STYLE MOBILE MODAL ===== */
+        #mobileModal .modal-dialog {
+            margin: 0 !important;
+            max-width: 100% !important;
+            height: 100% !important;
+        }
+        
+        #mobileModal .modal-content {
+            background: var(--mono-bg) !important;
+            border: none !important;
+            border-radius: 0 !important;
+            height: 100% !important;
+        }
+        
+        #mobileModal .modal-header {
+            background: var(--mono-surface) !important;
+            border-bottom: 1px solid var(--mono-border) !important;
+            padding: 16px 20px !important;
+        }
+        
+        #mobileModal .modal-title {
+            color: var(--mono-text) !important;
+            font-size: 1.25rem !important;
+            font-weight: 600 !important;
+        }
+        
+        #mobileModal .btn-close {
+            filter: invert(1) !important;
+            opacity: 0.7 !important;
+        }
+        
         #mobileModal .modal-body {
             padding: 0;
-            background: #f8f9fa;
+            background: var(--mono-bg);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         #mobileModal .popup-content {
-            padding: 20px;
-            background: white;
+            padding: 16px;
+            background: transparent;
             margin: 0;
-            border-radius: 0;
-            max-height: none;
-            overflow: visible;
         }
         
         #mobileModal .popup-content table {
-            font-size: 14px !important;
-            border-radius: 8px;
+            font-size: 15px !important;
+            border-radius: var(--mono-radius) !important;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: var(--mono-surface) !important;
+            border: 1px solid var(--mono-border) !important;
+            width: 100% !important;
         }
         
         #mobileModal .property-name {
             font-size: 13px !important;
-            padding: 12px 16px !important;
-            width: auto !important;
-            min-width: auto !important;
-            white-space: normal !important;
+            padding: 14px 16px !important;
+            background: var(--mono-surface-elevated) !important;
+            color: var(--mono-text-secondary) !important;
+            font-weight: 500 !important;
+            border-bottom: 1px solid var(--mono-border) !important;
+            border-right: 1px solid var(--mono-border) !important;
         }
         
         #mobileModal .property-value {
-            font-size: 14px !important;
-            padding: 12px 16px !important;
-            line-height: 1.4 !important;
-            max-height: none !important;
-            white-space: normal !important;
+            font-size: 15px !important;
+            padding: 14px 16px !important;
+            color: var(--mono-text) !important;
+            font-weight: 500 !important;
+            background: var(--mono-surface) !important;
+            border-bottom: 1px solid var(--mono-border) !important;
+        }
+        
+        #mobileModal tr:last-child .property-name,
+        #mobileModal tr:last-child .property-value {
+            border-bottom: none !important;
         }
         
         #mobileModal .mobile-header {
-            display: none; /* Приховуємо в модалі, бо є заголовок модалю */
+            display: none;
         }
         
         #mobileModal .popup-link {
-            margin: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin: 16px;
+            padding: 16px;
+            background: var(--mono-surface);
+            border-radius: var(--mono-radius-sm);
+            border: 1px solid var(--mono-border);
+        }
+        
+        #mobileModal .popup-link a {
+            color: var(--mono-primary) !important;
+        }
+        
+        #mobileModal .modal-footer {
+            background: var(--mono-surface) !important;
+            border-top: 1px solid var(--mono-border) !important;
+            padding: 12px 20px calc(12px + env(safe-area-inset-bottom)) !important;
+        }
+        
+        #mobileModal .modal-footer .btn {
+            background: var(--mono-surface-elevated) !important;
+            border: none !important;
+            color: var(--mono-text) !important;
+            border-radius: var(--mono-radius-sm) !important;
+            padding: 12px 24px !important;
+            font-weight: 600 !important;
         }
         
         /* Додаткові мобільні оптимізації */
