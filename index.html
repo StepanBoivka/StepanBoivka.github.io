@@ -2,9 +2,8 @@
 <html lang="uk">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <!-- Додаткові viewport налаштування для iPad -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" media="(orientation: landscape) and (min-device-width: 768px)">
+    <!-- Єдиний оптимізований viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>АГРО-ПРОСТІР</title>
     
     <!-- PWA Meta Tags -->
@@ -482,6 +481,57 @@ body {
     .pwa-install .install-tooltip {
         right: -10px;
         top: -45px;
+    }
+}
+
+/* === ОПТИМІЗАЦІЯ ПРОДУКТИВНОСТІ ДЛЯ МОБІЛЬНИХ === */
+@media (max-width: 768px) {
+    /* Вимикаємо важкі анімації на мобільних */
+    .pwa-install {
+        animation: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    
+    .pwa-install.show {
+        animation: slideInRight 0.3s ease-out !important;
+    }
+    
+    /* Прибираємо blur ефекти на мобільних (дуже важкі для GPU) */
+    .navbar {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(33, 37, 41, 0.98) !important;
+    }
+    
+    .mobile-bottom-menu {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+    }
+    
+    .mobile-layers-panel {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+    }
+    
+    /* Оптимізуємо переходи */
+    * {
+        transition-duration: 0.15s !important;
+    }
+    
+    /* Вимикаємо складні box-shadow на мобільних */
+    .pwa-install {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+}
+
+/* Зменшуємо навантаження на слабких пристроях */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
     }
 }
 
@@ -5818,17 +5868,27 @@ function addPolygonToMap(geoJSON, originalProperties) {
 
         function onEachFeature(feature, layer) {
     if (feature.properties) {
-        // Проверяем тип объекта и логируем
+        // Перевіряємо тип об'єкта
         if (feature.properties.type !== 'split') {
             return;
         }
         
-        createPopupContent(feature, layer);
+        // Обробляємо площу та орендаря (потрібно одразу)
         processAreaAndTenant(feature, layer);
-        // Добавляем обработчик клика для выделения/ Додаємо e як другий параметр
+        
+        // LAZY POPUP: Створюємо popup тільки при першому кліку (економить пам'ять)
+        let popupCreated = false;
+        
         layer.on('click', function(e) {
+            // Створюємо popup лише один раз
+            if (!popupCreated) {
+                createPopupContent(feature, layer);
+                popupCreated = true;
+            }
+            
+            // Обробка виділення
             if (!e.originalEvent.target.closest('.leaflet-popup')) {
-                toggleFeatureSelection(layer, e); // Додаємо e як другий параметр
+                toggleFeatureSelection(layer, e);
             }
         });
     }
@@ -7040,8 +7100,43 @@ function processGeoJsonData(data, clearExisting) {
             return true;
         }
 
-        // Універсальна функція для застосування всіх фільтрів
+        // Debounce функція для оптимізації продуктивності
+        let filterDebounceTimer = null;
+        function debounceFilter(callback, delay = 300) {
+            clearTimeout(filterDebounceTimer);
+            filterDebounceTimer = setTimeout(callback, delay);
+        }
+
+        // Показуємо індикатор завантаження при фільтрації
+        function showFilteringIndicator() {
+            let indicator = document.getElementById('filteringIndicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'filteringIndicator';
+                indicator.innerHTML = '<i class="bi bi-hourglass-split"></i> Фільтрація...';
+                indicator.style.cssText = 'position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(25, 135, 84, 0.9); color: white; padding: 8px 16px; border-radius: 20px; z-index: 9999; font-size: 14px; display: none;';
+                document.body.appendChild(indicator);
+            }
+            indicator.style.display = 'block';
+        }
+        
+        function hideFilteringIndicator() {
+            const indicator = document.getElementById('filteringIndicator');
+            if (indicator) indicator.style.display = 'none';
+        }
+
+        // Універсальна функція для застосування всіх фільтрів (з debounce)
         function applyAllFilters() {
+            showFilteringIndicator();
+            
+            debounceFilter(() => {
+                applyFiltersImmediate();
+                hideFilteringIndicator();
+            }, 200);
+        }
+        
+        // Негайне застосування фільтрів (внутрішня функція)
+        function applyFiltersImmediate() {
             var selectedField = document.getElementById('fieldSelect').value;
             var selectedFile = document.getElementById('fileSelect').value;
             var selectedExpiryYear = document.getElementById('expiryYearSelect').value;
