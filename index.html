@@ -2618,6 +2618,40 @@ body {
                         <option value="">Всі роки</option>
                     </select>
                 </div>
+                <!-- Фільтр за цільовим використанням -->
+                <div class="mb-3">
+                    <label for="landUseSelect" class="form-label">
+                        <i class="bi bi-signpost-split me-1"></i>
+                        Цільове використання
+                    </label>
+                    <select class="form-select form-select-sm bg-dark text-light border-secondary" id="landUseSelect">
+                        <option value="">Всі типи</option>
+                    </select>
+                </div>
+                <!-- Фільтр за площею земельної ділянки -->
+                <div class="mb-3">
+                    <label class="form-label">
+                        <i class="bi bi-rulers me-1"></i>
+                        Площа ДЗК (га)
+                    </label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary" id="areaMinInput" placeholder="Від" step="0.01" min="0">
+                        </div>
+                        <div class="col-6">
+                            <input type="number" class="form-control form-control-sm bg-dark text-light border-secondary" id="areaMaxInput" placeholder="До" step="0.01" min="0">
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm w-100 mt-2" id="applyAreaFilterBtn">
+                        <i class="bi bi-funnel me-1"></i>Застосувати фільтр площі
+                    </button>
+                </div>
+                <!-- Кнопка скидання всіх фільтрів -->
+                <div class="mb-3">
+                    <button class="btn btn-outline-danger btn-sm w-100" id="resetAllFiltersBtn">
+                        <i class="bi bi-x-circle me-1"></i>Скинути всі фільтри
+                    </button>
+                </div>
             </div>
             <!-- Секція інструментів -->
             <div class="mb-4">
@@ -5752,6 +5786,11 @@ function addPolygonToMap(geoJSON, originalProperties) {
         updateFieldSelect(data);
         updateExpiryYearSelect(data);
         updateRegistrationYearSelect(data); // Додаємо виклик функції для заповнення списку датами реєстрації
+        updateLandUseSelect(data); // Заповнюємо список цільового використання
+        
+        // Скидаємо фільтри площі при завантаженні нових даних
+        document.getElementById('areaMinInput').value = '';
+        document.getElementById('areaMaxInput').value = '';
 
         // Добавляем слой на карту
         map.fitBounds(geoJsonLayer.getBounds());
@@ -6956,32 +6995,77 @@ function processGeoJsonData(data, clearExisting) {
             });
         }
 
-        document.getElementById('expiryYearSelect').addEventListener('change', function() {
+        // Функція для заповнення списку цільового використання
+        function updateLandUseSelect(data) {
+            var landUseSelect = document.getElementById('landUseSelect');
+            landUseSelect.innerHTML = '<option value="">Всі типи</option>';
+            landUseSelect.innerHTML += '<option value="no_data">Без даних</option>';
+            var uniqueUses = new Set();
+            data.features.forEach(feature => {
+                if (feature.properties?.type === 'split' && feature.properties?.['Цільове']) {
+                    uniqueUses.add(feature.properties['Цільове']);
+                }
+            });
+            Array.from(uniqueUses).sort().forEach(use => {
+                var option = document.createElement('option');
+                option.value = use;
+                // Скорочуємо довгі назви для відображення
+                option.textContent = use.length > 50 ? use.substring(0, 47) + '...' : use;
+                option.title = use; // Повна назва у тултипі
+                landUseSelect.appendChild(option);
+            });
+        }
+
+        // Функція для фільтрації за цільовим використанням
+        function filterByLandUse(feature, selectedLandUse) {
+            if (!selectedLandUse) return true;
+            if (selectedLandUse === 'no_data') {
+                // Показати тільки записи без даних цільового використання
+                return !feature.properties?.['Цільове'];
+            }
+            return feature.properties?.['Цільове'] === selectedLandUse;
+        }
+
+        // Функція для фільтрації за діапазоном площі ДЗК
+        function filterByAreaRange(feature, minArea, maxArea) {
+            const area = parseFloat(feature.properties?.['Площа ДЗК']);
+            if (isNaN(area)) return true; // Якщо площа не визначена, показуємо
+            
+            const min = parseFloat(minArea);
+            const max = parseFloat(maxArea);
+            
+            if (!isNaN(min) && area < min) return false;
+            if (!isNaN(max) && area > max) return false;
+            
+            return true;
+        }
+
+        // Універсальна функція для застосування всіх фільтрів
+        function applyAllFilters() {
             var selectedField = document.getElementById('fieldSelect').value;
             var selectedFile = document.getElementById('fileSelect').value;
-            var selectedExpiryYear = this.value;
+            var selectedExpiryYear = document.getElementById('expiryYearSelect').value;
             var selectedRegistrationYear = document.getElementById('registrationYearSelect').value;
+            var selectedLandUse = document.getElementById('landUseSelect').value;
+            var areaMin = document.getElementById('areaMinInput').value;
+            var areaMax = document.getElementById('areaMaxInput').value;
             
             if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
                 clearOverlays();
                 tenantAreas = {};
                 freeArea = 0;
-                selectedFeatures.clear(); // Очищаем выделение при смене фильтра
+                selectedFeatures.clear();
                 
-                // Фильтруем только split-части
                 const filteredFeatures = originalGeoJsonData.features.filter(feature => {
-                    // Фільтр за полем
+                    if (feature.properties?.type !== 'split') return false;
+                    
                     const fieldMatch = !selectedField || feature.properties?.['Назва поля'] === selectedField;
-                    
-                    // Фільтр за роком завершення оренди
                     const expiryYearMatch = filterByExpiryYear(feature, selectedExpiryYear);
-                    
-                    // Фільтр за роком реєстрації оренди
                     const registrationYearMatch = filterByRegistrationYear(feature, selectedRegistrationYear);
+                    const landUseMatch = filterByLandUse(feature, selectedLandUse);
+                    const areaMatch = filterByAreaRange(feature, areaMin, areaMax);
                     
-                    // Повертаємо true тільки якщо запис відповідає всім умовам
-                    return feature.properties?.type === 'split' && 
-                           fieldMatch && expiryYearMatch && registrationYearMatch;
+                    return fieldMatch && expiryYearMatch && registrationYearMatch && landUseMatch && areaMatch;
                 });
                 
                 const filteredData = {
@@ -7005,70 +7089,64 @@ function processGeoJsonData(data, clearExisting) {
                 addSearchControl(geoJsonLayer);
                 updateDataFreshnessIndicator(filteredData);
             }
+        }
+
+        // Функція скидання всіх фільтрів
+        function resetAllFilters() {
+            // Скидаємо всі select-и на перше значення
+            document.getElementById('fieldSelect').value = '';
+            document.getElementById('expiryYearSelect').value = '';
+            document.getElementById('registrationYearSelect').value = '';
+            document.getElementById('landUseSelect').value = '';
+            
+            // Очищаємо поля площі
+            document.getElementById('areaMinInput').value = '';
+            document.getElementById('areaMaxInput').value = '';
+            
+            // Застосовуємо фільтри (з порожніми значеннями - покаже все)
+            applyAllFilters();
+        }
+
+        // Обробник для кнопки скидання всіх фільтрів
+        document.getElementById('resetAllFiltersBtn').addEventListener('click', function() {
+            resetAllFilters();
+        });
+
+        // Обробник для фільтра цільового використання
+        document.getElementById('landUseSelect').addEventListener('change', function() {
+            applyAllFilters();
+        });
+
+        // Обробник для кнопки застосування фільтра площі
+        document.getElementById('applyAreaFilterBtn').addEventListener('click', function() {
+            applyAllFilters();
+        });
+
+        // Також застосовуємо фільтр площі при натисканні Enter в полях введення
+        document.getElementById('areaMinInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                applyAllFilters();
+            }
+        });
+
+        document.getElementById('areaMaxInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                applyAllFilters();
+            }
+        });
+
+        document.getElementById('expiryYearSelect').addEventListener('change', function() {
+            applyAllFilters();
+        });
+
+        // Обробник для фільтра дати реєстрації оренди
+        document.getElementById('registrationYearSelect').addEventListener('change', function() {
+            applyAllFilters();
         });
 
         // Модифікуємо існуючий обробник зміни fieldSelect
         document.getElementById('fieldSelect').addEventListener('change', function() {
-            var selectedField = this.value;
-            var selectedFile = document.getElementById('fileSelect').value;
-            var selectedYear = document.getElementById('expiryYearSelect').value;
-            if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
-                clearOverlays();
-                tenantAreas = {};
-                freeArea = 0;
-                selectedFeatures.clear(); // Очищаем выделение при смене фильтра
-                
-                
-                // Фильтруем только split-части
-                const filteredFeatures = originalGeoJsonData.features.filter(feature => {
-                    // Проверяем тип объекта
-                    if (!feature.properties || feature.properties.type !== 'split') {
-                        return false;
-                    }
-                    
-                    // Проверяем соответствие полю
-                    const fieldMatch = !selectedField || 
-                        feature.properties['Назва поля'] === selectedField;
-                    
-                    // Проверяем соответствие году (если выбран)
-                    let yearMatch = true;
-                    if (selectedYear) {
-                        if (selectedYear === 'no_date') {
-                            yearMatch = !feature.properties['Дата завершення'];
-                        } else if (feature.properties['Дата завершення']) {
-                            const dateStr = feature.properties['Дата завершення'];
-                            const year = dateStr.split('.')[2];
-                            yearMatch = year === selectedYear;
-                        } else {
-                            yearMatch = false;
-                        }
-                    }
-                    
-                    return fieldMatch && yearMatch;
-                });
-                
-                
-                const filteredData = {
-                    type: "FeatureCollection",
-                    features: filteredFeatures
-                };
-                
-                var geoJsonLayer = L.geoJSON(filteredData, {
-                    style: styleFeature,
-                    onEachFeature: onEachFeature
-                });
-                
-                overlays[selectedFile] = geoJsonLayer;
-                geoJsonLayer.addTo(map);
-                
-                if (geoJsonLayer.getBounds().isValid()) {
-                    map.fitBounds(geoJsonLayer.getBounds());
-                }
-                
-                updateLayersControl();
-                addSearchControl(geoJsonLayer);
-                updateDataFreshnessIndicator(filteredData);
-            }
+            applyAllFilters();
         });
 
         // Додаємо обробники для кнопок виділення
@@ -8263,154 +8341,6 @@ function exportToExcel() {
 </script>
 
 <script src="js/pdfExport.js"></script>
-<script>
-        // ...existing code...
-        
-        // Додаємо обробник зміни року завершення оренди
-        document.getElementById('expiryYearSelect').addEventListener('change', function() {
-            var selectedField = document.getElementById('fieldSelect').value;
-            var selectedFile = document.getElementById('fileSelect').value;
-            var selectedExpiryYear = this.value;
-            var selectedRegistrationYear = document.getElementById('registrationYearSelect').value;
-            
-            if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
-                clearOverlays();
-                tenantAreas = {};
-                freeArea = 0;
-                selectedFeatures.clear(); // Очищуємо виділення при зміні фільтра
-                
-                // Фільтруємо тільки split-частини
-                const filteredFeatures = originalGeoJsonData.features.filter(feature => {
-                    if (!feature.properties || feature.properties.type !== 'split') {
-                        return false;
-                    }
-                    
-                    // Перевіряємо відповідність полю
-                    const fieldMatch = !selectedField || feature.properties['Назва поля'] === selectedField;
-                    
-                    // Перевіряємо відповідність року завершення
-                    const expiryYearMatch = filterByExpiryYear(feature, selectedExpiryYear);
-                    
-                    // Перевіряємо відповідність року реєстрації
-                    const registrationYearMatch = filterByRegistrationYear(feature, selectedRegistrationYear);
-                    
-                    return fieldMatch && expiryYearMatch && registrationYearMatch;
-                });
-                
-                const filteredData = {
-                    type: "FeatureCollection",
-                    features: filteredFeatures
-                };
-                
-                var geoJsonLayer = L.geoJSON(filteredData, {
-                    style: styleFeature,
-                    onEachFeature: onEachFeature
-                });
-                
-                overlays[selectedFile] = geoJsonLayer;
-                geoJsonLayer.addTo(map);
-                
-                if (geoJsonLayer.getBounds().isValid()) {
-                    map.fitBounds(geoJsonLayer.getBounds());
-                }
-                
-                updateLayersControl();
-                addSearchControl(geoJsonLayer);
-                updateDataFreshnessIndicator(filteredData);
-            }
-        });
-</script>
-<!-- Обробник фільтрації за роком завершення -->
-<script>
-document.getElementById('expiryYearSelect').addEventListener('change', function() {
-    var selectedExpiryYear = this.value;
-    var selectedRegistrationYear = document.getElementById('registrationYearSelect').value;
-    var selectedField = document.getElementById('fieldSelect').value;
-    selectedFile = document.getElementById('fileSelect').value;
-    
-    if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
-        clearOverlays();
-        tenantAreas = {};
-        freeArea = 0;
-        selectedFeatures.clear();
-        
-        // Фільтруємо тільки split-частини
-        const filteredFeatures = originalGeoJsonData.features.filter(feature => {
-            const fieldMatch = !selectedField || feature.properties["Назва поля"] === selectedField;
-            const expiryMatch = !selectedExpiryYear || filterByExpiryYear(feature, selectedExpiryYear);
-            const registrationMatch = !selectedRegistrationYear || filterByRegistrationYear(feature, selectedRegistrationYear);
-            return feature.properties?.type === 'split' && fieldMatch && expiryMatch && registrationMatch;
-        });
-        
-        const filteredData = {
-            type: "FeatureCollection",
-            features: filteredFeatures
-        };
-        
-        var geoJsonLayer = L.geoJSON(filteredData, {
-            style: styleFeature,
-            onEachFeature: onEachFeature
-        });
-        
-        overlays[selectedFile] = geoJsonLayer;
-        geoJsonLayer.addTo(map);
-        
-        if (geoJsonLayer.getBounds().isValid()) {
-            map.fitBounds(geoJsonLayer.getBounds());
-        }
-        
-        updateLayersControl();
-        addSearchControl(geoJsonLayer);
-        updateDataFreshnessIndicator(filteredData);
-    }
-});
-</script>
-<!-- Обробник фільтрації за роком реєстрації -->
-<script>
-document.getElementById('registrationYearSelect').addEventListener('change', function() {
-    var selectedRegistrationYear = this.value;
-    var selectedExpiryYear = document.getElementById('expiryYearSelect').value;
-    var selectedField = document.getElementById('fieldSelect').value;
-    selectedFile = document.getElementById('fileSelect').value;
-    
-    if (selectedFile !== 'Виберіть раду' && originalGeoJsonData) {
-        clearOverlays();
-        tenantAreas = {};
-        freeArea = 0;
-        selectedFeatures.clear();
-        
-        // Фільтруємо тільки split-частини
-        const filteredFeatures = originalGeoJsonData.features.filter(feature => {
-            const fieldMatch = !selectedField || feature.properties["Назва поля"] === selectedField;
-            const expiryMatch = !selectedExpiryYear || filterByExpiryYear(feature, selectedExpiryYear);
-            const registrationMatch = !selectedRegistrationYear || filterByRegistrationYear(feature, selectedRegistrationYear);
-            return feature.properties?.type === 'split' && fieldMatch && expiryMatch && registrationMatch;
-        });
-        
-        const filteredData = {
-            type: "FeatureCollection",
-            features: filteredFeatures
-        };
-        
-        var geoJsonLayer = L.geoJSON(filteredData, {
-            style: styleFeature,
-            onEachFeature: onEachFeature
-        });
-        
-        overlays[selectedFile] = geoJsonLayer;
-        geoJsonLayer.addTo(map);
-        
-        if (geoJsonLayer.getBounds().isValid()) {
-            map.fitBounds(geoJsonLayer.getBounds());
-        }
-        
-        updateLayersControl();
-        addSearchControl(geoJsonLayer);
-        updateDataFreshnessIndicator(filteredData);
-    }
-});
-</script>
-
 <!-- Мобільне модальне вікно для детальної інформації -->
 <div class="modal fade" id="mobileModal" tabindex="-1" aria-labelledby="mobileModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen">
