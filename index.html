@@ -1480,13 +1480,19 @@ body {
 
         /* ===== MONOBANK-STYLE POPUP ===== */
         .leaflet-popup-content-wrapper {
-            border-radius: var(--mono-radius) !important;
+            border-radius: 12px !important;
             max-width: calc(100vw - 32px) !important;
             min-width: 280px;
             background: transparent !important;
             box-shadow: none !important;
             border: none !important;
             padding: 0 !important;
+        }
+        
+        .leaflet-popup-content-wrapper,
+        .leaflet-popup-tip {
+            background: transparent !important;
+            box-shadow: none !important;
         }
         
         .leaflet-popup-tip {
@@ -1501,6 +1507,7 @@ body {
         
         .leaflet-popup-content {
             margin: 0 !important;
+            padding: 0 !important;
             max-height: 50vh;
             overflow-y: auto;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -6415,7 +6422,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
             }
             
             // Створюємо popup контент
-            let popupContent = `<div class="popup-content" style="padding: 0;">`;
+            let popupContent = `<div class="popup-content" style="padding: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">`;
             
             // СЕКЦІЯ: Ділянка (об'єднано зі статусом)
             popupContent += `
