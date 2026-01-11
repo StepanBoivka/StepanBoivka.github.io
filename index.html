@@ -2423,30 +2423,22 @@ body {
         flex-shrink: 0 !important;
     }
     
-    /* Toggle кнопка - Monobank style */
+    /* Toggle кнопка - Monobank style з SVG іконкою */
     .leaflet-control-layers-toggle {
         background-color: var(--mono-surface) !important;
-        background-image: none !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='%23FFFFFF' viewBox='0 0 16 16'%3E%3Cpath d='M8.235 1.559a.5.5 0 0 0-.47 0l-7.5 4a.5.5 0 0 0 0 .882L3.188 8 .264 9.559a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882L12.813 8l2.922-1.559a.5.5 0 0 0 0-.882l-7.5-4zM8 9.433 1.562 6 8 2.567 14.438 6 8 9.433z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        background-size: 22px 22px !important;
         width: 44px !important;
         height: 44px !important;
         border-radius: var(--mono-radius-sm) !important;
         border: 1px solid var(--mono-border) !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
         transition: var(--mono-transition) !important;
     }
     
     .leaflet-control-layers-toggle:hover {
         background-color: var(--mono-surface-elevated) !important;
-    }
-    
-    .leaflet-control-layers-toggle:after {
-        content: "\\F509" !important;
-        font-family: "bootstrap-icons" !important;
-        font-size: 20px !important;
-        color: var(--mono-text) !important;
-        display: block !important;
     }
     
     /* Забезпечуємо правильний колір тексту для layer names */
@@ -2471,21 +2463,21 @@ body {
             display: none !important;
         }
         
-        /* Створюємо мобільне меню внизу */
+        /* Створюємо мобільне меню внизу - MONOBANK STYLE */
         .mobile-bottom-menu {
             position: fixed;
             bottom: env(safe-area-inset-bottom);
             left: 0;
             right: 0;
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--mono-surface);
             backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            border-top: 1px solid var(--mono-border);
             padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
             z-index: 1000;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
         }
         
         .mobile-menu-item {
@@ -2493,40 +2485,41 @@ body {
             flex-direction: column;
             align-items: center;
             padding: 8px;
-            border-radius: 12px;
+            border-radius: var(--mono-radius-sm);
             background: transparent;
             border: none;
-            color: #333;
-            font-size: 12px;
+            color: var(--mono-text-secondary);
+            font-size: 11px;
+            font-weight: 500;
             min-width: 60px;
-            transition: all 0.2s ease;
+            transition: var(--mono-transition);
             touch-action: manipulation;
         }
         
         .mobile-menu-item:active {
-            background: rgba(0, 0, 0, 0.1);
+            background: var(--mono-surface-elevated);
             transform: scale(0.95);
         }
         
         .mobile-menu-item i {
-            font-size: 20px;
+            font-size: 22px;
             margin-bottom: 4px;
         }
         
         .mobile-menu-item.active {
-            background: rgba(25, 135, 84, 0.1);
-            color: #198754;
+            background: var(--mono-primary-soft);
+            color: var(--mono-primary);
         }
         
         .mobile-menu-item.locating {
-            background: rgba(255, 193, 7, 0.1);
-            color: #ffc107;
+            background: rgba(245, 158, 11, 0.15);
+            color: #F59E0B;
             animation: pulse 2s infinite;
         }
         
         .mobile-menu-item.located {
-            background: rgba(25, 135, 84, 0.2);
-            color: #198754;
+            background: var(--mono-primary-soft);
+            color: var(--mono-primary);
         }
         
         /* Додаємо відступ знизу для карти щоб не перекривала меню */
@@ -2534,38 +2527,80 @@ body {
             bottom: calc(80px + env(safe-area-inset-bottom)) !important;
         }
         
-        /* Мобільна панель шарів */
+        /* Мобільна панель шарів - MONOBANK STYLE */
         .mobile-layers-panel {
             position: fixed;
             bottom: calc(80px + env(safe-area-inset-bottom));
-            left: 16px;
-            right: 16px;
-            background: rgba(255, 255, 255, 0.95);
+            left: 12px;
+            right: 12px;
+            background: var(--mono-surface);
             backdrop-filter: blur(20px);
-            border-radius: 16px;
-            padding: 16px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            border-radius: var(--mono-radius);
+            padding: 0;
+            box-shadow: var(--mono-shadow);
             max-height: 60vh;
-            overflow-y: auto;
+            overflow: hidden;
             display: none;
             z-index: 1001;
+            border: 1px solid var(--mono-border);
         }
         
         .mobile-layers-panel.show {
             display: block;
         }
         
-        .mobile-layers-panel h6 {
-            margin: 0 0 12px 0;
-            color: #333;
+        .mobile-layers-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--mono-border);
+            background: var(--mono-surface-elevated);
+        }
+        
+        .mobile-layers-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--mono-text);
+            font-size: 16px;
             font-weight: 600;
+        }
+        
+        .mobile-layers-title i {
+            color: var(--mono-primary);
+            font-size: 20px;
+        }
+        
+        .mobile-layers-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--mono-surface);
+            border: 1px solid var(--mono-border);
+            color: var(--mono-text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .mobile-layers-close:active {
+            background: var(--mono-bg);
+            transform: scale(0.95);
+        }
+        
+        #mobileLayersList {
+            padding: 12px 16px;
+            max-height: calc(60vh - 60px);
+            overflow-y: auto;
         }
         
         .mobile-layer-item {
             display: flex;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 12px 0;
+            border-bottom: 1px solid var(--mono-border);
         }
         
         .mobile-layer-item:last-child {
@@ -2573,13 +2608,16 @@ body {
         }
         
         .mobile-layer-item input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
             margin-right: 12px;
-            transform: scale(1.2);
+            accent-color: var(--mono-primary);
         }
         
         .mobile-layer-item label {
-            color: #333 !important;
-            font-size: 14px;
+            color: var(--mono-text) !important;
+            font-size: 15px;
+            font-weight: 500;
             flex: 1;
             display: flex;
             align-items: center;
@@ -2589,10 +2627,11 @@ body {
             width: 14px;
             height: 14px;
             display: inline-block;
-            margin-right: 8px;
-            border-radius: 2px;
+            margin-right: 10px;
+            border-radius: 3px;
             vertical-align: middle;
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            flex-shrink: 0;
         }
         
         /* Стилі для мобільного пошуку в overlay */
