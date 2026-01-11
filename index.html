@@ -1483,14 +1483,15 @@ body {
             border-radius: var(--mono-radius) !important;
             max-width: calc(100vw - 32px) !important;
             min-width: 280px;
-            background: var(--mono-surface) !important;
-            box-shadow: var(--mono-shadow) !important;
-            border: 1px solid var(--mono-border) !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
         }
         
         .leaflet-popup-tip {
-            background: var(--mono-surface) !important;
-            border: 1px solid var(--mono-border) !important;
+            background: #1C1C1E !important;
+            border: none !important;
             box-shadow: none !important;
         }
         
@@ -6476,14 +6477,14 @@ function addPolygonToMap(geoJSON, originalProperties) {
                             </span>
                         </div>
                         ${tenant ? `<div style="color: #FFFFFF; font-size: 14px; font-weight: 500; margin-bottom: 8px;">${tenant}</div>` : ''}
-                        <div style="display: flex; gap: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                             ${registrationDate ? `
                             <div>
                                 <div style="color: #8E8E93; font-size: 11px;">Реєстрація</div>
                                 <div style="color: #FFFFFF; font-size: 13px; font-weight: 500;">${registrationDate}</div>
                             </div>` : ''}
                             ${expiryDate ? `
-                            <div>
+                            <div style="text-align: right;">
                                 <div style="color: #8E8E93; font-size: 11px;">Завершення</div>
                                 <div style="color: ${rentalStatus.color}; font-size: 13px; font-weight: 500;">${expiryDate}</div>
                             </div>` : ''}
