@@ -3587,7 +3587,8 @@ body {
                 modalContent.style.cssText = `
                     background: #1C1C1E;
                     width: 100%;
-                    max-height: 85vh;
+                    max-height: calc(85vh - 80px - env(safe-area-inset-bottom));
+                    margin-bottom: calc(80px + env(safe-area-inset-bottom));
                     border-radius: 24px 24px 0 0;
                     box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
                     overflow: hidden;
@@ -6751,6 +6752,16 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     </details>`;
             }
             
+            // СЕКЦІЯ: Дата оновлення
+            const updateDate = props["Дата оновлення"] || '';
+            if (updateDate) {
+                popupContent += `
+                    <div style="padding: 8px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between;">
+                        <span style="color: #636366; font-size: 11px;"><i class="bi bi-clock-history" style="margin-right: 4px;"></i>Дані оновлено</span>
+                        <span style="color: #8E8E93; font-size: 11px; font-weight: 500;">${updateDate}</span>
+                    </div>`;
+            }
+            
             // Quick Actions (компактні)
             const publicUrl = cadastralNumber ? 'https://e.land.gov.ua/back/cadaster/?cad_num=' + cadastralNumber : '';
             popupContent += `
@@ -6772,15 +6783,20 @@ function addPolygonToMap(geoJSON, originalProperties) {
             
             // Адаптивні налаштування popup
             if (window.innerWidth <= 768) {
+                // Для мобільних - додаємо footer з відступом для нижнього меню
+                const mobileContent = popupContent.replace('</div></div></div>', '') + `
+                    <div style="padding: 12px 14px; background: #000000; padding-bottom: calc(12px + env(safe-area-inset-bottom) + 70px);"></div>
+                </div>`;
+                
                 // Для мобільних - показуємо модальне вікно на весь екран
                 layer.on('click', function(e) {
-                    showMobileModal(popupContent, feature.properties);
+                    showMobileModal(mobileContent, feature.properties);
                 });
                 
                 // Прив'язуємо порожній попап щоб не було помилок
                 layer.bindPopup('', { maxWidth: 1, className: 'hidden-popup' });
             } else {
-                // Для десктопу - звичайний попап
+                // Для десктопу - звичайний попап (без мобільного footer)
                 const popupOptions = { maxWidth: 380, minWidth: 320 };
                 layer.bindPopup(popupContent, popupOptions);
             }
