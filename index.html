@@ -275,6 +275,28 @@
             --mono-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* Стилі для мультиселекта цільового використання */
+        .land-use-dropdown label:hover {
+            background: var(--mono-primary-soft);
+        }
+        
+        .land-use-toggle:hover {
+            background: var(--mono-surface-elevated) !important;
+        }
+        
+        .land-use-menu::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .land-use-menu::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .land-use-menu::-webkit-scrollbar-thumb {
+            background: var(--mono-border);
+            border-radius: 3px;
+        }
+
         /* PWA та мобільні покращення */
         html, body {
     width: 100%;
@@ -3233,15 +3255,29 @@ body {
                         <option value="">Всі роки</option>
                     </select>
                 </div>
-                <!-- Фільтр за цільовим використанням -->
+                <!-- Фільтр за цільовим використанням (множинний вибір) -->
                 <div class="mb-3">
-                    <label for="landUseSelect" class="form-label" style="color: var(--mono-text); font-weight: 500;">
+                    <label class="form-label" style="color: var(--mono-text); font-weight: 500;">
                         <i class="bi bi-signpost-split me-1" style="color: var(--mono-primary);"></i>
                         Цільове використання
                     </label>
-                    <select class="form-select form-select-sm" id="landUseSelect" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px;">
-                        <option value="">Всі типи</option>
-                    </select>
+                    <div class="land-use-dropdown" id="landUseDropdown" style="position: relative;">
+                        <button type="button" class="land-use-toggle" id="landUseToggle" style="background: var(--mono-bg); border: none; color: var(--mono-text); border-radius: var(--mono-radius-sm); padding: 12px 14px; width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <span id="landUseSelectedText">Всі типи</span>
+                            <i class="bi bi-chevron-down" id="landUseChevron" style="transition: transform 0.2s;"></i>
+                        </button>
+                        <div class="land-use-menu" id="landUseMenu" style="display: none; position: absolute; left: 0; right: 0; z-index: 1000; background: var(--mono-surface-elevated); border-radius: var(--mono-radius-sm); margin-top: 4px; max-height: 250px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                            <div style="padding: 8px 12px; border-bottom: 1px solid var(--mono-border);">
+                                <label style="display: flex; align-items: center; cursor: pointer; color: var(--mono-text);">
+                                    <input type="checkbox" id="landUseSelectAll" style="margin-right: 8px; accent-color: var(--mono-primary);" checked>
+                                    <span style="font-weight: 500;">Всі типи</span>
+                                </label>
+                            </div>
+                            <div id="landUseOptions" style="padding: 4px 0;">
+                                <!-- Опції будуть додані динамічно -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <!-- Фільтр за площею земельної ділянки -->
                 <div class="mb-3">
@@ -7852,35 +7888,139 @@ function processGeoJsonData(data, clearExisting) {
             });
         }
 
-        // Функція для заповнення списку цільового використання
+        // Функція для заповнення списку цільового використання (множинний вибір)
         function updateLandUseSelect(data) {
-            var landUseSelect = document.getElementById('landUseSelect');
-            landUseSelect.innerHTML = '<option value="">Всі типи</option>';
-            landUseSelect.innerHTML += '<option value="no_data">Без даних</option>';
+            var landUseOptions = document.getElementById('landUseOptions');
+            landUseOptions.innerHTML = '';
+            
+            // Додаємо опцію "Без даних"
+            var noDataLabel = document.createElement('label');
+            noDataLabel.style.cssText = 'display: flex; align-items: center; cursor: pointer; color: var(--mono-text); padding: 8px 12px;';
+            noDataLabel.innerHTML = '<input type="checkbox" class="land-use-checkbox" value="no_data" style="margin-right: 8px; accent-color: var(--mono-primary);" checked><span style="font-style: italic;">Без даних</span>';
+            landUseOptions.appendChild(noDataLabel);
+            
             var uniqueUses = new Set();
             data.features.forEach(feature => {
                 if (feature.properties?.type === 'split' && feature.properties?.['Цільове']) {
                     uniqueUses.add(feature.properties['Цільове']);
                 }
             });
+            
             Array.from(uniqueUses).sort().forEach(use => {
-                var option = document.createElement('option');
-                option.value = use;
-                // Скорочуємо довгі назви для відображення
-                option.textContent = use.length > 50 ? use.substring(0, 47) + '...' : use;
-                option.title = use; // Повна назва у тултипі
-                landUseSelect.appendChild(option);
+                var label = document.createElement('label');
+                label.style.cssText = 'display: flex; align-items: flex-start; cursor: pointer; color: var(--mono-text); padding: 8px 12px;';
+                var displayText = use.length > 45 ? use.substring(0, 42) + '...' : use;
+                label.innerHTML = '<input type="checkbox" class="land-use-checkbox" value="' + use.replace(/"/g, '&quot;') + '" style="margin-right: 8px; margin-top: 3px; accent-color: var(--mono-primary); flex-shrink: 0;" checked><span title="' + use.replace(/"/g, '&quot;') + '" style="word-break: break-word;">' + displayText + '</span>';
+                landUseOptions.appendChild(label);
+            });
+            
+            // Оновлюємо текст кнопки
+            updateLandUseButtonText();
+            
+            // Додаємо обробники подій для чекбоксів
+            initLandUseCheckboxHandlers();
+        }
+        
+        // Функція ініціалізації обробників для чекбоксів цільового використання
+        function initLandUseCheckboxHandlers() {
+            var selectAllCheckbox = document.getElementById('landUseSelectAll');
+            var checkboxes = document.querySelectorAll('.land-use-checkbox');
+            
+            // Обробник для "Всі типи"
+            selectAllCheckbox.addEventListener('change', function() {
+                checkboxes.forEach(cb => cb.checked = this.checked);
+                updateLandUseButtonText();
+                applyAllFilters();
+            });
+            
+            // Обробники для окремих чекбоксів
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    var allChecked = Array.from(checkboxes).every(c => c.checked);
+                    var noneChecked = Array.from(checkboxes).every(c => !c.checked);
+                    selectAllCheckbox.checked = allChecked;
+                    selectAllCheckbox.indeterminate = !allChecked && !noneChecked;
+                    updateLandUseButtonText();
+                    applyAllFilters();
+                });
             });
         }
-
-        // Функція для фільтрації за цільовим використанням
-        function filterByLandUse(feature, selectedLandUse) {
-            if (!selectedLandUse) return true;
-            if (selectedLandUse === 'no_data') {
-                // Показати тільки записи без даних цільового використання
-                return !feature.properties?.['Цільове'];
+        
+        // Функція оновлення тексту кнопки
+        function updateLandUseButtonText() {
+            var checkboxes = document.querySelectorAll('.land-use-checkbox');
+            var checkedBoxes = document.querySelectorAll('.land-use-checkbox:checked');
+            var textSpan = document.getElementById('landUseSelectedText');
+            
+            if (checkedBoxes.length === 0) {
+                textSpan.textContent = 'Нічого не вибрано';
+            } else if (checkedBoxes.length === checkboxes.length) {
+                textSpan.textContent = 'Всі типи';
+            } else if (checkedBoxes.length === 1) {
+                var value = checkedBoxes[0].value;
+                if (value === 'no_data') {
+                    textSpan.textContent = 'Без даних';
+                } else {
+                    textSpan.textContent = value.length > 25 ? value.substring(0, 22) + '...' : value;
+                }
+            } else {
+                textSpan.textContent = 'Вибрано: ' + checkedBoxes.length;
             }
-            return feature.properties?.['Цільове'] === selectedLandUse;
+        }
+        
+        // Ініціалізація dropdown для цільового використання
+        (function initLandUseDropdown() {
+            var toggle = document.getElementById('landUseToggle');
+            var menu = document.getElementById('landUseMenu');
+            var chevron = document.getElementById('landUseChevron');
+            var dropdown = document.getElementById('landUseDropdown');
+            
+            if (!toggle || !menu) return;
+            
+            // Відкриття/закриття меню
+            toggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var isOpen = menu.style.display === 'block';
+                menu.style.display = isOpen ? 'none' : 'block';
+                chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+            });
+            
+            // Закриття при кліку зовні
+            document.addEventListener('click', function(e) {
+                if (!dropdown.contains(e.target)) {
+                    menu.style.display = 'none';
+                    chevron.style.transform = 'rotate(0deg)';
+                }
+            });
+            
+            // Запобігаємо закриттю при кліку всередині меню
+            menu.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        })();
+
+        // Функція для фільтрації за цільовим використанням (множинний вибір)
+        function filterByLandUse(feature, selectedLandUses) {
+            // Якщо немає вибраних значень або вибрано все - показуємо все
+            if (!selectedLandUses || selectedLandUses.length === 0) return false;
+            
+            var checkboxes = document.querySelectorAll('.land-use-checkbox');
+            if (selectedLandUses.length === checkboxes.length) return true;
+            
+            var featureLandUse = feature.properties?.['Цільове'];
+            
+            // Якщо у feature немає цільового використання
+            if (!featureLandUse) {
+                return selectedLandUses.includes('no_data');
+            }
+            
+            return selectedLandUses.includes(featureLandUse);
+        }
+        
+        // Функція отримання вибраних значень цільового використання
+        function getSelectedLandUses() {
+            var checkedBoxes = document.querySelectorAll('.land-use-checkbox:checked');
+            return Array.from(checkedBoxes).map(cb => cb.value);
         }
 
         // Функція для фільтрації за діапазоном площі ДЗК
@@ -7903,7 +8043,7 @@ function processGeoJsonData(data, clearExisting) {
             var selectedFile = document.getElementById('fileSelect').value;
             var selectedExpiryYear = document.getElementById('expiryYearSelect').value;
             var selectedRegistrationYear = document.getElementById('registrationYearSelect').value;
-            var selectedLandUse = document.getElementById('landUseSelect').value;
+            var selectedLandUses = getSelectedLandUses();
             var areaMin = document.getElementById('areaMinInput').value;
             var areaMax = document.getElementById('areaMaxInput').value;
             
@@ -7919,7 +8059,7 @@ function processGeoJsonData(data, clearExisting) {
                     const fieldMatch = !selectedField || feature.properties?.['Назва поля'] === selectedField;
                     const expiryYearMatch = filterByExpiryYear(feature, selectedExpiryYear);
                     const registrationYearMatch = filterByRegistrationYear(feature, selectedRegistrationYear);
-                    const landUseMatch = filterByLandUse(feature, selectedLandUse);
+                    const landUseMatch = filterByLandUse(feature, selectedLandUses);
                     const areaMatch = filterByAreaRange(feature, areaMin, areaMax);
                     
                     return fieldMatch && expiryYearMatch && registrationYearMatch && landUseMatch && areaMatch;
@@ -7954,7 +8094,12 @@ function processGeoJsonData(data, clearExisting) {
             document.getElementById('fieldSelect').value = '';
             document.getElementById('expiryYearSelect').value = '';
             document.getElementById('registrationYearSelect').value = '';
-            document.getElementById('landUseSelect').value = '';
+            
+            // Скидаємо чекбокси цільового використання
+            document.getElementById('landUseSelectAll').checked = true;
+            document.getElementById('landUseSelectAll').indeterminate = false;
+            document.querySelectorAll('.land-use-checkbox').forEach(cb => cb.checked = true);
+            updateLandUseButtonText();
             
             // Очищаємо поля площі
             document.getElementById('areaMinInput').value = '';
@@ -7969,10 +8114,7 @@ function processGeoJsonData(data, clearExisting) {
             resetAllFilters();
         });
 
-        // Обробник для фільтра цільового використання
-        document.getElementById('landUseSelect').addEventListener('change', function() {
-            applyAllFilters();
-        });
+        // Обробник для фільтра цільового використання тепер в initLandUseCheckboxHandlers()
 
         // Обробник для кнопки застосування фільтра площі
         document.getElementById('applyAreaFilterBtn').addEventListener('click', function() {
@@ -9468,7 +9610,11 @@ function exportToExcel() {
         freeParcels: 0,
         freeArea: 0,
         pricePerCadastral: 7,
-        includeFree: true
+        costPerCadastral: 3.5,
+        includeFreeForClient: true,   // Вільні для клієнта (вартість)
+        includeFreeForCost: false,    // Вільні для собівартості (затрати)
+        areaMin: 0,                    // Мінімальна площа (га)
+        areaMax: 1000                  // Максимальна площа (га)
     };
     
     // Активація через Ctrl+Shift+B
@@ -9528,6 +9674,11 @@ function exportToExcel() {
         `;
         
         try {
+            // Визначаємо dataPath на основі URL параметра
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientId = urlParams.get('id');
+            const dataPath = clientId ? `data/${clientId}/` : 'data/';
+            
             // Отримуємо список geojson файлів
             const geojsonFiles = [];
             const fileSelect = document.getElementById('fileSelect');
@@ -9536,7 +9687,7 @@ function exportToExcel() {
                     if (option.value && option.value.endsWith('.geojson')) {
                         geojsonFiles.push({
                             name: option.text,
-                            path: option.value,
+                            path: dataPath + option.value, // Додаємо dataPath до шляху
                             included: true,
                             data: null
                         });
@@ -9544,15 +9695,21 @@ function exportToExcel() {
                 }
             }
             
+            console.log('Budget: Loading files from', dataPath);
+            console.log('Budget: Files to load:', geojsonFiles.map(f => f.path));
+            
             // Завантажуємо кожен файл
             for (let file of geojsonFiles) {
                 try {
                     const response = await fetch(file.path);
                     if (response.ok) {
                         file.data = await response.json();
+                        console.log('Budget: Loaded', file.name, '- Features:', file.data?.features?.length || 0);
+                    } else {
+                        console.warn('Budget: Failed to load (status ' + response.status + '):', file.path);
                     }
                 } catch (err) {
-                    console.warn('Failed to load:', file.path, err);
+                    console.warn('Budget: Failed to load:', file.path, err);
                 }
             }
             
@@ -9578,10 +9735,18 @@ function exportToExcel() {
         for (let file of budgetData.files) {
             if (!file.included || !file.data || !file.data.features) continue;
             
-            for (let feature of file.data.features) {
+            // Фільтруємо тільки original записи щоб уникнути задвоєння
+            const originalFeatures = file.data.features.filter(
+                feature => feature.properties?.type === 'original'
+            );
+            
+            for (let feature of originalFeatures) {
                 const props = feature.properties;
                 const tenant = props["Орендар"] || props["Орендар частини"] || '';
                 const area = parseFloat(props["Площа ДЗК"]) || parseFloat(props["Площа"]) || 0;
+                
+                // Фільтр по площі
+                if (area < budgetData.areaMin || area > budgetData.areaMax) continue;
                 
                 if (tenant) {
                     if (!budgetData.tenants.has(tenant)) {
@@ -9605,28 +9770,51 @@ function exportToExcel() {
     }
     
     function getSelectedStats() {
-        let totalParcels = 0;
-        let totalArea = 0;
+        // Рахуємо для клієнта (з вільними якщо включено)
+        let clientParcels = 0;
+        let clientArea = 0;
+        
+        // Рахуємо для собівартості (без вільних або з ними)
+        let costParcels = 0;
+        let costArea = 0;
         
         budgetData.tenants.forEach((t) => {
             if (t.included) {
-                totalParcels += t.parcels;
-                totalArea += t.area;
+                clientParcels += t.parcels;
+                clientArea += t.area;
+                costParcels += t.parcels;
+                costArea += t.area;
             }
         });
         
-        if (budgetData.includeFree) {
-            totalParcels += budgetData.freeParcels;
-            totalArea += budgetData.freeArea;
+        if (budgetData.includeFreeForClient) {
+            clientParcels += budgetData.freeParcels;
+            clientArea += budgetData.freeArea;
         }
         
-        return { totalParcels, totalArea };
+        if (budgetData.includeFreeForCost) {
+            costParcels += budgetData.freeParcels;
+            costArea += budgetData.freeArea;
+        }
+        
+        return { 
+            clientParcels, clientArea,
+            costParcels, costArea,
+            // Для сумісності
+            totalParcels: clientParcels, 
+            totalArea: clientArea
+        };
     }
     
     function renderBudgetUI() {
         const body = document.getElementById('budgetBody');
         const stats = getSelectedStats();
-        const totalCost = stats.totalParcels * budgetData.pricePerCadastral;
+        
+        // Розрахунки
+        const clientTotal = stats.clientParcels * budgetData.pricePerCadastral;
+        const costTotal = stats.costParcels * budgetData.costPerCadastral;
+        const profit = clientTotal - costTotal;
+        const margin = clientTotal > 0 ? ((profit / clientTotal) * 100) : 0;
         
         // Сортуємо орендарів за площею
         const sortedTenants = Array.from(budgetData.tenants.values())
@@ -9666,17 +9854,55 @@ function exportToExcel() {
                     </button>
                 </div>
                 <div class="budget-list" id="filesList">
-                    ${budgetData.files.map((f, i) => `
+                    ${budgetData.files.map((f, i) => {
+                        // Рахуємо тільки original записи
+                        const originalCount = f.data ? f.data.features.filter(feat => feat.properties?.type === 'original').length : 0;
+                        return `
                         <div class="budget-item">
                             <input type="checkbox" id="file_${i}" ${f.included ? 'checked' : ''} data-file-index="${i}">
                             <div class="budget-item-info">
                                 <span style="color: var(--mono-text);">${f.name}</span>
                                 <span style="color: var(--mono-text-secondary); font-size: 12px;">
-                                    ${f.data ? f.data.features.length : 0} діл.
+                                    ${originalCount} діл.
                                 </span>
                             </div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
+                </div>
+            </div>
+            
+            <!-- Фільтр по площі -->
+            <div class="budget-section">
+                <div class="budget-section-title">
+                    <i class="bi bi-rulers"></i>
+                    ФІЛЬТР ПО ПЛОЩІ
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="color: var(--mono-text-secondary); font-size: 10px; text-transform: uppercase;">Від (га)</label>
+                        <input type="number" id="budgetAreaMin" value="${budgetData.areaMin}" min="0" max="1000" step="0.01" 
+                            style="padding: 10px; border: 1px solid var(--mono-border); border-radius: var(--mono-radius-sm); background: var(--mono-bg); color: var(--mono-text); font-size: 14px; font-weight: 600; text-align: center;">
+                    </div>
+                    <span style="color: var(--mono-text-secondary); font-size: 18px; padding-top: 16px;">—</span>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="color: var(--mono-text-secondary); font-size: 10px; text-transform: uppercase;">До (га)</label>
+                        <input type="number" id="budgetAreaMax" value="${budgetData.areaMax}" min="0" max="1000" step="0.01" 
+                            style="padding: 10px; border: 1px solid var(--mono-border); border-radius: var(--mono-radius-sm); background: var(--mono-bg); color: var(--mono-text); font-size: 14px; font-weight: 600; text-align: center;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                    <button id="budgetAreaSmall" style="flex: 1; padding: 8px; border: 1px solid var(--mono-border); border-radius: var(--mono-radius-sm); background: var(--mono-surface-elevated); color: var(--mono-text-secondary); font-size: 11px; cursor: pointer;">
+                        &lt; 1 га
+                    </button>
+                    <button id="budgetAreaMedium" style="flex: 1; padding: 8px; border: 1px solid var(--mono-border); border-radius: var(--mono-radius-sm); background: var(--mono-surface-elevated); color: var(--mono-text-secondary); font-size: 11px; cursor: pointer;">
+                        1-5 га
+                    </button>
+                    <button id="budgetAreaLarge" style="flex: 1; padding: 8px; border: 1px solid var(--mono-border); border-radius: var(--mono-radius-sm); background: var(--mono-surface-elevated); color: var(--mono-text-secondary); font-size: 11px; cursor: pointer;">
+                        &gt; 5 га
+                    </button>
+                    <button id="budgetAreaAll" style="flex: 1; padding: 8px; border: 1px solid var(--mono-primary); border-radius: var(--mono-radius-sm); background: var(--mono-primary-soft); color: var(--mono-primary); font-size: 11px; cursor: pointer; font-weight: 600;">
+                        Всі
+                    </button>
                 </div>
             </div>
             
@@ -9704,47 +9930,115 @@ function exportToExcel() {
                 </div>
             </div>
             
-            <!-- Вільні ділянки -->
-            <div class="budget-section" style="padding: 12px 16px;">
-                <div class="budget-item" style="padding: 0; border: none;">
-                    <input type="checkbox" id="includeFree" ${budgetData.includeFree ? 'checked' : ''}>
-                    <div class="budget-item-info">
-                        <span style="color: var(--mono-text);">
-                            <i class="bi bi-square" style="margin-right: 8px; color: #8E8E93;"></i>
-                            Вільні від оренди
-                        </span>
-                        <span style="color: var(--mono-text-secondary); font-size: 12px;">
-                            ${budgetData.freeParcels} діл. | ${budgetData.freeArea.toFixed(2)} га
-                        </span>
-                    </div>
+            <!-- Вільні ділянки - окремі чекбокси -->
+            <div class="budget-section">
+                <div class="budget-section-title">
+                    <i class="bi bi-square"></i>
+                    ВІЛЬНІ ВІД ОРЕНДИ
+                    <span style="margin-left: auto; color: var(--mono-text-secondary); font-size: 12px;">
+                        ${budgetData.freeParcels} діл. | ${budgetData.freeArea.toFixed(2)} га
+                    </span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <label style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--mono-surface-elevated); border-radius: var(--mono-radius-sm); cursor: pointer;">
+                        <input type="checkbox" id="includeFreeClient" ${budgetData.includeFreeForClient ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--mono-primary);">
+                        <div>
+                            <div style="color: var(--mono-text); font-size: 13px; font-weight: 500;">Для клієнта</div>
+                            <div style="color: var(--mono-text-secondary); font-size: 11px;">Включити в вартість</div>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--mono-surface-elevated); border-radius: var(--mono-radius-sm); cursor: pointer;">
+                        <input type="checkbox" id="includeFreeForCost" ${budgetData.includeFreeForCost ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: #EF4444;">
+                        <div>
+                            <div style="color: var(--mono-text); font-size: 13px; font-weight: 500;">Для собівартості</div>
+                            <div style="color: var(--mono-text-secondary); font-size: 11px;">Включити в затрати</div>
+                        </div>
+                    </label>
                 </div>
             </div>
             
             <!-- Ціна та розрахунок -->
             <div class="budget-section">
                 <div class="budget-section-title">
-                    <i class="bi bi-currency-dollar"></i>
-                    РОЗРАХУНОК ВАРТОСТІ
+                    <i class="bi bi-calculator"></i>
+                    КАЛЬКУЛЯТОР
                 </div>
                 
-                <div class="budget-price-input">
-                    <span style="color: var(--mono-text);">Ціна за 1 кадастровий:</span>
-                    <input type="number" id="priceInput" value="${budgetData.pricePerCadastral}" min="1" max="1000">
-                    <span style="color: var(--mono-text-secondary);">грн</span>
+                <!-- Ціни -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div style="background: var(--mono-surface-elevated); padding: 14px; border-radius: var(--mono-radius-sm); border-left: 3px solid var(--mono-primary);">
+                        <div style="color: var(--mono-text-secondary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">💰 Ціна для клієнта</div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="number" id="priceInput" value="${budgetData.pricePerCadastral}" min="0.01" max="1000" step="0.01" style="width: 90px; padding: 10px; border: 1px solid var(--mono-border); border-radius: var(--mono-radius-sm); background: var(--mono-bg); color: var(--mono-text); font-size: 18px; font-weight: 700; text-align: center;">
+                            <span style="color: var(--mono-text-secondary); font-size: 14px;">грн/кад</span>
+                        </div>
+                    </div>
+                    <div style="background: var(--mono-surface-elevated); padding: 14px; border-radius: var(--mono-radius-sm); border-left: 3px solid #EF4444;">
+                        <div style="color: var(--mono-text-secondary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">📦 Собівартість</div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="number" id="costInput" value="${budgetData.costPerCadastral}" min="0.01" max="1000" step="0.01" style="width: 90px; padding: 10px; border: 1px solid var(--mono-border); border-radius: var(--mono-radius-sm); background: var(--mono-bg); color: var(--mono-text); font-size: 18px; font-weight: 700; text-align: center;">
+                            <span style="color: var(--mono-text-secondary); font-size: 14px;">грн/кад</span>
+                        </div>
+                    </div>
                 </div>
                 
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--mono-text-secondary); font-size: 13px;">
-                    <span>Обрано ділянок:</span>
-                    <span style="color: var(--mono-text); font-weight: 600;">${stats.totalParcels}</span>
+                <!-- Таблиця розрахунків -->
+                <div style="background: var(--mono-bg); border-radius: var(--mono-radius-sm); overflow: hidden; border: 1px solid var(--mono-border);">
+                    <!-- Заголовок -->
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; background: var(--mono-surface-elevated); padding: 10px 14px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mono-text-secondary); border-bottom: 1px solid var(--mono-border);">
+                        <span>Показник</span>
+                        <span style="text-align: center;">Кількість</span>
+                        <span style="text-align: center;">Ціна</span>
+                        <span style="text-align: right;">Сума</span>
+                    </div>
+                    
+                    <!-- Вартість для клієнта -->
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; padding: 12px 14px; border-bottom: 1px solid var(--mono-border); align-items: center;">
+                        <span style="color: var(--mono-text); font-weight: 500;">
+                            <i class="bi bi-person-check" style="color: var(--mono-primary); margin-right: 6px;"></i>
+                            Для клієнта
+                            ${budgetData.includeFreeForClient ? '<span style="font-size: 10px; color: var(--mono-text-secondary); margin-left: 4px;">(+вільні)</span>' : ''}
+                        </span>
+                        <span style="text-align: center; color: var(--mono-text);">${stats.clientParcels}</span>
+                        <span style="text-align: center; color: var(--mono-text);">${budgetData.pricePerCadastral}</span>
+                        <span style="text-align: right; color: var(--mono-text); font-weight: 600; font-size: 15px;">${formatMoney(clientTotal)} грн</span>
+                    </div>
+                    
+                    <!-- Собівартість -->
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; padding: 12px 14px; border-bottom: 1px solid var(--mono-border); align-items: center;">
+                        <span style="color: var(--mono-text); font-weight: 500;">
+                            <i class="bi bi-box-seam" style="color: #EF4444; margin-right: 6px;"></i>
+                            Собівартість
+                            ${budgetData.includeFreeForCost ? '<span style="font-size: 10px; color: var(--mono-text-secondary); margin-left: 4px;">(+вільні)</span>' : ''}
+                        </span>
+                        <span style="text-align: center; color: var(--mono-text);">${stats.costParcels}</span>
+                        <span style="text-align: center; color: var(--mono-text);">${budgetData.costPerCadastral}</span>
+                        <span style="text-align: right; color: #EF4444; font-weight: 600; font-size: 15px;">-${formatMoney(costTotal)} грн</span>
+                    </div>
+                    
+                    <!-- Прибуток -->
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; padding: 14px; background: ${profit >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; align-items: center;">
+                        <span style="color: var(--mono-text); font-weight: 600; font-size: 14px;">
+                            ${profit >= 0 ? '📈' : '📉'} ПРИБУТОК
+                        </span>
+                        <span></span>
+                        <span style="text-align: center; color: var(--mono-text-secondary); font-size: 12px;">${margin.toFixed(1)}%</span>
+                        <span style="text-align: right; color: ${profit >= 0 ? '#10B981' : '#EF4444'}; font-weight: 700; font-size: 18px;">${profit >= 0 ? '+' : ''}${formatMoney(profit)} грн</span>
+                    </div>
                 </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 16px; color: var(--mono-text-secondary); font-size: 13px;">
-                    <span>Загальна площа:</span>
-                    <span style="color: var(--mono-text); font-weight: 600;">${stats.totalArea.toFixed(2)} га</span>
-                </div>
-                
-                <div class="budget-total">
-                    <span style="color: var(--mono-text); font-weight: 600;">ВАРТІСТЬ ОНОВЛЕННЯ РРП:</span>
-                    <span class="budget-total-value">${formatNumber(totalCost)} грн</span>
+            </div>
+            
+            <!-- Підсумок -->
+            <div style="background: linear-gradient(135deg, var(--mono-primary) 0%, #059669 100%); padding: 20px; border-radius: var(--mono-radius); margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="color: rgba(255,255,255,0.8); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Рахунок для клієнта</div>
+                        <div style="color: white; font-size: 28px; font-weight: 700; margin-top: 4px;">${formatMoney(clientTotal)} грн</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: rgba(255,255,255,0.8); font-size: 11px;">${stats.clientParcels} ділянок × ${budgetData.pricePerCadastral} грн</div>
+                        <div style="color: rgba(255,255,255,0.9); font-size: 13px; margin-top: 2px;">${stats.clientArea.toFixed(2)} га</div>
+                    </div>
                 </div>
             </div>
             
@@ -9786,15 +10080,70 @@ function exportToExcel() {
             });
         });
         
-        // Вільні ділянки
-        document.getElementById('includeFree')?.addEventListener('change', function() {
-            budgetData.includeFree = this.checked;
+        // Вільні ділянки - для клієнта
+        document.getElementById('includeFreeClient')?.addEventListener('change', function() {
+            budgetData.includeFreeForClient = this.checked;
+            renderBudgetUI();
+        });
+        
+        // Вільні ділянки - для собівартості
+        document.getElementById('includeFreeForCost')?.addEventListener('change', function() {
+            budgetData.includeFreeForCost = this.checked;
+            renderBudgetUI();
+        });
+        
+        // Фільтр площі - мін
+        document.getElementById('budgetAreaMin')?.addEventListener('input', function() {
+            budgetData.areaMin = parseFloat(this.value) || 0;
+            calculateBudget();
+            renderBudgetUI();
+        });
+        
+        // Фільтр площі - макс
+        document.getElementById('budgetAreaMax')?.addEventListener('input', function() {
+            budgetData.areaMax = parseFloat(this.value) || 1000;
+            calculateBudget();
+            renderBudgetUI();
+        });
+        
+        // Пресети площі
+        document.getElementById('budgetAreaSmall')?.addEventListener('click', function() {
+            budgetData.areaMin = 0;
+            budgetData.areaMax = 1;
+            calculateBudget();
+            renderBudgetUI();
+        });
+        
+        document.getElementById('budgetAreaMedium')?.addEventListener('click', function() {
+            budgetData.areaMin = 1;
+            budgetData.areaMax = 5;
+            calculateBudget();
+            renderBudgetUI();
+        });
+        
+        document.getElementById('budgetAreaLarge')?.addEventListener('click', function() {
+            budgetData.areaMin = 5;
+            budgetData.areaMax = 1000;
+            calculateBudget();
+            renderBudgetUI();
+        });
+        
+        document.getElementById('budgetAreaAll')?.addEventListener('click', function() {
+            budgetData.areaMin = 0;
+            budgetData.areaMax = 1000;
+            calculateBudget();
             renderBudgetUI();
         });
         
         // Ціна
         document.getElementById('priceInput')?.addEventListener('input', function() {
-            budgetData.pricePerCadastral = parseInt(this.value) || 7;
+            budgetData.pricePerCadastral = parseFloat(this.value) || 7;
+            renderBudgetUI();
+        });
+        
+        // Собівартість
+        document.getElementById('costInput')?.addEventListener('input', function() {
+            budgetData.costPerCadastral = parseFloat(this.value) || 3.5;
             renderBudgetUI();
         });
         
@@ -9822,10 +10171,18 @@ function exportToExcel() {
     
     function copyReport() {
         const stats = getSelectedStats();
-        const totalCost = stats.totalParcels * budgetData.pricePerCadastral;
+        const clientTotal = stats.clientParcels * budgetData.pricePerCadastral;
+        const costTotal = stats.costParcels * budgetData.costPerCadastral;
+        const profit = clientTotal - costTotal;
+        const margin = clientTotal > 0 ? ((profit / clientTotal) * 100) : 0;
         
         let report = `📊 КОШТОРИС ОНОВЛЕННЯ РРП\n`;
         report += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        
+        // Фільтр площі
+        if (budgetData.areaMin > 0 || budgetData.areaMax < 1000) {
+            report += `📐 Фільтр площі: ${budgetData.areaMin} - ${budgetData.areaMax} га\n\n`;
+        }
         
         // Файли
         const includedFiles = budgetData.files.filter(f => f.included);
@@ -9844,17 +10201,22 @@ function exportToExcel() {
         report += `\n`;
         
         // Вільні
-        if (budgetData.includeFree) {
-            report += `⬜ Вільні від оренди: ${budgetData.freeParcels} діл., ${budgetData.freeArea.toFixed(2)} га\n\n`;
-        }
+        report += `⬜ Вільні від оренди: ${budgetData.freeParcels} діл., ${budgetData.freeArea.toFixed(2)} га\n`;
+        report += `   • Для клієнта: ${budgetData.includeFreeForClient ? '✅' : '❌'}\n`;
+        report += `   • Для собівартості: ${budgetData.includeFreeForCost ? '✅' : '❌'}\n\n`;
         
-        // Підсумок
+        // Таблиця
         report += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-        report += `📋 Обрано ділянок: ${stats.totalParcels}\n`;
-        report += `📐 Загальна площа: ${stats.totalArea.toFixed(2)} га\n`;
-        report += `💰 Ціна за 1 кадастровий: ${budgetData.pricePerCadastral} грн\n`;
+        report += `📋 РОЗРАХУНОК:\n`;
         report += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-        report += `💵 ВАРТІСТЬ: ${formatNumber(totalCost)} грн\n`;
+        report += `Для клієнта:\n`;
+        report += `  ${stats.clientParcels} діл. × ${budgetData.pricePerCadastral} грн = ${formatMoney(clientTotal)} грн\n\n`;
+        report += `Собівартість:\n`;
+        report += `  ${stats.costParcels} діл. × ${budgetData.costPerCadastral} грн = ${formatMoney(costTotal)} грн\n`;
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n`;
+        report += `💵 Вартість: ${formatMoney(clientTotal)} грн\n`;
+        report += `📤 Затрати: -${formatMoney(costTotal)} грн\n`;
+        report += `${profit >= 0 ? '📈' : '📉'} Прибуток: ${profit >= 0 ? '+' : ''}${formatMoney(profit)} грн (${margin.toFixed(1)}%)\n`;
         report += `━━━━━━━━━━━━━━━━━━━━━━\n`;
         report += `📅 ${new Date().toLocaleDateString('uk-UA')}`;
         
@@ -9872,6 +10234,11 @@ function exportToExcel() {
     
     function formatNumber(num) {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    
+    function formatMoney(num) {
+        // Форматування з копійками
+        return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     }
 })();
 </script>
