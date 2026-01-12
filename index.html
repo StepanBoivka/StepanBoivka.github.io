@@ -3576,9 +3576,7 @@ body {
                     height: 100%;
                     background: rgba(0, 0, 0, 0.85);
                     z-index: 10000;
-                    display: flex;
-                    align-items: flex-end;
-                    justify-content: center;
+                    display: block;
                     animation: modalFadeIn 0.3s ease-out;
                 `;
                 
@@ -3587,8 +3585,7 @@ body {
                 modalContent.style.cssText = `
                     background: #1C1C1E;
                     width: 100%;
-                    max-height: calc(85vh - 80px - env(safe-area-inset-bottom));
-                    margin-bottom: calc(80px + env(safe-area-inset-bottom));
+                    max-height: calc(100vh - 80px - env(safe-area-inset-bottom));
                     border-radius: 24px 24px 0 0;
                     box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
                     overflow: hidden;
@@ -3596,6 +3593,10 @@ body {
                     animation: modalSlideUp 0.3s ease-out forwards;
                     display: flex;
                     flex-direction: column;
+                    position: absolute;
+                    bottom: calc(80px + env(safe-area-inset-bottom));
+                    left: 0;
+                    right: 0;
                 `;
                 
                 // Хедер з кнопкою закриття
@@ -6017,21 +6018,38 @@ function addPolygonToMap(geoJSON, originalProperties) {
             }
             
             // Создаем инфобокс если его еще нет
+            const isMobile = window.innerWidth <= 768;
             if (!infoElement) {
-                const info = L.control({position: 'bottomleft'});
+                const info = L.control({position: isMobile ? 'topleft' : 'bottomleft'});
                 info.onAdd = function() {
                     const div = L.DomUtil.create('div', 'selection-info');
                     div.id = 'selectionInfo';
                     div.style.cssText = `
                         background: #1C1C1E;
                         color: #FFFFFF;
-                        padding: 12px 14px;
+                        padding: ${isMobile ? '8px 12px' : '12px 14px'};
                         border: 1px solid rgba(255, 255, 255, 0.08);
                         border-radius: 12px;
-                        max-width: 300px;
+                        max-width: ${isMobile ? '180px' : '300px'};
                         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
                         font-size: 13px;
+                        cursor: ${isMobile ? 'pointer' : 'default'};
+                        transition: all 0.2s ease;
                     `;
+                    // Для мобільного - клік розгортає/згортає
+                    if (isMobile) {
+                        div.dataset.collapsed = 'true';
+                        div.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            const isCollapsed = this.dataset.collapsed === 'true';
+                            this.dataset.collapsed = isCollapsed ? 'false' : 'true';
+                            this.style.maxWidth = isCollapsed ? '300px' : '180px';
+                            const details = this.querySelector('.selection-details');
+                            if (details) {
+                                details.style.display = isCollapsed ? 'block' : 'none';
+                            }
+                        });
+                    }
                     return div;
                 };
                 info.addTo(map);
@@ -6077,29 +6095,35 @@ function addPolygonToMap(geoJSON, originalProperties) {
             });
             
             // Обновляем содержимое инфобокса
-            document.getElementById('selectionInfo').innerHTML = `
+            const selectionInfoEl = document.getElementById('selectionInfo');
+            const isCollapsed = isMobile && selectionInfoEl.dataset.collapsed === 'true';
+            
+            selectionInfoEl.innerHTML = `
                 <div style="max-height: 300px; overflow-y: auto;">
-                    <div style="margin-bottom: 10px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Виділено</span>
-                            <span style="background: rgba(16, 185, 129, 0.15); color: #10B981; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600;">${uniqueFeatures.size}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                        <div>
+                            <span style="color: #8E8E93; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Виділено</span>
+                            <div style="color: #FFFFFF; font-size: ${isMobile ? '15px' : '18px'}; font-weight: 700; margin-top: 2px;">
+                                ${totalSelectedArea.toFixed(2)} <span style="font-size: ${isMobile ? '11px' : '14px'}; color: #8E8E93; font-weight: 400;">га</span>
+                            </div>
                         </div>
-                        <div style="color: #FFFFFF; font-size: 18px; font-weight: 700; margin-top: 4px;">
-                            ${totalSelectedArea.toFixed(4)} <span style="font-size: 14px; color: #8E8E93; font-weight: 400;">га</span>
+                        <span style="background: rgba(16, 185, 129, 0.15); color: #10B981; padding: 4px 10px; border-radius: 10px; font-size: 13px; font-weight: 600;">${uniqueFeatures.size}</span>
+                        ${isMobile ? '<i class="bi bi-chevron-down" style="color: #8E8E93; font-size: 12px; margin-left: 4px;"></i>' : ''}
+                    </div>
+                    <div class="selection-details" style="display: ${isCollapsed ? 'none' : 'block'};">
+                        <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 0;"></div>
+                        <div>
+                            <div style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Орендарі</div>
+                            ${tenantsInfo}
                         </div>
-                    </div>
-                    <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 0;"></div>
-                    <div>
-                        <div style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Орендарі</div>
-                        ${tenantsInfo}
-                    </div>
-                    <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 0;"></div>
-                    <div>
-                        <div style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Статуси</div>
-                        ${statusInfo}
-                    </div>
-                    <div style="margin-top: 10px; font-size: 11px; color: #8E8E93; text-align: right;">
-                        Площа частин: ${totalPartsArea.toFixed(4)} га
+                        <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 0;"></div>
+                        <div>
+                            <div style="color: #8E8E93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Статуси</div>
+                            ${statusInfo}
+                        </div>
+                        <div style="margin-top: 10px; font-size: 11px; color: #8E8E93; text-align: right;">
+                            Площа частин: ${totalPartsArea.toFixed(4)} га
+                        </div>
                     </div>
                 </div>`;
             
@@ -6783,20 +6807,15 @@ function addPolygonToMap(geoJSON, originalProperties) {
             
             // Адаптивні налаштування popup
             if (window.innerWidth <= 768) {
-                // Для мобільних - додаємо footer з відступом для нижнього меню
-                const mobileContent = popupContent.replace('</div></div></div>', '') + `
-                    <div style="padding: 12px 14px; background: #000000; padding-bottom: calc(12px + env(safe-area-inset-bottom) + 70px);"></div>
-                </div>`;
-                
                 // Для мобільних - показуємо модальне вікно на весь екран
                 layer.on('click', function(e) {
-                    showMobileModal(mobileContent, feature.properties);
+                    showMobileModal(popupContent, feature.properties);
                 });
                 
                 // Прив'язуємо порожній попап щоб не було помилок
                 layer.bindPopup('', { maxWidth: 1, className: 'hidden-popup' });
             } else {
-                // Для десктопу - звичайний попап (без мобільного footer)
+                // Для десктопу - звичайний попап
                 const popupOptions = { maxWidth: 380, minWidth: 320 };
                 layer.bindPopup(popupContent, popupOptions);
             }
