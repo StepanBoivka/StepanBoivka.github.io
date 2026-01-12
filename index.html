@@ -3149,7 +3149,7 @@ body {
 
             <!-- Логотип по центру -->
             <div class="d-flex justify-content-center flex-grow-1">
-                <span style="color: var(--mono-text); font-size: 17px; font-weight: 600; letter-spacing: -0.3px;">
+                <span id="logoText" style="color: var(--mono-text); font-size: 17px; font-weight: 600; letter-spacing: -0.3px; cursor: default; -webkit-touch-callout: none; -webkit-user-select: none;">
                     <i class="bi bi-geo-alt-fill me-1" style="color: var(--mono-primary);"></i>АГРО-ПРОСТІР
                 </span>
             </div>
@@ -9244,7 +9244,637 @@ function exportToExcel() {
         -webkit-touch-callout: default !important;
         cursor: auto !important;
     }
+    
+    /* Стилі для кошторису */
+    .budget-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 20000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    
+    .budget-modal {
+        background: var(--mono-surface);
+        border-radius: var(--mono-radius);
+        width: 100%;
+        max-width: 700px;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--mono-border);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    
+    .budget-header {
+        padding: 20px;
+        background: var(--mono-surface-elevated);
+        border-bottom: 1px solid var(--mono-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .budget-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+    
+    .budget-section {
+        margin-bottom: 20px;
+        background: var(--mono-bg);
+        border-radius: var(--mono-radius-sm);
+        padding: 16px;
+    }
+    
+    .budget-section-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--mono-text-secondary);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .budget-list {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .budget-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--mono-border);
+    }
+    
+    .budget-item:last-child {
+        border-bottom: none;
+    }
+    
+    .budget-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-right: 12px;
+        accent-color: var(--mono-primary);
+    }
+    
+    .budget-item-info {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .budget-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    
+    .budget-stat {
+        text-align: center;
+        padding: 12px;
+        background: var(--mono-surface-elevated);
+        border-radius: var(--mono-radius-sm);
+    }
+    
+    .budget-stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--mono-text);
+    }
+    
+    .budget-stat-label {
+        font-size: 11px;
+        color: var(--mono-text-secondary);
+        text-transform: uppercase;
+    }
+    
+    .budget-total {
+        background: var(--mono-primary-soft);
+        padding: 16px;
+        border-radius: var(--mono-radius-sm);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .budget-total-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--mono-primary);
+    }
+    
+    .budget-price-input {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    
+    .budget-price-input input {
+        width: 80px;
+        padding: 8px 12px;
+        border: 1px solid var(--mono-border);
+        border-radius: var(--mono-radius-sm);
+        background: var(--mono-surface);
+        color: var(--mono-text);
+        font-size: 16px;
+        font-weight: 600;
+        text-align: center;
+    }
+    
+    .budget-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+    }
+    
+    .budget-btn {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: var(--mono-radius-sm);
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: var(--mono-transition);
+    }
+    
+    .budget-btn-primary {
+        background: var(--mono-primary);
+        color: white;
+    }
+    
+    .budget-btn-secondary {
+        background: var(--mono-surface-elevated);
+        color: var(--mono-text);
+    }
+    
+    @media (max-width: 768px) {
+        .budget-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .budget-modal {
+            max-height: calc(100vh - 100px);
+            margin-bottom: 80px;
+        }
+    }
 </style>
+
+<!-- Модальне вікно кошторису (приховане) -->
+<div id="budgetModal" class="budget-modal-overlay" style="display: none;">
+    <div class="budget-modal">
+        <div class="budget-header">
+            <h5 style="margin: 0; color: var(--mono-text); font-weight: 600;">
+                <i class="bi bi-calculator me-2" style="color: var(--mono-primary);"></i>Кошторис оновлення РРП
+            </h5>
+            <button id="closeBudgetBtn" style="background: var(--mono-bg); border: none; color: var(--mono-text-secondary); width: 36px; height: 36px; border-radius: 50%; cursor: pointer;">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="budget-body" id="budgetBody">
+            <div style="text-align: center; padding: 40px; color: var(--mono-text-secondary);">
+                <i class="bi bi-hourglass-split" style="font-size: 32px;"></i>
+                <p style="margin-top: 12px;">Завантаження даних...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========== КОШТОРИС (АДМІН) ==========
+(function() {
+    let isAdminMode = false;
+    let budgetData = {
+        files: [],
+        tenants: new Map(),
+        freeParcels: 0,
+        freeArea: 0,
+        pricePerCadastral: 7,
+        includeFree: true
+    };
+    
+    // Активація через Ctrl+Shift+B
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.shiftKey && e.key === 'B') {
+            e.preventDefault();
+            openBudgetModal();
+        }
+    });
+    
+    // Активація через довгий тап по лого (3 секунди)
+    let logoTapTimer = null;
+    const logoElement = document.getElementById('logoText');
+    
+    if (logoElement) {
+        logoElement.addEventListener('touchstart', function(e) {
+            logoTapTimer = setTimeout(function() {
+                e.preventDefault();
+                openBudgetModal();
+                // Вібрація для підтвердження
+                if (navigator.vibrate) navigator.vibrate(100);
+            }, 3000);
+        });
+        
+        logoElement.addEventListener('touchend', function() {
+            if (logoTapTimer) clearTimeout(logoTapTimer);
+        });
+        
+        logoElement.addEventListener('touchmove', function() {
+            if (logoTapTimer) clearTimeout(logoTapTimer);
+        });
+    }
+    
+    // Закриття модалки
+    document.getElementById('closeBudgetBtn')?.addEventListener('click', closeBudgetModal);
+    document.getElementById('budgetModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeBudgetModal();
+    });
+    
+    function openBudgetModal() {
+        isAdminMode = true;
+        document.getElementById('budgetModal').style.display = 'flex';
+        loadAllGeoJsonFiles();
+    }
+    
+    function closeBudgetModal() {
+        document.getElementById('budgetModal').style.display = 'none';
+    }
+    
+    async function loadAllGeoJsonFiles() {
+        const body = document.getElementById('budgetBody');
+        body.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--mono-text-secondary);">
+                <div class="spinner-border text-success" role="status"></div>
+                <p style="margin-top: 12px;">Завантаження всіх файлів...</p>
+            </div>
+        `;
+        
+        try {
+            // Отримуємо список geojson файлів
+            const geojsonFiles = [];
+            const fileSelect = document.getElementById('fileSelect');
+            if (fileSelect) {
+                for (let option of fileSelect.options) {
+                    if (option.value && option.value.endsWith('.geojson')) {
+                        geojsonFiles.push({
+                            name: option.text,
+                            path: option.value,
+                            included: true,
+                            data: null
+                        });
+                    }
+                }
+            }
+            
+            // Завантажуємо кожен файл
+            for (let file of geojsonFiles) {
+                try {
+                    const response = await fetch(file.path);
+                    if (response.ok) {
+                        file.data = await response.json();
+                    }
+                } catch (err) {
+                    console.warn('Failed to load:', file.path, err);
+                }
+            }
+            
+            budgetData.files = geojsonFiles;
+            calculateBudget();
+            renderBudgetUI();
+            
+        } catch (err) {
+            body.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #EF4444;">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 32px;"></i>
+                    <p style="margin-top: 12px;">Помилка завантаження: ${err.message}</p>
+                </div>
+            `;
+        }
+    }
+    
+    function calculateBudget() {
+        budgetData.tenants.clear();
+        budgetData.freeParcels = 0;
+        budgetData.freeArea = 0;
+        
+        for (let file of budgetData.files) {
+            if (!file.included || !file.data || !file.data.features) continue;
+            
+            for (let feature of file.data.features) {
+                const props = feature.properties;
+                const tenant = props["Орендар"] || props["Орендар частини"] || '';
+                const area = parseFloat(props["Площа ДЗК"]) || parseFloat(props["Площа"]) || 0;
+                
+                if (tenant) {
+                    if (!budgetData.tenants.has(tenant)) {
+                        budgetData.tenants.set(tenant, {
+                            name: tenant,
+                            parcels: 0,
+                            area: 0,
+                            included: true,
+                            fileName: file.name
+                        });
+                    }
+                    const t = budgetData.tenants.get(tenant);
+                    t.parcels++;
+                    t.area += area;
+                } else {
+                    budgetData.freeParcels++;
+                    budgetData.freeArea += area;
+                }
+            }
+        }
+    }
+    
+    function getSelectedStats() {
+        let totalParcels = 0;
+        let totalArea = 0;
+        
+        budgetData.tenants.forEach((t) => {
+            if (t.included) {
+                totalParcels += t.parcels;
+                totalArea += t.area;
+            }
+        });
+        
+        if (budgetData.includeFree) {
+            totalParcels += budgetData.freeParcels;
+            totalArea += budgetData.freeArea;
+        }
+        
+        return { totalParcels, totalArea };
+    }
+    
+    function renderBudgetUI() {
+        const body = document.getElementById('budgetBody');
+        const stats = getSelectedStats();
+        const totalCost = stats.totalParcels * budgetData.pricePerCadastral;
+        
+        // Сортуємо орендарів за площею
+        const sortedTenants = Array.from(budgetData.tenants.values())
+            .sort((a, b) => b.area - a.area);
+        
+        let allTenantsCount = 0;
+        let allTenantsArea = 0;
+        budgetData.tenants.forEach(t => {
+            allTenantsCount += t.parcels;
+            allTenantsArea += t.area;
+        });
+        
+        body.innerHTML = `
+            <!-- Статистика -->
+            <div class="budget-stats">
+                <div class="budget-stat">
+                    <div class="budget-stat-value">${allTenantsCount + budgetData.freeParcels}</div>
+                    <div class="budget-stat-label">Всього ділянок</div>
+                </div>
+                <div class="budget-stat">
+                    <div class="budget-stat-value" style="color: var(--mono-primary);">${allTenantsCount}</div>
+                    <div class="budget-stat-label">З орендарем</div>
+                </div>
+                <div class="budget-stat">
+                    <div class="budget-stat-value" style="color: #8E8E93;">${budgetData.freeParcels}</div>
+                    <div class="budget-stat-label">Вільних</div>
+                </div>
+            </div>
+            
+            <!-- Вибір файлів -->
+            <div class="budget-section">
+                <div class="budget-section-title">
+                    <i class="bi bi-folder"></i>
+                    ФАЙЛИ (РАДИ)
+                    <button id="toggleAllFiles" style="margin-left: auto; background: var(--mono-surface-elevated); border: none; color: var(--mono-text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">
+                        Обрати всі
+                    </button>
+                </div>
+                <div class="budget-list" id="filesList">
+                    ${budgetData.files.map((f, i) => `
+                        <div class="budget-item">
+                            <input type="checkbox" id="file_${i}" ${f.included ? 'checked' : ''} data-file-index="${i}">
+                            <div class="budget-item-info">
+                                <span style="color: var(--mono-text);">${f.name}</span>
+                                <span style="color: var(--mono-text-secondary); font-size: 12px;">
+                                    ${f.data ? f.data.features.length : 0} діл.
+                                </span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <!-- Вибір орендарів -->
+            <div class="budget-section">
+                <div class="budget-section-title">
+                    <i class="bi bi-people"></i>
+                    ОРЕНДАРІ
+                    <button id="toggleAllTenants" style="margin-left: auto; background: var(--mono-surface-elevated); border: none; color: var(--mono-text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">
+                        Обрати всі
+                    </button>
+                </div>
+                <div class="budget-list" id="tenantsList">
+                    ${sortedTenants.map(t => `
+                        <div class="budget-item">
+                            <input type="checkbox" id="tenant_${encodeURIComponent(t.name)}" ${t.included ? 'checked' : ''} data-tenant="${t.name}">
+                            <div class="budget-item-info">
+                                <span style="color: var(--mono-text);">${t.name}</span>
+                                <span style="color: var(--mono-text-secondary); font-size: 12px;">
+                                    ${t.parcels} діл. | ${t.area.toFixed(2)} га
+                                </span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <!-- Вільні ділянки -->
+            <div class="budget-section" style="padding: 12px 16px;">
+                <div class="budget-item" style="padding: 0; border: none;">
+                    <input type="checkbox" id="includeFree" ${budgetData.includeFree ? 'checked' : ''}>
+                    <div class="budget-item-info">
+                        <span style="color: var(--mono-text);">
+                            <i class="bi bi-square" style="margin-right: 8px; color: #8E8E93;"></i>
+                            Вільні від оренди
+                        </span>
+                        <span style="color: var(--mono-text-secondary); font-size: 12px;">
+                            ${budgetData.freeParcels} діл. | ${budgetData.freeArea.toFixed(2)} га
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ціна та розрахунок -->
+            <div class="budget-section">
+                <div class="budget-section-title">
+                    <i class="bi bi-currency-dollar"></i>
+                    РОЗРАХУНОК ВАРТОСТІ
+                </div>
+                
+                <div class="budget-price-input">
+                    <span style="color: var(--mono-text);">Ціна за 1 кадастровий:</span>
+                    <input type="number" id="priceInput" value="${budgetData.pricePerCadastral}" min="1" max="1000">
+                    <span style="color: var(--mono-text-secondary);">грн</span>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--mono-text-secondary); font-size: 13px;">
+                    <span>Обрано ділянок:</span>
+                    <span style="color: var(--mono-text); font-weight: 600;">${stats.totalParcels}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 16px; color: var(--mono-text-secondary); font-size: 13px;">
+                    <span>Загальна площа:</span>
+                    <span style="color: var(--mono-text); font-weight: 600;">${stats.totalArea.toFixed(2)} га</span>
+                </div>
+                
+                <div class="budget-total">
+                    <span style="color: var(--mono-text); font-weight: 600;">ВАРТІСТЬ ОНОВЛЕННЯ РРП:</span>
+                    <span class="budget-total-value">${formatNumber(totalCost)} грн</span>
+                </div>
+            </div>
+            
+            <!-- Кнопки -->
+            <div class="budget-actions">
+                <button class="budget-btn budget-btn-primary" id="copyReportBtn">
+                    <i class="bi bi-clipboard"></i>
+                    Копіювати звіт
+                </button>
+                <button class="budget-btn budget-btn-secondary" id="closeBudgetBtn2">
+                    <i class="bi bi-x-lg"></i>
+                    Закрити
+                </button>
+            </div>
+        `;
+        
+        // Обробники подій
+        attachBudgetEventListeners();
+    }
+    
+    function attachBudgetEventListeners() {
+        // Зміна файлів
+        document.querySelectorAll('[data-file-index]').forEach(cb => {
+            cb.addEventListener('change', function() {
+                const idx = parseInt(this.dataset.fileIndex);
+                budgetData.files[idx].included = this.checked;
+                calculateBudget();
+                renderBudgetUI();
+            });
+        });
+        
+        // Зміна орендарів
+        document.querySelectorAll('[data-tenant]').forEach(cb => {
+            cb.addEventListener('change', function() {
+                const tenant = this.dataset.tenant;
+                const t = budgetData.tenants.get(tenant);
+                if (t) t.included = this.checked;
+                renderBudgetUI();
+            });
+        });
+        
+        // Вільні ділянки
+        document.getElementById('includeFree')?.addEventListener('change', function() {
+            budgetData.includeFree = this.checked;
+            renderBudgetUI();
+        });
+        
+        // Ціна
+        document.getElementById('priceInput')?.addEventListener('input', function() {
+            budgetData.pricePerCadastral = parseInt(this.value) || 7;
+            renderBudgetUI();
+        });
+        
+        // Обрати всі файли
+        document.getElementById('toggleAllFiles')?.addEventListener('click', function() {
+            const allChecked = budgetData.files.every(f => f.included);
+            budgetData.files.forEach(f => f.included = !allChecked);
+            calculateBudget();
+            renderBudgetUI();
+        });
+        
+        // Обрати всі орендарі
+        document.getElementById('toggleAllTenants')?.addEventListener('click', function() {
+            const allChecked = Array.from(budgetData.tenants.values()).every(t => t.included);
+            budgetData.tenants.forEach(t => t.included = !allChecked);
+            renderBudgetUI();
+        });
+        
+        // Копіювати звіт
+        document.getElementById('copyReportBtn')?.addEventListener('click', copyReport);
+        
+        // Закрити
+        document.getElementById('closeBudgetBtn2')?.addEventListener('click', closeBudgetModal);
+    }
+    
+    function copyReport() {
+        const stats = getSelectedStats();
+        const totalCost = stats.totalParcels * budgetData.pricePerCadastral;
+        
+        let report = `📊 КОШТОРИС ОНОВЛЕННЯ РРП\n`;
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        
+        // Файли
+        const includedFiles = budgetData.files.filter(f => f.included);
+        report += `📁 Файли (${includedFiles.length}):\n`;
+        includedFiles.forEach(f => {
+            report += `   • ${f.name}\n`;
+        });
+        report += `\n`;
+        
+        // Орендарі
+        const includedTenants = Array.from(budgetData.tenants.values()).filter(t => t.included);
+        report += `👥 Орендарі (${includedTenants.length}):\n`;
+        includedTenants.sort((a, b) => b.area - a.area).forEach(t => {
+            report += `   • ${t.name}: ${t.parcels} діл., ${t.area.toFixed(2)} га\n`;
+        });
+        report += `\n`;
+        
+        // Вільні
+        if (budgetData.includeFree) {
+            report += `⬜ Вільні від оренди: ${budgetData.freeParcels} діл., ${budgetData.freeArea.toFixed(2)} га\n\n`;
+        }
+        
+        // Підсумок
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n`;
+        report += `📋 Обрано ділянок: ${stats.totalParcels}\n`;
+        report += `📐 Загальна площа: ${stats.totalArea.toFixed(2)} га\n`;
+        report += `💰 Ціна за 1 кадастровий: ${budgetData.pricePerCadastral} грн\n`;
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n`;
+        report += `💵 ВАРТІСТЬ: ${formatNumber(totalCost)} грн\n`;
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n`;
+        report += `📅 ${new Date().toLocaleDateString('uk-UA')}`;
+        
+        navigator.clipboard.writeText(report).then(() => {
+            const btn = document.getElementById('copyReportBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check-lg"></i> Скопійовано!';
+            btn.style.background = '#10B981';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+            }, 2000);
+        });
+    }
+    
+    function formatNumber(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+})();
+</script>
 
 </body>
 </html>
