@@ -542,6 +542,135 @@
             color: var(--mono-yellow);
         }
         
+        /* Compact table style */
+        .data-table.compact th,
+        .data-table.compact td {
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+        
+        .data-table.compact th {
+            font-size: 10px;
+        }
+        
+        /* Details/Summary for collapsible sections */
+        .section-details {
+            background: var(--mono-surface);
+            border-radius: var(--mono-radius);
+            border: 1px solid var(--mono-border);
+            overflow: hidden;
+        }
+        
+        .section-details[open] .expand-icon {
+            transform: rotate(180deg);
+        }
+        
+        .section-summary {
+            list-style: none;
+            cursor: pointer;
+        }
+        
+        .section-summary::-webkit-details-marker {
+            display: none;
+        }
+        
+        .section-summary .section-header {
+            margin: 0;
+            border: none;
+            transition: background 0.2s;
+        }
+        
+        .section-summary:hover .section-header {
+            background: var(--mono-surface-2);
+        }
+        
+        .expand-icon {
+            transition: transform 0.3s ease;
+            color: var(--mono-text-secondary);
+        }
+        
+        /* Timeline Cards */
+        .timeline-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .timeline-card.active {
+            box-shadow: 0 0 0 2px var(--mono-blue);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 1400px) {
+            .potential-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .potential-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            
+            /* Timeline cards - скрол на планшетах */
+            #expiryTimeline {
+                flex-wrap: nowrap !important;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .potential-grid {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .stats-value {
+                font-size: 22px;
+            }
+            
+            .data-table.compact th,
+            .data-table.compact td {
+                padding: 6px 8px;
+                font-size: 11px;
+            }
+            
+            /* Timeline cards на мобільних - менший розмір */
+            .timeline-card {
+                min-width: 90px !important;
+                padding: 12px !important;
+            }
+            
+            .timeline-card > div:nth-child(2) {
+                font-size: 22px !important;
+            }
+            
+            /* Матриця на мобільних */
+            .matrix-table th,
+            .matrix-table td {
+                padding: 4px 6px !important;
+                font-size: 10px !important;
+            }
+            
+            .matrix-table .sticky-col {
+                max-width: 100px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            
+            /* Потенціал картки */
+            #potentialCards > div {
+                min-width: 80px !important;
+                padding: 8px 10px !important;
+            }
+            
+            #potentialCards > div span:first-of-type {
+                font-size: 12px !important;
+            }
+            
+            #potentialSummary {
+                flex-wrap: wrap;
+            }
+        }
+
         /* Export buttons */
         .export-buttons {
             display: flex;
@@ -625,78 +754,12 @@
         </div>
     </nav>
 
-    <div class="container py-4">
+    <div class="container-fluid px-3 px-lg-5 py-4">
         <h1 class="page-title">Статистика: <span id="councilName">Завантаження...</span></h1>
 
-        <!-- Сповіщення про договори -->
-        <div class="alert-card" id="alertsCard" style="display: none;">
-            <div class="alert-header">
-                <div class="alert-icon warning">
-                    <i class="bi bi-bell"></i>
-                </div>
-                <div>
-                    <div class="alert-title">Увага! Потрібна дія</div>
-                    <div class="alert-subtitle">Договори, які потребують уваги найближчим часом</div>
-                </div>
-            </div>
-            <div class="alert-body" id="alertsBody">
-                <!-- Заповнюється динамічно -->
-            </div>
-        </div>
-
-        <!-- Потенціал для нових договорів -->
-        <div class="potential-card" id="potentialCard">
-            <div class="potential-header">
-                <div class="potential-icon">
-                    <i class="bi bi-graph-up-arrow"></i>
-                </div>
-                <div>
-                    <div class="potential-title">Потенціал для нових договорів</div>
-                    <div class="potential-subtitle">Ділянки, які можна взяти в оренду зараз або найближчим часом</div>
-                </div>
-            </div>
-            <div class="potential-grid" id="potentialGrid">
-                <!-- Заповнюється динамічно -->
-            </div>
-        </div>
-
-        <!-- Графіки -->
+        <!-- Загальна статистика - ПЕРША СЕКЦІЯ -->
         <div class="row mb-4 g-3">
-            <div class="col-lg-6">
-                <div class="section">
-                    <div class="section-header">
-                        <div class="section-title">
-                            <i class="bi bi-bar-chart"></i>
-                            Динаміка реєстрації договорів
-                        </div>
-                    </div>
-                    <div class="section-body">
-                        <div class="chart-container">
-                            <canvas id="registrationChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="section">
-                    <div class="section-header">
-                        <div class="section-title">
-                            <i class="bi bi-pie-chart"></i>
-                            Розподіл площі по орендарях
-                        </div>
-                    </div>
-                    <div class="section-body">
-                        <div class="chart-container">
-                            <canvas id="tenantsChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Загальна статистика -->
-        <div class="row mb-4 g-3">
-            <div class="col-md-3 col-6">
+            <div class="col-xl-3 col-md-6 col-6">
                 <div class="stats-card">
                     <div class="stats-card-title">
                         <i class="bi bi-geo-alt"></i> Загальна площа
@@ -705,7 +768,7 @@
                     <div class="stats-subtitle"><span id="totalParcels">0</span> ділянок</div>
                 </div>
             </div>
-            <div class="col-md-3 col-6">
+            <div class="col-xl-3 col-md-6 col-6">
                 <div class="stats-card">
                     <div class="stats-card-title">
                         <i class="bi bi-unlock"></i> Вільні від оренди
@@ -714,7 +777,7 @@
                     <div class="stats-subtitle"><span id="freeParcels">0</span> ділянок</div>
                 </div>
             </div>
-            <div class="col-md-3 col-6">
+            <div class="col-xl-3 col-md-6 col-6">
                 <div class="stats-card">
                     <div class="stats-card-title">
                         <i class="bi bi-people"></i> Орендарі
@@ -723,7 +786,7 @@
                     <div class="stats-subtitle">активних компаній</div>
                 </div>
             </div>
-            <div class="col-md-3 col-6">
+            <div class="col-xl-3 col-md-6 col-6">
                 <div class="stats-card">
                     <div class="stats-card-title">
                         <i class="bi bi-cash-stack"></i> НГО
@@ -734,149 +797,186 @@
             </div>
         </div>
 
-        <!-- Концентрація орендарів -->
-        <div class="section mb-4">
-            <div class="section-header">
-                <div class="section-title">
-                    <i class="bi bi-pie-chart"></i>
-                    Концентрація орендарів (топ-5)
+        <!-- Потенціал для нових договорів (об'єднаний блок) -->
+        <div class="section mb-4" id="potentialSection">
+            <div class="section-header" style="padding: 16px 20px;">
+                <div class="section-title" style="font-size: 18px;">
+                    <i class="bi bi-bullseye" style="color: var(--mono-green);"></i>
+                    🎯 Потенціал для нових договорів
+                </div>
+                <div id="potentialSummary" style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Заповнюється динамічно -->
                 </div>
             </div>
-            <div class="section-body" id="concentrationBody">
+            <div class="section-body" style="padding: 16px 20px;">
+                <!-- Картки потенціалу -->
+                <div id="potentialCards" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+                    <!-- Заповнюється динамічно -->
+                </div>
+                <!-- Прогрес-бар -->
+                <div id="potentialProgressContainer" style="background: var(--mono-surface-2); border-radius: 8px; overflow: hidden; height: 32px; position: relative;">
+                    <div id="potentialProgressBar" style="display: flex; height: 100%;">
+                        <!-- Заповнюється динамічно -->
+                    </div>
+                    <div id="potentialProgressText" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; font-weight: 600; color: var(--mono-text); text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+                        <!-- Заповнюється динамічно -->
+                    </div>
+                </div>
+                <!-- Список нових власників (згорнуто) -->
+                <details id="newOwnersDetails" style="margin-top: 16px; display: none;">
+                    <summary style="cursor: pointer; color: var(--mono-orange); font-size: 13px; padding: 8px 0; font-weight: 500;">
+                        <i class="bi bi-fire"></i> Показати нових власників без оренди
+                    </summary>
+                    <div id="newOwnersList" style="margin-top: 8px;">
+                        <!-- Список власників -->
+                    </div>
+                </details>
             </div>
         </div>
 
-        <!-- Прогноз завершення договорів -->
-        <div class="section mb-4">
-            <div class="section-header">
-                <div class="section-title">
-                    <i class="bi bi-calendar-event"></i>
-                    Прогноз завершення договорів (5 років)
+        <!-- Завершення договорів (Timeline Cards) -->
+        <div class="section mb-4" id="expiryTimelineSection">
+            <div class="section-header" style="padding: 16px 20px;">
+                <div class="section-title" style="font-size: 18px;">
+                    <i class="bi bi-calendar-event" style="color: var(--mono-yellow);"></i>
+                    📅 Завершення договорів
+                </div>
+                <div id="expirySummary" style="display: flex; align-items: center; gap: 12px;">
+                    <!-- Заповнюється динамічно -->
                 </div>
             </div>
-            <div class="section-body">
-                <div class="table-responsive">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Рік</th>
-                                <th class="text-end">Договорів</th>
-                                <th class="text-end">Площа (га)</th>
-                                <th class="text-end">% від орендованої</th>
-                                <th style="width: 30%;">Розподіл</th>
-                            </tr>
-                        </thead>
-                        <tbody id="forecastTableBody"></tbody>
-                    </table>
+            <div class="section-body" style="padding: 16px 20px;">
+                <!-- Timeline Cards -->
+                <div id="expiryTimeline" style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px;">
+                    <!-- Заповнюється динамічно -->
                 </div>
-            </div>
-        </div>
-
-        <!-- Статистика реєстрації -->
-        <div class="section mb-4 page-break">
-            <div class="section-header">
-                <div class="section-title">
-                    <i class="bi bi-graph-up"></i>
-                    Статистика реєстрації договорів
+                
+                <!-- Progress bar -->
+                <div style="margin-top: 16px; background: var(--mono-surface-2); border-radius: 6px; height: 8px; overflow: hidden;">
+                    <div id="expiryProgressBar" style="display: flex; height: 100%;">
+                        <!-- Заповнюється динамічно -->
+                    </div>
                 </div>
-            </div>
-            <div class="section-body">
-                <div class="table-responsive">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Рік</th>
-                                <th class="text-end">Всього</th>
-                                <th class="text-end">Площа (га)</th>
-                                <th class="text-end">Активні / Площа</th>
-                                <th class="text-end">Неактивні / Площа</th>
-                                <th style="width: 25%;">Розподіл</th>
-                            </tr>
-                        </thead>
-                        <tbody id="registrationTableBody"></tbody>
-                    </table>
+                
+                <!-- Деталі по роках (акордеон) -->
+                <div id="expiryDetails" style="margin-top: 16px;">
+                    <!-- Заповнюється динамічно -->
                 </div>
-            </div>
-        </div>
-
-        <!-- Таблиця орендарів -->
-        <div class="section mb-4">
-            <div class="section-header">
-                <div class="section-title">
-                    <i class="bi bi-building"></i>
-                    Орендарі
-                </div>
-            </div>
-            <div class="section-body">
-                <div class="table-responsive">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Орендар</th>
-                                <th class="text-end">Ділянок</th>
-                                <th class="text-end">Площа (га)</th>
-                                <th class="text-end">% площі</th>
-                                <th class="text-end">Сер. площа</th>
-                                <th class="text-end">НГО (грн)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tenantsTableBody"></tbody>
-                    </table>
+                
+                <!-- Матриця по орендарях (завжди видима) -->
+                <div style="margin-top: 20px;">
+                    <div style="font-size: 14px; font-weight: 600; color: var(--mono-text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-table"></i>
+                        Матриця по орендарях
+                    </div>
+                    <div style="max-height: 400px; overflow: auto; position: relative; border: 1px solid var(--mono-border); border-radius: 8px;">
+                        <table class="data-table matrix-table compact" style="border-collapse: separate; border-spacing: 0; margin: 0;">
+                            <thead style="position: sticky; top: 0; z-index: 10;">
+                                <tr id="matrixHeader">
+                                    <th class="sticky-col" style="position: sticky; left: 0; top: 0; z-index: 11; background-color: #1C1C1E;">Орендар</th>
+                                </tr>
+                            </thead>
+                            <tbody id="matrixTableBody"></tbody>
+                            <tfoot id="matrixFooter" style="position: sticky; bottom: 0; z-index: 10;">
+                                <!-- Рядок Всього - sticky знизу -->
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Таблиця власників -->
-        <div class="section mb-4 page-break">
-            <div class="section-header">
-                <div class="section-title">
-                    <i class="bi bi-person"></i>
-                    Власники
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span style="font-size: 13px; color: var(--mono-text-secondary);">Мін. ділянок:</span>
-                    <input type="number" class="filter-input" id="minParcelsFilter" value="3" min="1">
-                    <button class="filter-btn" onclick="updateOwnersTable()">
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="section-body">
-                <div class="table-responsive">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Власник</th>
-                                <th class="text-end">Ділянок</th>
-                                <th class="text-end">Площа (га)</th>
-                                <th class="text-end">Сер. площа</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ownersTableBody"></tbody>
-                    </table>
+        <!-- Графік: Динаміка реєстрації (власність + оренда) -->
+        <div class="row mb-4 g-3">
+            <div class="col-12">
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="bi bi-bar-chart"></i>
+                            Динаміка реєстрації по роках
+                        </div>
+                        <div style="display: flex; gap: 16px; font-size: 12px;">
+                            <span><span style="display: inline-block; width: 12px; height: 12px; background: #10B981; border-radius: 2px; margin-right: 4px;"></span>Власність</span>
+                            <span><span style="display: inline-block; width: 12px; height: 12px; background: #3B82F6; border-radius: 2px; margin-right: 4px;"></span>Оренда</span>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="registrationChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Матрична таблиця завершення -->
-        <div class="section page-break">
-            <div class="section-header">
-                <div class="section-title">
-                    <i class="bi bi-table"></i>
-                    Матриця завершення договорів
-                </div>
+        <!-- Згортаємі секції з деталями -->
+        <div class="row mb-4 g-3">
+            <!-- Орендарі (згорнуто) -->
+            <div class="col-xl-6">
+                <details class="section-details">
+                    <summary class="section-summary">
+                        <div class="section-header" style="border-radius: var(--mono-radius); margin: 0;">
+                            <div class="section-title">
+                                <i class="bi bi-building"></i>
+                                Всі орендарі
+                            </div>
+                            <i class="bi bi-chevron-down expand-icon"></i>
+                        </div>
+                    </summary>
+                    <div class="section-body" style="border: 1px solid var(--mono-border); border-top: none; border-radius: 0 0 var(--mono-radius) var(--mono-radius); padding: 12px;">
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="data-table compact">
+                                <thead>
+                                    <tr>
+                                        <th>Орендар</th>
+                                        <th class="text-end">Діл.</th>
+                                        <th class="text-end">Площа</th>
+                                        <th class="text-end">%</th>
+                                        <th class="text-end">НГО</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tenantsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </details>
             </div>
-            <div class="section-body">
-                <div class="table-responsive">
-                    <table class="data-table matrix-table">
-                        <thead>
-                            <tr id="matrixHeader">
-                                <th class="sticky-col">Орендар</th>
-                            </tr>
-                        </thead>
-                        <tbody id="matrixTableBody"></tbody>
-                    </table>
-                </div>
+            
+            <!-- Власники (згорнуто) -->
+            <div class="col-xl-6">
+                <details class="section-details">
+                    <summary class="section-summary">
+                        <div class="section-header" style="border-radius: var(--mono-radius); margin: 0;">
+                            <div class="section-title">
+                                <i class="bi bi-person"></i>
+                                Власники
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span style="font-size: 12px; color: var(--mono-text-secondary);">Мін:</span>
+                                <input type="number" class="filter-input" id="minParcelsFilter" value="3" min="1" style="width: 50px;" onclick="event.stopPropagation();">
+                                <button class="filter-btn" onclick="event.stopPropagation(); updateOwnersTable();">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                                <i class="bi bi-chevron-down expand-icon"></i>
+                            </div>
+                        </div>
+                    </summary>
+                    <div class="section-body" style="border: 1px solid var(--mono-border); border-top: none; border-radius: 0 0 var(--mono-radius) var(--mono-radius); padding: 12px;">
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="data-table compact">
+                                <thead>
+                                    <tr>
+                                        <th>Власник</th>
+                                        <th class="text-end">Діл.</th>
+                                        <th class="text-end">Площа</th>
+                                        <th class="text-end">Сер.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ownersTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </details>
             </div>
         </div>
     </div>
@@ -1060,6 +1160,21 @@
                         } else {
                             acc.registrationYears[year].inactive++;
                             acc.registrationYears[year].inactiveArea += area;
+                            
+                            // Збираємо "гарячий потенціал" - нові власники без оренди (останні 3 роки)
+                            if (year >= currentYear - 2 && owner) {
+                                if (!acc.newOwnersFree[year]) {
+                                    acc.newOwnersFree[year] = { count: 0, area: 0, owners: [] };
+                                }
+                                acc.newOwnersFree[year].count++;
+                                acc.newOwnersFree[year].area += area;
+                                acc.newOwnersFree[year].owners.push({
+                                    name: owner,
+                                    area: area,
+                                    cadastre: props['Кадастровий номер'] || '',
+                                    ngo: ngo
+                                });
+                            }
                         }
                     }
                 }
@@ -1103,7 +1218,9 @@
                 return acc;
             }, {
                 totalArea: 0, totalParcels: 0, freeParcels: 0, freeArea: 0, freeNGO: 0,
-                rentedArea: 0, totalNGO: 0, tenants: {}, owners: {}, expiryYears: {}, registrationYears: {}
+                rentedArea: 0, totalNGO: 0, tenants: {}, owners: {}, expiryYears: {}, registrationYears: {},
+                // Нові власники без оренди (зареєстровані за останні 3 роки)
+                newOwnersFree: {}
             });
 
             stats.uniqueOwnersCount = uniqueOwners.size;
@@ -1128,33 +1245,60 @@
             document.getElementById('tenantsCount').textContent = Object.keys(stats.tenants).length;
             document.getElementById('totalNGO').innerHTML = `${formatNumber(stats.totalNGO)}<span class="stats-value-unit">грн</span>`;
 
-            updateAlerts(stats, null);
-            updatePotentialCard(stats);
-            updateConcentration(stats);
+            updatePotentialSection(stats);
             updateForecastTable(stats);
-            updateRegistrationTable(stats.registrationYears);
             updateTenantsTable(stats);
             updateOwnersTable();
             updateMatrixTable(stats.expiryYears, stats.tenants);
             updateRegistrationChart(stats.registrationYears);
-            updateTenantsChart(stats.tenants, stats.totalArea);
         }
-
-        function updatePotentialCard(stats) {
-            const grid = document.getElementById('potentialGrid');
-            let html = '';
+        
+        // Об'єднана функція для потенціалу
+        function updatePotentialSection(stats) {
+            const cardsContainer = document.getElementById('potentialCards');
+            const progressBar = document.getElementById('potentialProgressBar');
+            const progressText = document.getElementById('potentialProgressText');
+            const summary = document.getElementById('potentialSummary');
+            const newOwnersDetails = document.getElementById('newOwnersDetails');
+            const newOwnersList = document.getElementById('newOwnersList');
             
-            html += `
-                <div class="potential-item">
-                    <div class="potential-item-label">🟢 Вільні зараз</div>
-                    <div class="potential-item-value" style="color: var(--mono-green);">${stats.freeParcels}</div>
-                    <div class="potential-item-detail">${stats.freeArea.toFixed(1)} га</div>
-                </div>`;
+            // Збираємо всі категорії потенціалу
+            const categories = [];
             
-            let cumulativeCount = stats.freeParcels;
-            let cumulativeArea = stats.freeArea;
+            // 1. Вільні зараз
+            if (stats.freeParcels > 0) {
+                categories.push({
+                    id: 'free',
+                    label: 'Вільні',
+                    icon: '🟢',
+                    count: stats.freeParcels,
+                    area: stats.freeArea,
+                    color: '#10B981',
+                    colorVar: 'var(--mono-green)'
+                });
+            }
             
-            // Прострочені
+            // 2. Нові власники без оренди
+            let newOwnersCount = 0, newOwnersArea = 0;
+            const newOwnersYears = Object.keys(stats.newOwnersFree).sort((a, b) => b - a);
+            newOwnersYears.forEach(year => {
+                newOwnersCount += stats.newOwnersFree[year].count;
+                newOwnersArea += stats.newOwnersFree[year].area;
+            });
+            
+            if (newOwnersCount > 0) {
+                categories.push({
+                    id: 'newOwners',
+                    label: 'Нові влас.',
+                    icon: '🔥',
+                    count: newOwnersCount,
+                    area: newOwnersArea,
+                    color: '#F97316',
+                    colorVar: 'var(--mono-orange)'
+                });
+            }
+            
+            // 3. Прострочені
             let expiredCount = 0, expiredArea = 0;
             Object.entries(stats.expiryYears).forEach(([year, data]) => {
                 if (parseInt(year) < currentYear) {
@@ -1164,195 +1308,406 @@
             });
             
             if (expiredCount > 0) {
-                cumulativeCount += expiredCount;
-                cumulativeArea += expiredArea;
-                html += `
-                    <div class="potential-item">
-                        <div class="potential-item-label">🔴 Прострочені</div>
-                        <div class="potential-item-value" style="color: var(--mono-red);">${expiredCount}</div>
-                        <div class="potential-item-detail">${expiredArea.toFixed(1)} га</div>
-                    </div>`;
+                categories.push({
+                    id: 'expired',
+                    label: 'Простроч.',
+                    icon: '🔴',
+                    count: expiredCount,
+                    area: expiredArea,
+                    color: '#EF4444',
+                    colorVar: 'var(--mono-red)'
+                });
             }
             
+            // 4-6. Роки завершення
             for (let year = currentYear; year <= currentYear + 2; year++) {
                 const yearData = stats.expiryYears[year] || { count: 0, area: 0 };
-                cumulativeCount += yearData.count;
-                cumulativeArea += yearData.area;
-                
-                const isCurrent = year === currentYear;
-                const color = isCurrent ? 'var(--mono-yellow)' : 'var(--mono-text)';
-                const icon = isCurrent ? '🟡' : '📅';
-                
-                html += `
-                    <div class="potential-item">
-                        <div class="potential-item-label">${icon} ${isCurrent ? 'Цього року' : year}</div>
-                        <div class="potential-item-value" style="color: ${color};">${yearData.count}</div>
-                        <div class="potential-item-detail">${yearData.area.toFixed(1)} га</div>
-                    </div>`;
+                if (yearData.count > 0) {
+                    const isCurrent = year === currentYear;
+                    categories.push({
+                        id: `year${year}`,
+                        label: isCurrent ? `${year}` : `${year}`,
+                        icon: isCurrent ? '🟡' : '📅',
+                        count: yearData.count,
+                        area: yearData.area,
+                        color: isCurrent ? '#F59E0B' : '#6B7280',
+                        colorVar: isCurrent ? 'var(--mono-yellow)' : 'var(--mono-text-secondary)'
+                    });
+                }
             }
             
-            html += `
-                <div class="potential-item" style="border-color: var(--mono-green);">
-                    <div class="potential-item-label">🎯 Всього потенціал</div>
-                    <div class="potential-item-value" style="color: var(--mono-green);">${cumulativeCount}</div>
-                    <div class="potential-item-detail">${cumulativeArea.toFixed(1)} га</div>
-                </div>`;
+            // Підрахунок загального потенціалу
+            let totalCount = 0, totalArea = 0;
+            categories.forEach(cat => {
+                totalCount += cat.count;
+                totalArea += cat.area;
+            });
             
-            grid.innerHTML = html;
+            const percentOfTotal = stats.totalArea > 0 ? (totalArea / stats.totalArea * 100).toFixed(1) : 0;
+            
+            // Заповнюємо summary
+            summary.innerHTML = `
+                <div style="text-align: right;">
+                    <span style="font-size: 24px; font-weight: 700; color: var(--mono-green);">${totalCount}</span>
+                    <span style="font-size: 14px; color: var(--mono-text-secondary);"> діл.</span>
+                    <span style="font-size: 18px; font-weight: 600; color: var(--mono-text); margin-left: 8px;">${totalArea.toFixed(1)}</span>
+                    <span style="font-size: 12px; color: var(--mono-text-secondary);"> га</span>
+                    <span style="background: var(--mono-green-bg); color: var(--mono-green); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-left: 12px;">${percentOfTotal}%</span>
+                </div>
+            `;
+            
+            // Генеруємо картки
+            let cardsHtml = '';
+            categories.forEach(cat => {
+                cardsHtml += `
+                    <div style="background: var(--mono-surface-2); border-radius: 8px; padding: 10px 14px; border-left: 3px solid ${cat.color}; min-width: 100px; flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                            <span style="font-size: 14px;">${cat.icon}</span>
+                            <span style="font-size: 11px; color: var(--mono-text-secondary); text-transform: uppercase; letter-spacing: 0.3px;">${cat.label}</span>
+                        </div>
+                        <div style="display: flex; align-items: baseline; gap: 8px;">
+                            <span style="font-size: 20px; font-weight: 700; color: ${cat.colorVar};">${cat.count}</span>
+                            <span style="font-size: 12px; color: var(--mono-text-secondary);">${cat.area.toFixed(1)} га</span>
+                        </div>
+                    </div>
+                `;
+            });
+            cardsContainer.innerHTML = cardsHtml;
+            
+            // Генеруємо прогрес-бар
+            let progressHtml = '';
+            categories.forEach(cat => {
+                const widthPercent = totalArea > 0 ? (cat.area / stats.totalArea * 100) : 0;
+                if (widthPercent > 0) {
+                    progressHtml += `<div style="width: ${widthPercent}%; background: ${cat.color}; height: 100%;" title="${cat.label}: ${cat.count} діл., ${cat.area.toFixed(1)} га"></div>`;
+                }
+            });
+            progressBar.innerHTML = progressHtml;
+            progressText.textContent = `${percentOfTotal}% від загальної площі`;
+            
+            // Список нових власників
+            if (newOwnersCount > 0) {
+                newOwnersDetails.style.display = 'block';
+                
+                let allOwners = [];
+                newOwnersYears.forEach(year => {
+                    stats.newOwnersFree[year].owners.forEach(o => {
+                        o.year = year;
+                        allOwners.push(o);
+                    });
+                });
+                
+                allOwners.sort((a, b) => b.area - a.area);
+                const top10 = allOwners.slice(0, 10);
+                
+                let listHtml = `<div style="display: flex; flex-direction: column; gap: 6px;">`;
+                top10.forEach((owner, index) => {
+                    const yearColor = parseInt(owner.year) === currentYear ? 'var(--mono-orange)' : 'var(--mono-yellow)';
+                    listHtml += `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--mono-surface-2); border-radius: 6px; border-left: 2px solid ${yearColor};">
+                            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                                <span style="color: var(--mono-text-secondary); font-size: 11px; min-width: 16px;">${index + 1}</span>
+                                <span style="font-size: 13px; color: var(--mono-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${owner.name}</span>
+                            </div>
+                            <span style="font-size: 12px; font-weight: 600; color: var(--mono-orange); white-space: nowrap; margin-left: 8px;">${owner.area.toFixed(2)} га</span>
+                        </div>
+                    `;
+                });
+                listHtml += `</div>`;
+                newOwnersList.innerHTML = listHtml;
+            } else {
+                newOwnersDetails.style.display = 'none';
+            }
+        }
+        
+        // Старі функції (для сумісності)
+        function updatePotentialCard(stats) {
+            // Замінено на updatePotentialSection
+        }
+        
+        function updateNewOwnersSection(stats) {
+            // Замінено на updatePotentialSection
         }
 
         function updateConcentration(stats) {
-            const container = document.getElementById('concentrationBody');
-            const sorted = Object.entries(stats.tenants).sort((a, b) => b[1].area - a[1].area).slice(0, 5);
-            
-            let html = '';
-            sorted.forEach(([tenantKey, data]) => {
-                const percent = stats.rentedArea > 0 ? (data.area / stats.rentedArea * 100).toFixed(1) : 0;
-                const color = getColor(tenantKey);
-                const displayName = getTenantDisplayName(tenantKey);
-                
-                html += `
-                    <div class="risk-indicator">
-                        <span class="tenant-indicator" style="background-color: ${color};"></span>
-                        <span style="flex: 1; font-size: 14px; color: ${color};">${displayName}</span>
-                        <div class="risk-bar">
-                            <div class="risk-bar-fill" style="width: ${percent}%; background-color: ${color};"></div>
-                        </div>
-                        <span class="risk-percent">${percent}%</span>
-                    </div>`;
-            });
-            
-            container.innerHTML = html || '<p style="color: var(--mono-text-secondary);">Немає даних</p>';
+            // Не використовується
         }
 
-        function updateForecastTable(stats) {
-            const tbody = document.getElementById('forecastTableBody');
-            let html = '';
-            let totalCount = 0, totalArea = 0;
+        // Timeline Cards для завершення договорів
+        function updateExpiryTimeline(stats) {
+            const timeline = document.getElementById('expiryTimeline');
+            const progressBar = document.getElementById('expiryProgressBar');
+            const summary = document.getElementById('expirySummary');
+            const detailsContainer = document.getElementById('expiryDetails');
+            
+            // Збираємо дані по роках
+            const yearData = [];
             
             // Прострочені
-            let expiredCount = 0, expiredArea = 0;
+            let expiredCount = 0, expiredArea = 0, expiredTenants = {};
             Object.entries(stats.expiryYears).forEach(([year, data]) => {
                 if (parseInt(year) < currentYear) {
                     expiredCount += data.count;
                     expiredArea += data.area;
+                    Object.entries(data.tenants || {}).forEach(([tenant, tData]) => {
+                        if (!expiredTenants[tenant]) expiredTenants[tenant] = { count: 0, area: 0 };
+                        expiredTenants[tenant].count += tData.count;
+                        expiredTenants[tenant].area += tData.area;
+                    });
                 }
             });
             
             if (expiredCount > 0) {
-                const percent = stats.rentedArea > 0 ? (expiredArea / stats.rentedArea * 100).toFixed(1) : 0;
-                html += `
-                    <tr>
-                        <td class="year-expired">⚠️ Прострочені</td>
-                        <td class="text-end">${expiredCount}</td>
-                        <td class="text-end">${expiredArea.toFixed(1)}</td>
-                        <td class="text-end">${percent}%</td>
-                        <td>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill">
-                                    <div class="progress-bar-segment" style="width: ${percent}%; background: var(--mono-red);"></div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>`;
-                totalCount += expiredCount;
-                totalArea += expiredArea;
+                yearData.push({
+                    id: 'expired',
+                    label: 'Прострочено',
+                    icon: '🔴',
+                    count: expiredCount,
+                    area: expiredArea,
+                    color: '#EF4444',
+                    tenants: expiredTenants
+                });
             }
             
-            for (let year = currentYear; year <= currentYear + 5; year++) {
-                const yearData = stats.expiryYears[year] || { count: 0, area: 0 };
-                const percent = stats.rentedArea > 0 ? (yearData.area / stats.rentedArea * 100).toFixed(1) : 0;
-                
-                totalCount += yearData.count;
-                totalArea += yearData.area;
-                
-                const yearClass = year === currentYear ? 'year-current' : 'year-future';
-                const barColor = year === currentYear ? 'var(--mono-yellow)' : 'var(--mono-green)';
-                
-                html += `
-                    <tr>
-                        <td class="${yearClass}">${year}</td>
-                        <td class="text-end">${yearData.count}</td>
-                        <td class="text-end">${yearData.area.toFixed(1)}</td>
-                        <td class="text-end">${percent}%</td>
-                        <td>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill">
-                                    <div class="progress-bar-segment" style="width: ${percent}%; background: ${barColor};"></div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>`;
+            // Роки від поточного до +4
+            for (let year = currentYear; year <= currentYear + 4; year++) {
+                const data = stats.expiryYears[year] || { count: 0, area: 0, tenants: {} };
+                if (data.count > 0) {
+                    const isCurrent = year === currentYear;
+                    yearData.push({
+                        id: `year${year}`,
+                        label: `${year}`,
+                        icon: isCurrent ? '🟡' : '📅',
+                        count: data.count,
+                        area: data.area,
+                        color: isCurrent ? '#F59E0B' : '#6B7280',
+                        tenants: data.tenants || {}
+                    });
+                }
             }
             
-            const totalPercent = stats.rentedArea > 0 ? (totalArea / stats.rentedArea * 100).toFixed(1) : 0;
-            html += `
-                <tr class="total-row">
-                    <td>Всього</td>
-                    <td class="text-end">${totalCount}</td>
-                    <td class="text-end">${totalArea.toFixed(1)}</td>
-                    <td class="text-end">${totalPercent}%</td>
-                    <td></td>
-                </tr>`;
+            // Підрахунок загального
+            let totalCount = 0, totalArea = 0;
+            yearData.forEach(d => {
+                totalCount += d.count;
+                totalArea += d.area;
+            });
+            
+            // Summary
+            summary.innerHTML = `
+                <span style="font-size: 20px; font-weight: 700; color: var(--mono-text);">${totalCount}</span>
+                <span style="font-size: 12px; color: var(--mono-text-secondary);">діл.</span>
+                <span style="font-size: 16px; font-weight: 600; color: var(--mono-text); margin-left: 4px;">${totalArea.toFixed(1)}</span>
+                <span style="font-size: 12px; color: var(--mono-text-secondary);">га</span>
+            `;
+            
+            // Timeline Cards
+            let timelineHtml = '';
+            yearData.forEach((d, index) => {
+                const isFirst = index === 0;
+                const borderColor = d.color;
+                
+                timelineHtml += `
+                    <div class="timeline-card" data-year="${d.id}" style="
+                        min-width: 120px;
+                        flex: 1;
+                        background: var(--mono-surface-2);
+                        border-radius: 12px;
+                        padding: 16px;
+                        border-top: 3px solid ${borderColor};
+                        cursor: pointer;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                        position: relative;
+                    " onclick="toggleYearDetails('${d.id}')">
+                        <div style="font-size: 12px; color: var(--mono-text-secondary); margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+                            <span>${d.icon}</span>
+                            <span>${d.label}</span>
+                        </div>
+                        <div style="font-size: 28px; font-weight: 700; color: ${d.color};">${d.count}</div>
+                        <div style="font-size: 13px; color: var(--mono-text-secondary);">${d.area.toFixed(1)} га</div>
+                        <div style="position: absolute; bottom: 8px; right: 12px; font-size: 10px; color: var(--mono-text-secondary);">
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                    </div>
+                `;
+            });
+            timeline.innerHTML = timelineHtml;
+            
+            // Progress bar
+            let progressHtml = '';
+            yearData.forEach(d => {
+                const widthPercent = stats.rentedArea > 0 ? (d.area / stats.rentedArea * 100) : 0;
+                if (widthPercent > 0) {
+                    progressHtml += `<div style="width: ${widthPercent}%; background: ${d.color}; height: 100%;" title="${d.label}: ${d.count} діл."></div>`;
+                }
+            });
+            progressBar.innerHTML = progressHtml;
+            
+            // Details (акордеон)
+            let detailsHtml = '';
+            yearData.forEach(d => {
+                const tenantsList = Object.entries(d.tenants)
+                    .sort((a, b) => b[1].area - a[1].area)
+                    .slice(0, 5);
+                
+                const othersCount = Object.keys(d.tenants).length - 5;
+                
+                let tenantsHtml = '';
+                tenantsList.forEach(([tenantKey, tData]) => {
+                    const displayName = getTenantDisplayName(tenantKey);
+                    const color = getColor(tenantKey);
+                    const percent = d.area > 0 ? (tData.area / d.area * 100).toFixed(0) : 0;
+                    
+                    tenantsHtml += `
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--mono-surface); border-radius: 6px;">
+                            <span style="width: 8px; height: 8px; background: ${color}; border-radius: 50%;"></span>
+                            <span style="flex: 1; font-size: 13px; color: var(--mono-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayName}</span>
+                            <span style="font-size: 12px; color: var(--mono-text-secondary);">${tData.count} діл.</span>
+                            <span style="font-size: 12px; font-weight: 600; color: ${d.color};">${tData.area.toFixed(1)} га</span>
+                            <div style="width: 50px; height: 4px; background: var(--mono-surface-3); border-radius: 2px; overflow: hidden;">
+                                <div style="width: ${percent}%; height: 100%; background: ${color};"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                if (othersCount > 0) {
+                    tenantsHtml += `
+                        <div style="text-align: center; padding: 8px; color: var(--mono-text-secondary); font-size: 12px;">
+                            ... ще ${othersCount} орендарів
+                        </div>
+                    `;
+                }
+                
+                detailsHtml += `
+                    <div id="details-${d.id}" style="display: none; margin-top: 12px; padding: 12px; background: var(--mono-surface-2); border-radius: 8px; border-left: 3px solid ${d.color};">
+                        <div style="font-size: 14px; font-weight: 600; color: var(--mono-text); margin-bottom: 10px;">
+                            ${d.icon} ${d.label} — ${d.count} договорів (${d.area.toFixed(1)} га)
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            ${tenantsHtml || '<div style="color: var(--mono-text-secondary); font-size: 13px;">Немає даних про орендарів</div>'}
+                        </div>
+                    </div>
+                `;
+            });
+            detailsContainer.innerHTML = detailsHtml;
+            
+            // Зберігаємо дані для доступу
+            window.expiryYearData = yearData;
+        }
+        
+        // Перемикач деталей по року
+        function toggleYearDetails(yearId) {
+            const detailsEl = document.getElementById(`details-${yearId}`);
+            const allDetails = document.querySelectorAll('[id^="details-"]');
+            
+            // Закриваємо всі інші
+            allDetails.forEach(el => {
+                if (el.id !== `details-${yearId}`) {
+                    el.style.display = 'none';
+                }
+            });
+            
+            // Перемикаємо поточний
+            if (detailsEl) {
+                detailsEl.style.display = detailsEl.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+        
+        // Стара функція для сумісності
+        function updateForecastTable(stats) {
+            updateExpiryTimeline(stats);
+        }
+        
+        function updateMatrixTable(expiryYears, tenants) {
+            const years = Object.keys(expiryYears).sort((a, b) => a - b).filter(y => parseInt(y) >= currentYear - 2);
+            const header = document.getElementById('matrixHeader');
+            const tbody = document.getElementById('matrixTableBody');
+            
+            if (!header || !tbody) return;
+            
+            // Знаходимо максимальне значення для heatmap
+            let maxArea = 0;
+            Object.values(expiryYears).forEach(yearData => {
+                Object.values(yearData.tenants || {}).forEach(t => {
+                    if (t.area > maxArea) maxArea = t.area;
+                });
+            });
+            
+            // Функція для отримання кольору heatmap
+            function getHeatmapStyle(area, isCurrentYear) {
+                if (area <= 0) return '';
+                const intensity = Math.min(area / maxArea, 1);
+                const baseColor = isCurrentYear ? '239, 68, 68' : '16, 185, 129'; // червоний для поточного, зелений для інших
+                const alpha = 0.2 + intensity * 0.5; // від 0.2 до 0.7
+                return `background-color: rgba(${baseColor}, ${alpha}) !important;`;
+            }
+            
+            // Header
+            let headerHtml = '<th class="sticky-col">Орендар</th>';
+            years.forEach(year => {
+                const isCurrent = parseInt(year) === currentYear;
+                const yearClass = parseInt(year) < currentYear ? 'year-expired' : (isCurrent ? 'year-current' : 'year-future');
+                // Використовуємо box-shadow для рамки (працює з border-collapse)
+                const currentYearStyle = isCurrent ? 
+                    'box-shadow: inset 0 0 0 2px #EF4444; background-color: rgba(239, 68, 68, 0.15) !important; color: #EF4444; font-weight: 700;' : '';
+                headerHtml += `<th class="text-end ${yearClass}" style="${currentYearStyle}">${year}</th>`;
+            });
+            headerHtml += '<th class="text-end">Всього</th>';
+            header.innerHTML = headerHtml;
+            
+            let html = '';
+            const yearTotals = {};
+            years.forEach(y => yearTotals[y] = 0);
+            
+            Object.entries(tenants)
+                .sort((a, b) => b[1].area - a[1].area)
+                .forEach(([tenantKey, data]) => {
+                    const color = getColor(tenantKey);
+                    const displayName = getTenantDisplayName(tenantKey);
+                    let rowTotal = 0;
+                    
+                    html += `<tr><td class="sticky-col"><span class="tenant-indicator" style="background-color: ${color};"></span><span style="color: ${color};">${displayName}</span></td>`;
+                    
+                    years.forEach(year => {
+                        const areaForYear = expiryYears[year]?.tenants?.[tenantKey]?.area || 0;
+                        yearTotals[year] += areaForYear;
+                        rowTotal += areaForYear;
+                        
+                        const isCurrent = parseInt(year) === currentYear;
+                        const heatmapStyle = getHeatmapStyle(areaForYear, isCurrent);
+                        // box-shadow для рамки поточного року
+                        const currentYearStyle = isCurrent ? 
+                            'box-shadow: inset 2px 0 0 #EF4444, inset -2px 0 0 #EF4444;' : '';
+                        
+                        html += `<td class="text-end" style="${heatmapStyle}${currentYearStyle}">${areaForYear > 0 ? areaForYear.toFixed(1) : '-'}</td>`;
+                    });
+                    
+                    html += `<td class="text-end" style="font-weight: 600;">${rowTotal > 0 ? rowTotal.toFixed(1) : '-'}</td></tr>`;
+                });
             
             tbody.innerHTML = html;
+            
+            // Sticky footer - рядок "Всього" (sticky знизу)
+            const footer = document.getElementById('matrixFooter');
+            if (footer) {
+                let grandTotal = 0;
+                let footerHtml = '<tr style="background-color: #1C1C1E;"><td class="sticky-col" style="position: sticky; left: 0; background-color: #1C1C1E; font-weight: 700;">Всього</td>';
+                years.forEach(year => {
+                    grandTotal += yearTotals[year];
+                    const isCurrent = parseInt(year) === currentYear;
+                    const currentYearStyle = isCurrent ? 
+                        'box-shadow: inset 2px 0 0 #EF4444, inset -2px 0 0 #EF4444, inset 0 -2px 0 #EF4444; background-color: rgba(239, 68, 68, 0.25) !important; color: #EF4444;' : 
+                        'background-color: #1C1C1E;';
+                    footerHtml += `<td class="text-end" style="${currentYearStyle} font-weight: 700;">${yearTotals[year] > 0 ? yearTotals[year].toFixed(1) : '-'}</td>`;
+                });
+                footerHtml += `<td class="text-end" style="font-weight: 700; background-color: #1C1C1E;">${grandTotal.toFixed(1)}</td></tr>`;
+                footer.innerHTML = footerHtml;
+            }
         }
 
         function updateRegistrationTable(registrationYears) {
-            const tbody = document.getElementById('registrationTableBody');
-            const years = Object.keys(registrationYears).sort((a, b) => a - b);
-            
-            let html = '';
-            let totals = { total: 0, totalArea: 0, active: 0, activeArea: 0, inactive: 0, inactiveArea: 0 };
-            
-            years.forEach(year => {
-                const d = registrationYears[year];
-                Object.keys(totals).forEach(k => totals[k] += d[k] || 0);
-                
-                const activePercent = d.total > 0 ? (d.active / d.total * 100).toFixed(0) : 0;
-                const inactivePercent = d.total > 0 ? (d.inactive / d.total * 100).toFixed(0) : 0;
-                
-                html += `
-                    <tr>
-                        <td>${year}</td>
-                        <td class="text-end">${d.total}</td>
-                        <td class="text-end">${d.totalArea.toFixed(1)}</td>
-                        <td class="text-end">${d.active} / ${d.activeArea.toFixed(1)}</td>
-                        <td class="text-end">${d.inactive} / ${d.inactiveArea.toFixed(1)}</td>
-                        <td>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill">
-                                    <div class="progress-bar-segment" style="width: ${activePercent}%; background: var(--mono-green);"></div>
-                                    <div class="progress-bar-segment" style="width: ${inactivePercent}%; background: var(--mono-red);"></div>
-                                </div>
-                                <span class="progress-bar-text">${activePercent}% / ${inactivePercent}%</span>
-                            </div>
-                        </td>
-                    </tr>`;
-            });
-            
-            const activePercent = totals.total > 0 ? (totals.active / totals.total * 100).toFixed(0) : 0;
-            const inactivePercent = totals.total > 0 ? (totals.inactive / totals.total * 100).toFixed(0) : 0;
-            
-            html += `
-                <tr class="total-row">
-                    <td>Всього</td>
-                    <td class="text-end">${totals.total}</td>
-                    <td class="text-end">${totals.totalArea.toFixed(1)}</td>
-                    <td class="text-end">${totals.active} / ${totals.activeArea.toFixed(1)}</td>
-                    <td class="text-end">${totals.inactive} / ${totals.inactiveArea.toFixed(1)}</td>
-                    <td>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill">
-                                <div class="progress-bar-segment" style="width: ${activePercent}%; background: var(--mono-green);"></div>
-                                <div class="progress-bar-segment" style="width: ${inactivePercent}%; background: var(--mono-red);"></div>
-                            </div>
-                            <span class="progress-bar-text">${activePercent}% / ${inactivePercent}%</span>
-                        </div>
-                    </td>
-                </tr>`;
-            
-            tbody.innerHTML = html;
+            // Не використовується
         }
 
         function updateTenantsTable(stats) {
@@ -1408,55 +1763,6 @@
             tbody.innerHTML = html || '<tr><td colspan="4" style="text-align: center; color: var(--mono-text-secondary);">Немає власників з такою кількістю ділянок</td></tr>';
         }
 
-        function updateMatrixTable(expiryYears, tenants) {
-            const years = Object.keys(expiryYears).sort((a, b) => a - b).filter(y => parseInt(y) >= currentYear - 2);
-            const header = document.getElementById('matrixHeader');
-            const tbody = document.getElementById('matrixTableBody');
-            
-            let headerHtml = '<th class="sticky-col">Орендар</th>';
-            years.forEach(year => {
-                const yearClass = parseInt(year) < currentYear ? 'year-expired' : (parseInt(year) === currentYear ? 'year-current' : 'year-future');
-                headerHtml += `<th class="text-end ${yearClass}">${year}</th>`;
-            });
-            headerHtml += '<th class="text-end">Всього</th>';
-            header.innerHTML = headerHtml;
-            
-            let html = '';
-            const yearTotals = {};
-            years.forEach(y => yearTotals[y] = 0);
-            
-            Object.entries(tenants)
-                .sort((a, b) => b[1].area - a[1].area)
-                .forEach(([tenantKey, data]) => {
-                    const color = getColor(tenantKey);
-                    const displayName = getTenantDisplayName(tenantKey);
-                    let rowTotal = 0;
-                    
-                    html += `<tr><td class="sticky-col"><span class="tenant-indicator" style="background-color: ${color};"></span><span style="color: ${color};">${displayName}</span></td>`;
-                    
-                    years.forEach(year => {
-                        const areaForYear = expiryYears[year]?.tenants?.[tenantKey]?.area || 0;
-                        yearTotals[year] += areaForYear;
-                        rowTotal += areaForYear;
-                        
-                        const highlight = areaForYear > 0 ? 'matrix-cell-highlight' : '';
-                        html += `<td class="text-end ${highlight}">${areaForYear > 0 ? areaForYear.toFixed(1) : '-'}</td>`;
-                    });
-                    
-                    html += `<td class="text-end" style="font-weight: 600;">${rowTotal > 0 ? rowTotal.toFixed(1) : '-'}</td></tr>`;
-                });
-            
-            let grandTotal = 0;
-            html += '<tr class="total-row"><td class="sticky-col">Всього</td>';
-            years.forEach(year => {
-                grandTotal += yearTotals[year];
-                html += `<td class="text-end">${yearTotals[year] > 0 ? yearTotals[year].toFixed(1) : '-'}</td>`;
-            });
-            html += `<td class="text-end">${grandTotal.toFixed(1)}</td></tr>`;
-            
-            tbody.innerHTML = html;
-        }
-
         // ========== НОВІ ФУНКЦІЇ ==========
         
         // Графік динаміки реєстрації
@@ -1481,18 +1787,20 @@
                     labels: years,
                     datasets: [
                         {
-                            label: 'Активні',
-                            data: activeData,
+                            label: 'Реєстрація власності',
+                            data: years.map(y => registrationYears[y].total || 0),
                             backgroundColor: 'rgba(16, 185, 129, 0.7)',
                             borderColor: '#10B981',
-                            borderWidth: 1
+                            borderWidth: 1,
+                            borderRadius: 4
                         },
                         {
-                            label: 'Неактивні',
-                            data: inactiveData,
-                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                            borderColor: '#EF4444',
-                            borderWidth: 1
+                            label: 'Укладено договорів оренди',
+                            data: years.map(y => registrationYears[y].active || 0),
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: '#3B82F6',
+                            borderWidth: 1,
+                            borderRadius: 4
                         }
                     ]
                 },
@@ -1501,184 +1809,57 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'top',
-                            labels: { color: '#8E8E93', font: { size: 12 } }
+                            display: false // Легенда в заголовку секції
+                        },
+                        tooltip: {
+                            backgroundColor: '#2C2C2E',
+                            titleColor: '#FFFFFF',
+                            bodyColor: '#ABABAB',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw} ділянок`;
+                                }
+                            }
                         }
                     },
                     scales: {
                         x: {
-                            stacked: true,
                             grid: { color: 'rgba(255,255,255,0.05)' },
-                            ticks: { color: '#8E8E93' }
+                            ticks: { color: '#8E8E93', font: { size: 11 } }
                         },
                         y: {
-                            stacked: true,
                             grid: { color: 'rgba(255,255,255,0.05)' },
-                            ticks: { color: '#8E8E93' }
+                            ticks: { color: '#8E8E93', font: { size: 11 } },
+                            beginAtZero: true
                         }
                     }
                 }
             });
         }
-        
-        function updateTenantsChart(tenants, totalArea) {
-            const ctx = document.getElementById('tenantsChart');
-            if (!ctx) return;
-            
-            const sorted = Object.entries(tenants).sort((a, b) => b[1].area - a[1].area);
-            const top5 = sorted.slice(0, 5);
-            const othersArea = sorted.slice(5).reduce((sum, [_, d]) => sum + d.area, 0);
-            
-            const labels = top5.map(([key, _]) => {
-                const displayName = getTenantDisplayName(key);
-                return displayName.length > 20 ? displayName.substring(0, 20) + '...' : displayName;
-            });
-            const data = top5.map(([_, d]) => d.area);
-            const colors = top5.map(([key, _]) => getColor(key));
-            
-            if (othersArea > 0) {
-                labels.push('Інші');
-                data.push(othersArea);
-                colors.push('#636366');
-            }
-            
-            if (tenantsChartInstance) {
-                tenantsChartInstance.destroy();
-            }
-            
-            tenantsChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colors,
-                        borderColor: '#1C1C1E',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                color: '#8E8E93',
-                                font: { size: 11 },
-                                boxWidth: 12,
-                                padding: 8
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.raw;
-                                    const percent = (value / totalArea * 100).toFixed(1);
-                                    return `${context.label}: ${value.toFixed(1)} га (${percent}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Сповіщення про договори
+
+        // Сповіщення про договори (прибрано, але залишаємо порожню функцію)
         function updateAlerts(stats, features) {
-            const alertsCard = document.getElementById('alertsCard');
-            const alertsBody = document.getElementById('alertsBody');
-            
-            const today = new Date();
-            const alerts = [];
-            
-            // Прострочені договори
-            let expiredCount = 0;
-            let expiredArea = 0;
-            Object.entries(stats.expiryYears).forEach(([year, data]) => {
-                if (parseInt(year) < currentYear) {
-                    expiredCount += data.count;
-                    expiredArea += data.area;
-                }
-            });
-            
-            if (expiredCount > 0) {
-                alerts.push({
-                    type: 'red',
-                    icon: 'exclamation-triangle',
-                    title: 'Прострочені договори',
-                    count: expiredCount,
-                    area: expiredArea.toFixed(1),
-                    description: 'Термін оренди вже закінчився'
-                });
-            }
-            
-            // Договори цього року
-            const thisYearData = stats.expiryYears[currentYear] || { count: 0, area: 0 };
-            if (thisYearData.count > 0) {
-                alerts.push({
-                    type: 'orange',
-                    icon: 'clock-history',
-                    title: `Закінчуються у ${currentYear}`,
-                    count: thisYearData.count,
-                    area: thisYearData.area.toFixed(1),
-                    description: 'Потрібно продовжити або переукласти'
-                });
-            }
-            
-            // Договори наступного року
-            const nextYearData = stats.expiryYears[currentYear + 1] || { count: 0, area: 0 };
-            if (nextYearData.count > 0) {
-                alerts.push({
-                    type: 'yellow',
-                    icon: 'calendar-event',
-                    title: `Закінчуються у ${currentYear + 1}`,
-                    count: nextYearData.count,
-                    area: nextYearData.area.toFixed(1),
-                    description: 'Підготуйтеся заздалегідь'
-                });
-            }
-            
-            // Вільні ділянки
-            if (stats.freeParcels > 0) {
-                alerts.push({
-                    type: 'yellow',
-                    icon: 'unlock',
-                    title: 'Вільні від оренди',
-                    count: stats.freeParcels,
-                    area: stats.freeArea.toFixed(1),
-                    description: 'Можна укласти нові договори'
-                });
-            }
-            
-            if (alerts.length === 0) {
-                alertsCard.style.display = 'none';
-                return;
-            }
-            
-            alertsCard.style.display = 'block';
-            
-            let html = '';
-            alerts.forEach(alert => {
-                html += `
-                    <div class="alert-item">
-                        <div class="alert-item-left">
-                            <i class="bi bi-${alert.icon}" style="font-size: 18px; color: var(--mono-${alert.type === 'red' ? 'red' : (alert.type === 'orange' ? 'orange' : 'yellow')});"></i>
-                            <div>
-                                <div style="font-weight: 500;">${alert.title}</div>
-                                <div style="font-size: 12px; color: var(--mono-text-secondary);">${alert.description}</div>
-                            </div>
-                        </div>
-                        <div style="text-align: right;">
-                            <span class="alert-badge ${alert.type}">${alert.count} ділянок</span>
-                            <div style="font-size: 12px; color: var(--mono-text-secondary); margin-top: 2px;">${alert.area} га</div>
-                        </div>
-                    </div>`;
-            });
-            
-            alertsBody.innerHTML = html;
+            // Не використовується
         }
         
+        // Концентрація орендарів (прибрано)
+        function updateConcentration(stats) {
+            // Не використовується
+        }
+        
+        // Статистика реєстрації (об'єднано з графіком)
+        function updateRegistrationTable(registrationYears) {
+            // Не використовується
+        }
+        
+        // Графік орендарів (прибрано)
+        function updateTenantsChart(tenants, totalArea) {
+            // Не використовується
+        }
+
         // Експорт в Excel
         function exportToExcel() {
             if (!globalStats) {
