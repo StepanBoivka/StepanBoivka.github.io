@@ -4290,6 +4290,12 @@ body {
         let editableLayers;
         let selectedFile = ''; // Додаємо глобальну змінну для вибраного файлу
         let locateControl; // Додаємо глобальну змінну для locate control
+        
+        // === Система унікальності орендарів по ЄДРПОУ ===
+        // Мап: ЄДРПОУ -> канонічна назва (найкоротша)
+        let tenantEdrpouNames = {};
+        // Мап: назва орендаря -> ЄДРПОУ (для зворотного пошуку)
+        let tenantNameToEdrpou = {};
 
         // Предопределенные цвета для орендарів
         const predefinedColors = [
@@ -4342,24 +4348,78 @@ body {
         function styleFeature(feature) {
             // Для split используем орендаря части если есть
             const tenant = feature.properties["Орендар частини"] || feature.properties["Орендар"];
+            const edrpou = feature.properties["ЄДРПОУ орендаря частини"] || feature.properties["ЄДРПОУ орендаря ділянки"];
             return {
-                color: getColor(tenant),
+                color: getColor(tenant, edrpou),
                 weight: 0.5,
                 opacity: 1,
                 fillOpacity: 0.4
             };
         }
 
-        function getColor(tenant) {
+        /**
+         * Отримує колір для орендаря.
+         * Унікальність визначається по ЄДРПОУ якщо є, інакше по назві.
+         * @param {string} tenant - Назва орендаря
+         * @param {string} edrpou - ЄДРПОУ орендаря (опціонально)
+         * @returns {string} - Колір у форматі HEX
+         */
+        function getColor(tenant, edrpou) {
             if (!tenant) return "#ffffff";
-            if (!tenantColors[tenant]) {
-                tenantColors[tenant] = predefinedColors[colorIndex % predefinedColors.length];
+            
+            // Визначаємо ключ для кольору: ЄДРПОУ якщо є, інакше назва
+            const colorKey = edrpou || tenant;
+            
+            // Реєструємо маппінг ЄДРПОУ -> назва якщо є ЄДРПОУ
+            if (edrpou) {
+                registerTenantEdrpou(edrpou, tenant);
+            }
+            
+            if (!tenantColors[colorKey]) {
+                tenantColors[colorKey] = predefinedColors[colorIndex % predefinedColors.length];
                 colorIndex++;
                 
                 // Логуємо для налагодження
-                debugLog('Assigned color', tenantColors[tenant], 'to tenant', tenant);
+                debugLog('Assigned color', tenantColors[colorKey], 'to tenant', tenant, 'edrpou', edrpou);
             }
-            return tenantColors[tenant];
+            return tenantColors[colorKey];
+        }
+        
+        /**
+         * Реєструє зв'язок ЄДРПОУ з назвою орендаря.
+         * Зберігає найкоротшу назву як канонічну.
+         */
+        function registerTenantEdrpou(edrpou, tenantName) {
+            if (!edrpou || !tenantName) return;
+            
+            // Зберігаємо зворотний маппінг
+            tenantNameToEdrpou[tenantName] = edrpou;
+            
+            // Вибираємо найкоротшу назву як канонічну
+            if (!tenantEdrpouNames[edrpou]) {
+                tenantEdrpouNames[edrpou] = tenantName;
+            } else if (tenantName.length < tenantEdrpouNames[edrpou].length) {
+                tenantEdrpouNames[edrpou] = tenantName;
+            }
+        }
+        
+        /**
+         * Отримує унікальний ключ орендаря (ЄДРПОУ або назву)
+         */
+        function getTenantKey(tenant, edrpou) {
+            return edrpou || tenant;
+        }
+        
+        /**
+         * Отримує назву для відображення по ключу (ЄДРПОУ або назві)
+         */
+        function getTenantDisplayName(key) {
+            // Якщо ключ - це ЄДРПОУ, повертаємо канонічну назву
+            if (tenantEdrpouNames[key]) {
+                return tenantEdrpouNames[key];
+            }
+            // Інакше це сама назва
+            return key;
         }
 
         // Функція для очищення шарів
@@ -5253,16 +5313,29 @@ body {
             // Логуємо для налагодження
             debugLog('Extracting color for layer:', layerName);
             
-            // Перевіряємо в tenantColors (глобальні кольори орендарів)
-            if (window.tenantColors && tenantColors[layerName]) {
-                debugLog('Found in tenantColors:', tenantColors[layerName]);
-                return tenantColors[layerName];
+            // Перевіряємо в tenantColors (глобальні кольори орендарів) - може бути ключ ЄДРПОУ або назва
+            if (window.tenantColors) {
+                // Спочатку шукаємо напряму
+                if (tenantColors[layerName]) {
+                    debugLog('Found in tenantColors:', tenantColors[layerName]);
+                    return tenantColors[layerName];
+                }
+                // Шукаємо по ЄДРПОУ якщо layerName - це назва
+                if (tenantNameToEdrpou && tenantNameToEdrpou[layerName]) {
+                    const edrpou = tenantNameToEdrpou[layerName];
+                    if (tenantColors[edrpou]) {
+                        debugLog('Found via EDRPOU:', tenantColors[edrpou]);
+                        return tenantColors[edrpou];
+                    }
+                }
             }
             
             // Перевіряємо чи є це орендар з кольором через getColor функцію
             if (window.getColor && typeof getColor === 'function') {
                 try {
-                    const color = getColor(layerName);
+                    // Отримуємо ЄДРПОУ якщо є
+                    const edrpou = tenantNameToEdrpou ? tenantNameToEdrpou[layerName] : null;
+                    const color = getColor(layerName, edrpou);
                     if (color && color !== '#999999' && color !== '#999' && color !== '#ffffff') {
                         debugLog('Generated color via getColor:', color);
                         return color;
@@ -5336,9 +5409,21 @@ body {
         
         // Функція для витягування назви шару
         function extractLayerName(layerName) {
-            // Перевіряємо чи є площа в назві (для орендарів)
-            if (typeof tenantAreas !== 'undefined' && tenantAreas[layerName]) {
-                return `${layerName} (${tenantAreas[layerName].toFixed(2)} га)`;
+            // Спробуємо знайти ключ в tenantAreas (може бути ЄДРПОУ або назва)
+            if (typeof tenantAreas !== 'undefined') {
+                // Спочатку шукаємо напряму
+                if (tenantAreas[layerName]) {
+                    const displayName = getTenantDisplayName(layerName);
+                    return `${displayName} (${tenantAreas[layerName].toFixed(2)} га)`;
+                }
+                // Шукаємо по ЄДРПОУ якщо layerName - це назва
+                if (tenantNameToEdrpou && tenantNameToEdrpou[layerName]) {
+                    const edrpou = tenantNameToEdrpou[layerName];
+                    if (tenantAreas[edrpou]) {
+                        const displayName = getTenantDisplayName(edrpou);
+                        return `${displayName} (${tenantAreas[edrpou].toFixed(2)} га)`;
+                    }
+                }
             }
             
             // Для вільних від оренди
@@ -5988,11 +6073,21 @@ function addPolygonToMap(geoJSON, originalProperties) {
                         const kadNum = props["Кадастровий номер"];
                         const partArea = parseFloat(props["Площа частини"]) || 0;
                         const totalArea = parseFloat(props["Площа розрахована"]) || 0;
-                        const tenant = props["Орендар частини"] || props["Орендар"] || "Без орендаря";
+                        const tenantName = props["Орендар частини"] || props["Орендар"] || "Без орендаря";
+                        const edrpou = props["ЄДРПОУ орендаря частини"] || props["ЄДРПОУ орендаря ділянки"];
                         const status = props["Статус"] || "Не вказано";
                         
+                        // Використовуємо ЄДРПОУ як ключ якщо є, інакше назву
+                        const tenantKey = (tenantName !== "Без орендаря" && edrpou) ? edrpou : tenantName;
+                        // Реєструємо маппінг для відображення канонічної назви
+                        if (edrpou && tenantName !== "Без орендаря") {
+                            registerTenantEdrpou(edrpou, tenantName);
+                        }
+                        // Для відображення використовуємо канонічну назву
+                        const tenant = getTenantDisplayName(tenantKey);
+                        
                         // Уникальный идентификатор комбинации
-                        const partId = `${kadNum}_${tenant}_${status}`;
+                        const partId = `${kadNum}_${tenantKey}_${status}`;
                         
                         // Проверяем, не добавляли ли мы уже этот объект
                         if (processedParts.has(partId) || !kadNum || isNaN(partArea) || partArea <= 0) {
@@ -6094,7 +6189,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
             // Формируем HTML для арендаторов
             let tenantsInfo = '';
             tenantAreas.forEach((area, tenant) => {
-                const color = tenant === "Без орендаря" ? "#3A3A3C" : getColor(tenant);
+                // Отримуємо ЄДРПОУ для кольору
+                const edrpou = tenantNameToEdrpou ? tenantNameToEdrpou[tenant] : null;
+                const colorKey = edrpou || tenant;
+                const color = tenant === "Без орендаря" ? "#3A3A3C" : (tenantColors[colorKey] || getColor(tenant, edrpou));
                 tenantsInfo += `
                     <div style="display: flex; align-items: center; margin-top: 6px;">
                         <span style="
@@ -6536,6 +6634,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
     
     clearOverlays();
     tenantAreas = {};
+    tenantColors = {};
+    tenantEdrpouNames = {};
+    tenantNameToEdrpou = {};
+    colorIndex = 0;
     freeArea = 0;
     selectedFeatures.clear(); // Очищаем выбранные объекты
     
@@ -6886,6 +6988,7 @@ function addPolygonToMap(geoJSON, originalProperties) {
         function processAreaAndTenant(feature, layer) {
             // Для split используем орендаря части
             const tenant = feature.properties["Орендар частини"] || feature.properties["Орендар"];
+            const edrpou = feature.properties["ЄДРПОУ орендаря частини"] || feature.properties["ЄДРПОУ орендаря ділянки"];
             const selectedField = document.getElementById('fieldSelect').value;
             
             // Для split используем Площа частини
@@ -6908,8 +7011,11 @@ function addPolygonToMap(geoJSON, originalProperties) {
                     freeLayer.addLayer(layer);
                     freeArea += area;
                 } else {
-                    if (!tenantAreas[tenant]) tenantAreas[tenant] = 0;
-                    tenantAreas[tenant] += area;
+                    // Використовуємо ЄДРПОУ як ключ для унікальності
+                    const key = getTenantKey(tenant, edrpou);
+                    if (edrpou) registerTenantEdrpou(edrpou, tenant);
+                    if (!tenantAreas[key]) tenantAreas[key] = 0;
+                    tenantAreas[key] += area;
                 }
             }
         }
@@ -6967,6 +7073,9 @@ function addPolygonToMap(geoJSON, originalProperties) {
                         // Используем "Орендар частини" или "Орендар"
                         const tenant = layer.feature.properties["Орендар частини"] || 
                                      layer.feature.properties["Орендар"];
+                        // Отримуємо ЄДРПОУ для унікальності
+                        const edrpou = layer.feature.properties["ЄДРПОУ орендаря частини"] || 
+                                      layer.feature.properties["ЄДРПОУ орендаря ділянки"];
                         
                         // Используем "Площа частини" для split
                         const area = parseFloat(layer.feature.properties["Площа частини"]);
@@ -6981,12 +7090,16 @@ function addPolygonToMap(geoJSON, originalProperties) {
                         }
                         
                         if (tenant && !isNaN(area) && shouldCount) {
-                            if (!tenantLayers[tenant]) {
-                                tenantLayers[tenant] = L.layerGroup();
-                                tenantAreas[tenant] = 0;
+                            // Використовуємо ЄДРПОУ як ключ для унікальності орендарів
+                            const key = getTenantKey(tenant, edrpou);
+                            if (edrpou) registerTenantEdrpou(edrpou, tenant);
+                            
+                            if (!tenantLayers[key]) {
+                                tenantLayers[key] = L.layerGroup();
+                                tenantAreas[key] = 0;
                             }
-                            tenantAreas[tenant] += area;
-                            tenantLayers[tenant].addLayer(layer);
+                            tenantAreas[key] += area;
+                            tenantLayers[key].addLayer(layer);
                         }
                     });
                 }
@@ -6995,15 +7108,16 @@ function addPolygonToMap(geoJSON, originalProperties) {
             // Сортуємо орендарів за площею
             var sortedTenants = Object.entries(tenantAreas)
                 .sort(([,a], [,b]) => b - a)
-                .map(([tenant]) => tenant);
+                .map(([key]) => key);
 
             // Додаємо шари в потрібному порядку
-            sortedTenants.forEach(tenant => {
-                overlays[tenant] = tenantLayers[tenant];
-                var colorBox = `<span class="color-box" style="background-color:${getColor(tenant)}"></span>`;
-                layersControl.addOverlay(tenantLayers[tenant], 
-                    colorBox + `<span class="layer-name">${tenant} (${tenantAreas[tenant].toFixed(2)} га)</span>`);
-                tenantLayers[tenant].addTo(map);
+            sortedTenants.forEach(key => {
+                const displayName = getTenantDisplayName(key);
+                overlays[displayName] = tenantLayers[key];
+                var colorBox = `<span class="color-box" style="background-color:${tenantColors[key] || getColor(displayName, key)}"></span>`;
+                layersControl.addOverlay(tenantLayers[key], 
+                    colorBox + `<span class="layer-name">${displayName} (${tenantAreas[key].toFixed(2)} га)</span>`);
+                tenantLayers[key].addTo(map);
             });
             
             // Оновлюємо мобільні шари після додавання орендарів
@@ -10240,6 +10354,1313 @@ function exportToExcel() {
         // Форматування з копійками
         return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     }
+})();
+</script>
+
+<!-- ===== ШІ-ПОМІЧНИК АГРО-ПРОСТІР (ВИМКНЕНО) ===== -->
+<style>
+/* Кнопка виклику помічника - ВИМКНЕНО */
+.ai-assistant-btn {
+    display: none !important; /* Тимчасово вимкнено */
+    position: fixed;
+    bottom: calc(170px + env(safe-area-inset-bottom));
+    right: 16px;
+    z-index: 1002;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ai-assistant-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.5);
+}
+
+.ai-assistant-btn:active {
+    transform: scale(0.95);
+}
+
+.ai-assistant-btn .pulse-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(99, 102, 241, 0.5);
+    animation: ai-pulse 2s infinite;
+}
+
+@keyframes ai-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* Вікно чату */
+.ai-chat-window {
+    position: fixed;
+    bottom: calc(90px + env(safe-area-inset-bottom));
+    right: 16px;
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    height: 500px;
+    max-height: calc(100vh - 180px);
+    background: #1C1C1E;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    z-index: 1003;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-chat-window.active {
+    display: flex;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Шапка чату */
+.ai-chat-header {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ai-chat-header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.ai-chat-header-title i {
+    font-size: 20px;
+}
+
+.ai-chat-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.ai-chat-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Тіло чату */
+.ai-chat-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ai-chat-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ai-chat-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ai-chat-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+/* Повідомлення */
+.ai-message {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ai-message.bot {
+    background: #2C2C2E;
+    color: #FFFFFF;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+.ai-message.user {
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+
+.ai-message.system {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10B981;
+    align-self: center;
+    font-size: 12px;
+    padding: 8px 12px;
+}
+
+.ai-message.error {
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+    align-self: center;
+    font-size: 12px;
+}
+
+/* Typing indicator */
+.ai-typing {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    background: #2C2C2E;
+    border-radius: 16px;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+.ai-typing span {
+    width: 8px;
+    height: 8px;
+    background: #8E8E93;
+    border-radius: 50%;
+    animation: typingBounce 1.4s infinite;
+}
+
+.ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+.ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+}
+
+/* Швидкі команди */
+.ai-quick-commands {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ai-quick-cmd {
+    background: #2C2C2E;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ABABAB;
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ai-quick-cmd:hover {
+    background: #3A3A3C;
+    color: white;
+    border-color: #10B981;
+    transform: translateY(-1px);
+}
+
+.ai-quick-cmd:active {
+    transform: scale(0.98);
+}
+
+.ai-quick-cmd.primary {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white;
+    border: none;
+}
+
+.ai-quick-cmd.primary:hover {
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+/* Секції меню */
+.ai-menu-section {
+    padding: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ai-menu-section:last-child {
+    border-bottom: none;
+}
+
+.ai-menu-title {
+    color: #8E8E93;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ai-menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.ai-menu-btn {
+    background: #2C2C2E;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: white;
+    padding: 14px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+}
+
+.ai-menu-btn:hover {
+    background: #3A3A3C;
+    border-color: #10B981;
+    transform: translateY(-2px);
+}
+
+.ai-menu-btn:active {
+    transform: scale(0.98);
+}
+
+.ai-menu-btn i {
+    font-size: 20px;
+    color: #10B981;
+}
+
+.ai-menu-btn span {
+    font-size: 12px;
+    color: #ABABAB;
+}
+
+/* Поле пошуку орендаря */
+.ai-search-section {
+    padding: 16px;
+    background: #1C1C1E;
+}
+
+.ai-search-wrapper {
+    position: relative;
+}
+
+.ai-search-input {
+    width: 100%;
+    background: #2C2C2E;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 14px 16px 14px 44px;
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.ai-search-input:focus {
+    border-color: #10B981;
+}
+
+.ai-search-input::placeholder {
+    color: #8E8E93;
+}
+
+.ai-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8E8E93;
+    font-size: 16px;
+}
+
+/* Таби пошуку */
+.ai-search-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.ai-search-tab {
+    flex: 1;
+    background: #2C2C2E;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #8E8E93;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ai-search-tab:hover {
+    background: #3A3A3C;
+    color: white;
+}
+
+.ai-search-tab.active {
+    background: #10B981;
+    color: white;
+    border-color: #10B981;
+}
+
+/* Результати */
+.ai-result {
+    background: #2C2C2E;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 12px 16px;
+    animation: fadeIn 0.3s ease;
+}
+
+.ai-result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.ai-result-title {
+    font-weight: 600;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-result-close {
+    background: none;
+    border: none;
+    color: #8E8E93;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.ai-result-content {
+    color: #ABABAB;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.ai-result-content b {
+    color: white;
+}
+
+/* Tenant list */
+.ai-tenant-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 8px;
+}
+
+.ai-tenant-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #1C1C1E;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ai-tenant-item:hover {
+    background: #3A3A3C;
+}
+
+.ai-tenant-name {
+    color: white;
+    font-size: 13px;
+}
+
+.ai-tenant-stats {
+    color: #10B981;
+    font-size: 12px;
+}
+
+/* Back button */
+.ai-back-btn {
+    background: none;
+    border: none;
+    color: #10B981;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 0;
+    margin-bottom: 8px;
+}
+
+.ai-back-btn:hover {
+    text-decoration: underline;
+}
+
+/* Поле вводу - приховуємо */
+.ai-chat-input {
+    display: none;
+}
+
+/* Мобільна адаптація */
+@media (max-width: 768px) {
+    .ai-assistant-btn {
+        bottom: calc(90px + env(safe-area-inset-bottom));
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+    
+    .ai-chat-window {
+        bottom: 0;
+        right: 0;
+        left: 0;
+        width: 100%;
+        max-width: 100%;
+        height: calc(100vh - 60px);
+        max-height: calc(100vh - 60px);
+        border-radius: 20px 20px 0 0;
+    }
+}
+</style>
+
+<!-- Кнопка виклику помічника -->
+<button class="ai-assistant-btn" id="aiAssistantBtn" title="Помічник">
+    <div class="pulse-ring"></div>
+    <i class="bi bi-cpu"></i>
+</button>
+
+<!-- Вікно помічника -->
+<div class="ai-chat-window" id="aiChatWindow">
+    <div class="ai-chat-header">
+        <div class="ai-chat-header-title">
+            <i class="bi bi-cpu"></i>
+            <span>Помічник</span>
+        </div>
+        <button class="ai-chat-close" id="aiChatClose">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    
+    <div class="ai-chat-body" id="aiChatBody">
+        <!-- Головне меню -->
+        <div id="aiMainMenu">
+            <!-- Пошук - універсальний -->
+            <div class="ai-search-section">
+                <div class="ai-search-tabs">
+                    <button class="ai-search-tab active" data-search="tenant">Орендар</button>
+                    <button class="ai-search-tab" data-search="cadastre">Кадастр</button>
+                    <button class="ai-search-tab" data-search="owner">Власник</button>
+                </div>
+                <div class="ai-search-wrapper">
+                    <i class="bi bi-search ai-search-icon"></i>
+                    <input type="text" class="ai-search-input" id="aiSearchInput" placeholder="Введіть для пошуку..." autocomplete="off">
+                </div>
+            </div>
+            
+            <!-- Статистика -->
+            <div class="ai-menu-section">
+                <div class="ai-menu-title"><i class="bi bi-bar-chart"></i> Статистика</div>
+                <div class="ai-menu-grid">
+                    <button class="ai-menu-btn" data-action="parcel-count">
+                        <i class="bi bi-grid-3x3"></i>
+                        <span>Кількість ділянок</span>
+                    </button>
+                    <button class="ai-menu-btn" data-action="total-area">
+                        <i class="bi bi-rulers"></i>
+                        <span>Загальна площа</span>
+                    </button>
+                    <button class="ai-menu-btn" data-action="top-tenants">
+                        <i class="bi bi-trophy"></i>
+                        <span>Топ орендарів</span>
+                    </button>
+                    <button class="ai-menu-btn" data-action="all-tenants">
+                        <i class="bi bi-people"></i>
+                        <span>Всі орендарі</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Фільтри -->
+            <div class="ai-menu-section">
+                <div class="ai-menu-title"><i class="bi bi-funnel"></i> Фільтри на карті</div>
+                <div class="ai-menu-grid">
+                    <button class="ai-menu-btn" data-action="show-free">
+                        <i class="bi bi-circle" style="color: #22C55E;"></i>
+                        <span>Вільні ділянки</span>
+                    </button>
+                    <button class="ai-menu-btn" data-action="show-rented">
+                        <i class="bi bi-circle-fill" style="color: #EF4444;"></i>
+                        <span>Орендовані</span>
+                    </button>
+                    <button class="ai-menu-btn" data-action="expiring-2026">
+                        <i class="bi bi-calendar-x"></i>
+                        <span>Закінч. 2026</span>
+                    </button>
+                    <button class="ai-menu-btn" data-action="expiring-2027">
+                        <i class="bi bi-calendar-event"></i>
+                        <span>Закінч. 2027</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Швидкі дії -->
+            <div class="ai-menu-section">
+                <div class="ai-menu-title"><i class="bi bi-lightning"></i> Швидкі дії</div>
+                <div class="ai-menu-grid">
+                    <button class="ai-menu-btn" data-action="open-stats">
+                        <i class="bi bi-pie-chart"></i>
+                        <span>Панель статистики</span>
+                    </button>
+                    <button class="ai-menu-btn" data-action="reset-filters">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        <span>Скинути фільтри</span>
+                    </button>
+                    <button class="ai-menu-btn" data-action="free-stats">
+                        <i class="bi bi-clipboard-data"></i>
+                        <span>Аналіз вільних</span>
+                    </button>
+                    <button class="ai-menu-btn" data-action="export">
+                        <i class="bi bi-download"></i>
+                        <span>Експорт даних</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Контейнер для результатів -->
+        <div id="aiResultContainer" style="display: none;"></div>
+    </div>
+</div>
+
+<script>
+// ===== ПОМІЧНИК АГРО-ПРОСТІР (без API) =====
+(function() {
+    'use strict';
+    
+    // Елементи DOM
+    const assistantBtn = document.getElementById('aiAssistantBtn');
+    const chatWindow = document.getElementById('aiChatWindow');
+    const chatClose = document.getElementById('aiChatClose');
+    const mainMenu = document.getElementById('aiMainMenu');
+    const resultContainer = document.getElementById('aiResultContainer');
+    const searchInput = document.getElementById('aiSearchInput');
+    const searchTabs = document.querySelectorAll('.ai-search-tab');
+    
+    // Стан пошуку
+    let currentSearchType = 'tenant';
+    const placeholders = {
+        tenant: 'Введіть назву орендаря...',
+        cadastre: 'Введіть кадастровий номер або частину...',
+        owner: 'Введіть ПІБ власника...'
+    };
+    
+    // Таби пошуку
+    searchTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            searchTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentSearchType = tab.getAttribute('data-search');
+            searchInput.placeholder = placeholders[currentSearchType];
+            searchInput.value = '';
+            searchInput.focus();
+        });
+    });
+    
+    // Відкриття/закриття
+    assistantBtn.addEventListener('click', () => {
+        chatWindow.classList.add('active');
+        assistantBtn.style.display = 'none';
+        searchInput.focus();
+    });
+    
+    chatClose.addEventListener('click', () => {
+        chatWindow.classList.remove('active');
+        assistantBtn.style.display = 'flex';
+        showMainMenu();
+    });
+    
+    // Обробники кнопок меню
+    document.querySelectorAll('.ai-menu-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const action = btn.getAttribute('data-action');
+            handleAction(action);
+        });
+    });
+    
+    // Універсальний пошук
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const query = searchInput.value.trim();
+            if (query.length >= 2) {
+                performSearch(query, currentSearchType);
+            }
+        }, 300);
+    });
+    
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const query = searchInput.value.trim();
+            if (query.length >= 2) {
+                performSearch(query, currentSearchType);
+            }
+        }
+    });
+    
+    // Диспетчер пошуку
+    function performSearch(query, type) {
+        switch(type) {
+            case 'tenant':
+                searchTenant(query);
+                break;
+            case 'cadastre':
+                searchByCadastre(query);
+                break;
+            case 'owner':
+                searchByOwner(query);
+                break;
+        }
+    }
+    
+    // Показати головне меню
+    function showMainMenu() {
+        mainMenu.style.display = 'block';
+        resultContainer.style.display = 'none';
+        resultContainer.innerHTML = '';
+        searchInput.value = '';
+    }
+    
+    // Показати результат
+    function showResult(title, content, icon = 'bi-info-circle') {
+        mainMenu.style.display = 'none';
+        resultContainer.style.display = 'block';
+        resultContainer.innerHTML = `
+            <div class="ai-result">
+                <button class="ai-back-btn" onclick="document.getElementById('aiMainMenu').style.display='block'; document.getElementById('aiResultContainer').style.display='none';">
+                    <i class="bi bi-arrow-left"></i> Назад
+                </button>
+                <div class="ai-result-header">
+                    <div class="ai-result-title">
+                        <i class="bi ${icon}"></i>
+                        ${title}
+                    </div>
+                </div>
+                <div class="ai-result-content">
+                    ${content}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Обробка дій
+    function handleAction(action) {
+        if (typeof originalGeoJsonData === 'undefined' || !originalGeoJsonData?.features) {
+            showResult('⚠️ Помилка', 'Спочатку виберіть раду на карті', 'bi-exclamation-triangle');
+            return;
+        }
+        
+        const features = originalGeoJsonData.features.filter(f => f.properties?.type === 'split');
+        
+        switch(action) {
+            case 'parcel-count':
+                showParcelCount(features);
+                break;
+            case 'total-area':
+                showTotalArea(features);
+                break;
+            case 'top-tenants':
+                showTopTenants(features);
+                break;
+            case 'all-tenants':
+                showAllTenants(features);
+                break;
+            case 'show-free':
+                filterParcels(features, 'free');
+                break;
+            case 'show-rented':
+                filterParcels(features, 'rented');
+                break;
+            case 'expiring-2026':
+                showExpiring(features, '2026');
+                break;
+            case 'expiring-2027':
+                showExpiring(features, '2027');
+                break;
+            case 'open-stats':
+                document.getElementById('statisticsButton')?.click();
+                chatWindow.classList.remove('active');
+                assistantBtn.style.display = 'flex';
+                break;
+            case 'reset-filters':
+                resetMapFilters();
+                showResult('✅ Готово', 'Фільтри скинуто! Всі ділянки відображаються нормально.', 'bi-check-circle');
+                break;
+            case 'free-stats':
+                showFreeStats(features);
+                break;
+            case 'export':
+                document.getElementById('exportButton')?.click();
+                chatWindow.classList.remove('active');
+                assistantBtn.style.display = 'flex';
+                break;
+        }
+    }
+    
+    // Кількість ділянок
+    function showParcelCount(features) {
+        let free = 0, rented = 0;
+        features.forEach(f => {
+            const tenant = f.properties['Орендар'] || f.properties['Орендар частини'];
+            if (tenant && tenant.trim()) rented++;
+            else free++;
+        });
+        
+        showResult('📊 Кількість ділянок', `
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 12px;">
+                <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: white;">${features.length}</div>
+                    <div style="font-size: 12px; color: #8E8E93;">Всього</div>
+                </div>
+                <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #EF4444;">${rented}</div>
+                    <div style="font-size: 12px; color: #8E8E93;">Орендовані</div>
+                </div>
+                <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #22C55E;">${free}</div>
+                    <div style="font-size: 12px; color: #8E8E93;">Вільні</div>
+                </div>
+            </div>
+        `, 'bi-grid-3x3');
+    }
+    
+    // Загальна площа
+    function showTotalArea(features) {
+        let totalArea = 0, freeArea = 0, rentedArea = 0;
+        features.forEach(f => {
+            const area = parseFloat(f.properties['Площа ДЗК']) || 0;
+            const tenant = f.properties['Орендар'] || f.properties['Орендар частини'];
+            totalArea += area;
+            if (tenant && tenant.trim()) rentedArea += area;
+            else freeArea += area;
+        });
+        
+        showResult('📐 Площа земель', `
+            <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 12px;">
+                <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Загальна площа</span>
+                    <span style="font-size: 18px; font-weight: 700; color: white;">${totalArea.toFixed(2)} га</span>
+                </div>
+                <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>В оренді</span>
+                    <span style="font-size: 18px; font-weight: 700; color: #EF4444;">${rentedArea.toFixed(2)} га <small style="color: #8E8E93;">(${(rentedArea/totalArea*100).toFixed(1)}%)</small></span>
+                </div>
+                <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Вільна</span>
+                    <span style="font-size: 18px; font-weight: 700; color: #22C55E;">${freeArea.toFixed(2)} га <small style="color: #8E8E93;">(${(freeArea/totalArea*100).toFixed(1)}%)</small></span>
+                </div>
+            </div>
+        `, 'bi-rulers');
+    }
+    
+    // Топ орендарів
+    function showTopTenants(features) {
+        const tenantStats = {};
+        features.forEach(f => {
+            const tenant = f.properties['Орендар'] || f.properties['Орендар частини'];
+            if (tenant && tenant.trim()) {
+                if (!tenantStats[tenant]) tenantStats[tenant] = { count: 0, area: 0 };
+                tenantStats[tenant].count++;
+                tenantStats[tenant].area += parseFloat(f.properties['Площа ДЗК']) || 0;
+            }
+        });
+        
+        const sorted = Object.entries(tenantStats)
+            .sort((a, b) => b[1].area - a[1].area)
+            .slice(0, 5);
+        
+        let html = '<div class="ai-tenant-list" style="margin-top: 12px;">';
+        sorted.forEach(([name, stats], i) => {
+            html += `
+                <div class="ai-tenant-item" onclick="document.getElementById('aiSearchInput').value='${name}'; document.getElementById('aiSearchInput').dispatchEvent(new Event('input'));">
+                    <div>
+                        <span style="color: #10B981; font-weight: 600;">#${i+1}</span>
+                        <span class="ai-tenant-name" style="margin-left: 8px;">${name}</span>
+                    </div>
+                    <div class="ai-tenant-stats">${stats.area.toFixed(2)} га</div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        showResult('🏆 Топ-5 орендарів', html, 'bi-trophy');
+    }
+    
+    // Всі орендарі
+    function showAllTenants(features) {
+        const tenantStats = {};
+        features.forEach(f => {
+            const tenant = f.properties['Орендар'] || f.properties['Орендар частини'];
+            if (tenant && tenant.trim()) {
+                if (!tenantStats[tenant]) tenantStats[tenant] = { count: 0, area: 0 };
+                tenantStats[tenant].count++;
+                tenantStats[tenant].area += parseFloat(f.properties['Площа ДЗК']) || 0;
+            }
+        });
+        
+        const sorted = Object.entries(tenantStats).sort((a, b) => a[0].localeCompare(b[0], 'uk'));
+        
+        let html = `<div style="color: #8E8E93; margin-bottom: 12px;">Всього: ${sorted.length} орендарів</div>`;
+        html += '<div class="ai-tenant-list" style="max-height: 300px;">';
+        sorted.forEach(([name, stats]) => {
+            html += `
+                <div class="ai-tenant-item" onclick="document.getElementById('aiSearchInput').value='${name}'; document.getElementById('aiSearchInput').dispatchEvent(new Event('input'));">
+                    <span class="ai-tenant-name">${name}</span>
+                    <div class="ai-tenant-stats">${stats.area.toFixed(2)} га | ${stats.count} діл.</div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        showResult('👥 Всі орендарі', html, 'bi-people');
+    }
+    
+    // Пошук орендаря
+    function searchTenant(query) {
+        if (typeof originalGeoJsonData === 'undefined' || !originalGeoJsonData?.features) {
+            showResult('⚠️ Помилка', 'Спочатку виберіть раду на карті', 'bi-exclamation-triangle');
+            return;
+        }
+        
+        const features = originalGeoJsonData.features.filter(f => f.properties?.type === 'split');
+        const tenantStats = {};
+        
+        features.forEach(f => {
+            const tenant = f.properties['Орендар'] || f.properties['Орендар частини'];
+            if (tenant && tenant.trim()) {
+                if (!tenantStats[tenant]) tenantStats[tenant] = { count: 0, area: 0, parcels: [] };
+                tenantStats[tenant].count++;
+                tenantStats[tenant].area += parseFloat(f.properties['Площа ДЗК']) || 0;
+                tenantStats[tenant].parcels.push(f.properties['Кадастровий номер']);
+            }
+        });
+        
+        const queryLower = query.toLowerCase();
+        const found = [];
+        
+        for (const [name, stats] of Object.entries(tenantStats)) {
+            if (name.toLowerCase().includes(queryLower)) {
+                found.push({ name, ...stats });
+            }
+        }
+        
+        if (found.length === 0) {
+            showResult('🔍 Пошук', `
+                <div style="text-align: center; padding: 20px;">
+                    <i class="bi bi-search" style="font-size: 48px; color: #3A3A3C;"></i>
+                    <div style="margin-top: 12px; color: #8E8E93;">Орендаря "<b>${query}</b>" не знайдено</div>
+                </div>
+            `, 'bi-search');
+            return;
+        }
+        
+        found.sort((a, b) => b.area - a.area);
+        
+        if (found.length === 1) {
+            const t = found[0];
+            showResult(`📊 ${t.name}`, `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+                    <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: 700; color: #10B981;">${t.area.toFixed(2)}</div>
+                        <div style="font-size: 12px; color: #8E8E93;">га</div>
+                    </div>
+                    <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: 700; color: white;">${t.count}</div>
+                        <div style="font-size: 12px; color: #8E8E93;">ділянок</div>
+                    </div>
+                </div>
+                ${t.count <= 5 ? `<div style="margin-top: 16px; padding: 12px; background: #1C1C1E; border-radius: 12px;"><div style="color: #8E8E93; font-size: 12px; margin-bottom: 8px;">Кадастрові номери:</div><div style="font-family: monospace; font-size: 12px; color: white;">${t.parcels.join('<br>')}</div></div>` : ''}
+            `, 'bi-person');
+        } else {
+            let html = `<div style="color: #8E8E93; margin-bottom: 12px;">Знайдено: ${found.length}</div>`;
+            html += '<div class="ai-tenant-list">';
+            found.slice(0, 10).forEach(t => {
+                html += `
+                    <div class="ai-tenant-item" onclick="document.getElementById('aiSearchInput').value='${t.name}'; document.getElementById('aiSearchInput').dispatchEvent(new Event('input'));">
+                        <span class="ai-tenant-name">${t.name}</span>
+                        <div class="ai-tenant-stats">${t.area.toFixed(2)} га</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            showResult('🔍 Результати пошуку', html, 'bi-search');
+        }
+    }
+    
+    // Пошук за кадастровим номером
+    function searchByCadastre(query) {
+        if (typeof originalGeoJsonData === 'undefined' || !originalGeoJsonData?.features) {
+            showResult('⚠️ Помилка', 'Спочатку виберіть раду на карті', 'bi-exclamation-triangle');
+            return;
+        }
+        
+        const features = originalGeoJsonData.features.filter(f => f.properties?.type === 'split');
+        const queryClean = query.replace(/[:\s-]/g, ''); // Видаляємо роздільники
+        
+        const found = features.filter(f => {
+            const cadastre = f.properties['Кадастровий номер'] || '';
+            const cadastreClean = cadastre.replace(/[:\s-]/g, '');
+            return cadastreClean.includes(queryClean) || cadastre.toLowerCase().includes(query.toLowerCase());
+        });
+        
+        if (found.length === 0) {
+            showResult('🔍 Пошук за кадастром', `
+                <div style="text-align: center; padding: 20px;">
+                    <i class="bi bi-geo-alt" style="font-size: 48px; color: #3A3A3C;"></i>
+                    <div style="margin-top: 12px; color: #8E8E93;">Ділянку "<b>${query}</b>" не знайдено</div>
+                </div>
+            `, 'bi-geo-alt');
+            return;
+        }
+        
+        if (found.length === 1) {
+            const f = found[0].properties;
+            const tenant = f['Орендар'] || f['Орендар частини'] || '<span style="color:#22C55E">Вільна</span>';
+            const owner = f['Власник'] || f['ПІБ'] || 'Невідомо';
+            
+            showResult(`📍 ${f['Кадастровий номер']}`, `
+                <div style="margin-top: 12px;">
+                    <div style="background: #1C1C1E; padding: 14px; border-radius: 12px; margin-bottom: 8px;">
+                        <div style="color: #8E8E93; font-size: 11px; margin-bottom: 4px;">Площа</div>
+                        <div style="font-size: 18px; font-weight: 600; color: #10B981;">${parseFloat(f['Площа ДЗК'] || 0).toFixed(4)} га</div>
+                    </div>
+                    <div style="background: #1C1C1E; padding: 14px; border-radius: 12px; margin-bottom: 8px;">
+                        <div style="color: #8E8E93; font-size: 11px; margin-bottom: 4px;">Власник</div>
+                        <div style="font-size: 14px; color: white;">${owner}</div>
+                    </div>
+                    <div style="background: #1C1C1E; padding: 14px; border-radius: 12px; margin-bottom: 8px;">
+                        <div style="color: #8E8E93; font-size: 11px; margin-bottom: 4px;">Орендар</div>
+                        <div style="font-size: 14px; color: white;">${tenant}</div>
+                    </div>
+                    ${f['Дата завершення'] ? `<div style="background: #1C1C1E; padding: 14px; border-radius: 12px;"><div style="color: #8E8E93; font-size: 11px; margin-bottom: 4px;">Завершення оренди</div><div style="font-size: 14px; color: #F59E0B;">${f['Дата завершення']}</div></div>` : ''}
+                </div>
+            `, 'bi-geo-alt');
+            
+            // Підсвітити на карті
+            highlightParcel(f['Кадастровий номер']);
+        } else {
+            let html = `<div style="color: #8E8E93; margin-bottom: 12px;">Знайдено: ${found.length}</div>`;
+            html += '<div class="ai-tenant-list" style="max-height: 300px;">';
+            found.slice(0, 20).forEach(p => {
+                const f = p.properties;
+                const area = parseFloat(f['Площа ДЗК'] || 0).toFixed(4);
+                html += `
+                    <div class="ai-tenant-item" onclick="document.getElementById('aiSearchInput').value='${f['Кадастровий номер']}'; document.getElementById('aiSearchInput').dispatchEvent(new Event('input'));">
+                        <span class="ai-tenant-name" style="font-family: monospace; font-size: 12px;">${f['Кадастровий номер']}</span>
+                        <div class="ai-tenant-stats">${area} га</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            showResult('🔍 Знайдені ділянки', html, 'bi-geo-alt');
+        }
+    }
+    
+    // Пошук за власником
+    function searchByOwner(query) {
+        if (typeof originalGeoJsonData === 'undefined' || !originalGeoJsonData?.features) {
+            showResult('⚠️ Помилка', 'Спочатку виберіть раду на карті', 'bi-exclamation-triangle');
+            return;
+        }
+        
+        const features = originalGeoJsonData.features.filter(f => f.properties?.type === 'split');
+        const queryLower = query.toLowerCase();
+        
+        const ownerStats = {};
+        
+        features.forEach(f => {
+            const owner = f.properties['Власник'] || f.properties['ПІБ'] || '';
+            if (owner && owner.toLowerCase().includes(queryLower)) {
+                if (!ownerStats[owner]) {
+                    ownerStats[owner] = { count: 0, area: 0, parcels: [] };
+                }
+                ownerStats[owner].count++;
+                ownerStats[owner].area += parseFloat(f.properties['Площа ДЗК']) || 0;
+                ownerStats[owner].parcels.push({
+                    cadastre: f.properties['Кадастровий номер'],
+                    area: parseFloat(f.properties['Площа ДЗК']) || 0,
+                    tenant: f.properties['Орендар'] || f.properties['Орендар частини'] || ''
+                });
+            }
+        });
+        
+        const found = Object.entries(ownerStats);
+        
+        if (found.length === 0) {
+            showResult('🔍 Пошук власника', `
+                <div style="text-align: center; padding: 20px;">
+                    <i class="bi bi-person" style="font-size: 48px; color: #3A3A3C;"></i>
+                    <div style="margin-top: 12px; color: #8E8E93;">Власника "<b>${query}</b>" не знайдено</div>
+                </div>
+            `, 'bi-person');
+            return;
+        }
+        
+        found.sort((a, b) => b[1].area - a[1].area);
+        
+        if (found.length === 1) {
+            const [name, stats] = found[0];
+            let html = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+                    <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: 700; color: #10B981;">${stats.area.toFixed(2)}</div>
+                        <div style="font-size: 12px; color: #8E8E93;">га</div>
+                    </div>
+                    <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: 700; color: white;">${stats.count}</div>
+                        <div style="font-size: 12px; color: #8E8E93;">ділянок</div>
+                    </div>
+                </div>
+            `;
+            
+            if (stats.count <= 10) {
+                html += `<div style="margin-top: 16px; color: #8E8E93; font-size: 12px;">Ділянки:</div>`;
+                html += '<div class="ai-tenant-list" style="margin-top: 8px;">';
+                stats.parcels.forEach(p => {
+                    const status = p.tenant ? `<span style="color:#EF4444">В оренді</span>` : `<span style="color:#22C55E">Вільна</span>`;
+                    html += `
+                        <div class="ai-tenant-item">
+                            <span class="ai-tenant-name" style="font-family: monospace; font-size: 11px;">${p.cadastre}</span>
+                            <div class="ai-tenant-stats">${p.area.toFixed(4)} га | ${status}</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            showResult(`👤 ${name}`, html, 'bi-person');
+        } else {
+            let html = `<div style="color: #8E8E93; margin-bottom: 12px;">Знайдено: ${found.length}</div>`;
+            html += '<div class="ai-tenant-list">';
+            found.slice(0, 15).forEach(([name, stats]) => {
+                html += `
+                    <div class="ai-tenant-item" onclick="document.getElementById('aiSearchInput').value='${name}'; document.getElementById('aiSearchInput').dispatchEvent(new Event('input'));">
+                        <span class="ai-tenant-name">${name}</span>
+                        <div class="ai-tenant-stats">${stats.area.toFixed(2)} га | ${stats.count} діл.</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            showResult('🔍 Знайдені власники', html, 'bi-person');
+        }
+    }
+    
+    // Підсвітити ділянку на карті
+    function highlightParcel(cadastre) {
+        if (typeof overlays !== 'undefined') {
+            Object.values(overlays).forEach(layerGroup => {
+                if (layerGroup && typeof layerGroup.eachLayer === 'function') {
+                    layerGroup.eachLayer(layer => {
+                        if (layer.feature && layer.feature.properties) {
+                            if (layer.feature.properties['Кадастровий номер'] === cadastre) {
+                                layer.setStyle({ fillColor: '#F59E0B', fillOpacity: 0.8, weight: 3, color: '#F59E0B' });
+                                if (layer.getBounds) {
+                                    map.fitBounds(layer.getBounds(), { maxZoom: 17 });
+                                }
+                                layer.openPopup();
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    }
+    
+    // Фільтрація на карті
+    function filterParcels(features, type) {
+        if (typeof overlays !== 'undefined') {
+            Object.values(overlays).forEach(layerGroup => {
+                if (layerGroup && typeof layerGroup.eachLayer === 'function') {
+                    layerGroup.eachLayer(layer => {
+                        if (layer.feature && layer.feature.properties) {
+                            const tenant = layer.feature.properties['Орендар'] || layer.feature.properties['Орендар частини'];
+                            const isFree = !tenant || tenant.trim() === '';
+                            
+                            if ((type === 'free' && isFree) || (type === 'rented' && !isFree)) {
+                                layer.setStyle({ fillOpacity: 0.7, weight: 2 });
+                            } else {
+                                layer.setStyle({ fillOpacity: 0.1, weight: 0.3 });
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        
+        const message = type === 'free' ? 'Підсвічено вільні ділянки' : 'Підсвічено орендовані ділянки';
+        showResult('✅ Готово', message + '<br><br><small style="color: #8E8E93;">Натисніть "Скинути фільтри" щоб відновити вигляд</small>', 'bi-check-circle');
+    }
+    
+    // Скидання фільтрів карти
+    function resetMapFilters() {
+        // Скидаємо через глобальну кнопку якщо є
+        const resetBtn = document.getElementById('resetAllFiltersBtn');
+        if (resetBtn) resetBtn.click();
+        
+        // Також відновлюємо стилі всіх шарів
+        if (typeof overlays !== 'undefined') {
+            Object.values(overlays).forEach(layerGroup => {
+                if (layerGroup && typeof layerGroup.eachLayer === 'function') {
+                    layerGroup.eachLayer(layer => {
+                        if (layer.feature && layer.feature.properties) {
+                            // Відновлюємо стандартні стилі
+                            const props = layer.feature.properties;
+                            const tenant = props['Орендар'] || props['Орендар частини'];
+                            
+                            if (props.type === 'split') {
+                                layer.setStyle({
+                                    fillOpacity: 0.4,
+                                    weight: 1,
+                                    color: tenant ? '#e74c3c' : '#27ae60',
+                                    fillColor: tenant ? '#e74c3c' : '#27ae60'
+                                });
+                            } else {
+                                layer.setStyle({
+                                    fillOpacity: 0.3,
+                                    weight: 1,
+                                    color: '#3498db',
+                                    fillColor: '#3498db'
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    }
+    
+    // Закінчення оренди
+    function showExpiring(features, year) {
+        let count = 0, area = 0;
+        const tenants = new Set();
+        
+        features.forEach(f => {
+            const expiryDate = f.properties['Дата завершення'];
+            if (expiryDate && expiryDate.includes(year)) {
+                count++;
+                area += parseFloat(f.properties['Площа ДЗК']) || 0;
+                const tenant = f.properties['Орендар'] || f.properties['Орендар частини'];
+                if (tenant) tenants.add(tenant);
+            }
+        });
+        
+        showResult(`📅 Завершення у ${year}`, `
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 12px;">
+                <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #F59E0B;">${count}</div>
+                    <div style="font-size: 12px; color: #8E8E93;">ділянок</div>
+                </div>
+                <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: white;">${area.toFixed(2)}</div>
+                    <div style="font-size: 12px; color: #8E8E93;">га</div>
+                </div>
+                <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #10B981;">${tenants.size}</div>
+                    <div style="font-size: 12px; color: #8E8E93;">орендарів</div>
+                </div>
+            </div>
+        `, 'bi-calendar-x');
+    }
+    
+    // Статистика вільних
+    function showFreeStats(features) {
+        let freeCount = 0, freeArea = 0;
+        const landUses = {};
+        
+        features.forEach(f => {
+            const tenant = f.properties['Орендар'] || f.properties['Орендар частини'];
+            if (!tenant || !tenant.trim()) {
+                freeCount++;
+                freeArea += parseFloat(f.properties['Площа ДЗК']) || 0;
+                const landUse = f.properties['Цільове'] || 'Невизначено';
+                if (!landUses[landUse]) landUses[landUse] = { count: 0, area: 0 };
+                landUses[landUse].count++;
+                landUses[landUse].area += parseFloat(f.properties['Площа ДЗК']) || 0;
+            }
+        });
+        
+        let html = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0;">
+                <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #22C55E;">${freeCount}</div>
+                    <div style="font-size: 12px; color: #8E8E93;">ділянок</div>
+                </div>
+                <div style="background: #1C1C1E; padding: 16px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #22C55E;">${freeArea.toFixed(2)}</div>
+                    <div style="font-size: 12px; color: #8E8E93;">га</div>
+                </div>
+            </div>
+            <div style="color: #8E8E93; font-size: 12px; margin: 12px 0 8px;">За цільовим використанням:</div>
+            <div class="ai-tenant-list" style="max-height: 150px;">
+        `;
+        
+        Object.entries(landUses)
+            .sort((a, b) => b[1].area - a[1].area)
+            .forEach(([use, stats]) => {
+                html += `
+                    <div class="ai-tenant-item">
+                        <span class="ai-tenant-name">${use}</span>
+                        <div class="ai-tenant-stats">${stats.area.toFixed(2)} га | ${stats.count}</div>
+                    </div>
+                `;
+            });
+        
+        html += '</div>';
+        
+        showResult('🟢 Вільні ділянки', html, 'bi-clipboard-data');
+    }
+    
+    console.log('🤖 Помічник АГРО-ПРОСТІР завантажено (без API)');
 })();
 </script>
 
