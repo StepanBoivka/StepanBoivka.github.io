@@ -891,13 +891,50 @@
         ];
         let colorIndex = 0;
         
-        function getColor(tenant) {
-            if (!tenant) return '#3A3A3C';
-            if (!tenantColors[tenant]) {
-                tenantColors[tenant] = colorPalette[colorIndex % colorPalette.length];
+        // === Система унікальності орендарів по ЄДРПОУ ===
+        // Мап: ЄДРПОУ -> канонічна назва (найкоротша)
+        let tenantEdrpouNames = {};
+        // Мап: назва орендаря -> ЄДРПОУ
+        let tenantNameToEdrpou = {};
+        
+        /**
+         * Реєструє зв'язок ЄДРПОУ з назвою орендаря.
+         * Зберігає найкоротшу назву як канонічну.
+         */
+        function registerTenantEdrpou(edrpou, tenantName) {
+            if (!edrpou || !tenantName) return;
+            tenantNameToEdrpou[tenantName] = edrpou;
+            if (!tenantEdrpouNames[edrpou]) {
+                tenantEdrpouNames[edrpou] = tenantName;
+            } else if (tenantName.length < tenantEdrpouNames[edrpou].length) {
+                tenantEdrpouNames[edrpou] = tenantName;
+            }
+        }
+        
+        /**
+         * Отримує унікальний ключ орендаря (ЄДРПОУ або назву)
+         */
+        function getTenantKey(tenant, edrpou) {
+            return edrpou || tenant;
+        }
+        
+        /**
+         * Отримує назву для відображення по ключу
+         */
+        function getTenantDisplayName(key) {
+            if (tenantEdrpouNames[key]) {
+                return tenantEdrpouNames[key];
+            }
+            return key;
+        }
+        
+        function getColor(key) {
+            if (!key) return '#3A3A3C';
+            if (!tenantColors[key]) {
+                tenantColors[key] = colorPalette[colorIndex % colorPalette.length];
                 colorIndex++;
             }
-            return tenantColors[tenant];
+            return tenantColors[key];
         }
 
         function getClientId() {
@@ -968,14 +1005,29 @@
             const features = data.features;
             const uniqueOwners = new Set();
             
+            // Очищаємо маппінги ЄДРПОУ при новому завантаженні
+            tenantEdrpouNames = {};
+            tenantNameToEdrpou = {};
+            colorIndex = 0;
+            Object.keys(tenantColors).forEach(k => delete tenantColors[k]);
+            
             const stats = features.reduce((acc, feature) => {
                 const props = feature.properties;
                 const area = parseFloat(props['Площа розрахована'] || props['Площа ДЗК'] || 0);
-                const tenant = props['Орендар'];
+                const tenantName = props['Орендар'];
+                const edrpou = props['ЄДРПОУ орендаря ділянки'];
                 const owner = props['Власник'];
                 const expiryYear = props['Рік завершення'];
                 const registrationDate = props['Дата реєстрації'];
                 const ngo = parseFloat(String(props['НГО'] || '0').replace(/\s/g, '')) || 0;
+                
+                // Реєструємо зв'язок ЄДРПОУ -> назва
+                if (tenantName && edrpou) {
+                    registerTenantEdrpou(edrpou, tenantName);
+                }
+                
+                // Використовуємо ЄДРПОУ як ключ для унікальності
+                const tenant = tenantName ? getTenantKey(tenantName, edrpou) : null;
 
                 acc.totalArea += area;
                 acc.totalParcels++;
@@ -1154,14 +1206,15 @@
             const sorted = Object.entries(stats.tenants).sort((a, b) => b[1].area - a[1].area).slice(0, 5);
             
             let html = '';
-            sorted.forEach(([tenant, data]) => {
+            sorted.forEach(([tenantKey, data]) => {
                 const percent = stats.rentedArea > 0 ? (data.area / stats.rentedArea * 100).toFixed(1) : 0;
-                const color = getColor(tenant);
+                const color = getColor(tenantKey);
+                const displayName = getTenantDisplayName(tenantKey);
                 
                 html += `
                     <div class="risk-indicator">
                         <span class="tenant-indicator" style="background-color: ${color};"></span>
-                        <span style="flex: 1; font-size: 14px; color: ${color};">${tenant}</span>
+                        <span style="flex: 1; font-size: 14px; color: ${color};">${displayName}</span>
                         <div class="risk-bar">
                             <div class="risk-bar-fill" style="width: ${percent}%; background-color: ${color};"></div>
                         </div>
@@ -1307,16 +1360,18 @@
             const sorted = Object.entries(stats.tenants).sort((a, b) => b[1].area - a[1].area);
             
             let html = '';
-            sorted.forEach(([tenant, data]) => {
+            sorted.forEach(([tenantKey, data]) => {
                 const percent = (data.area / stats.totalArea * 100).toFixed(1);
                 const avgArea = (data.area / data.count).toFixed(2);
-                const color = getColor(tenant);
+                const color = getColor(tenantKey);
+                // Отримуємо канонічну назву для відображення
+                const displayName = getTenantDisplayName(tenantKey);
                 
                 html += `
                     <tr>
                         <td>
                             <span class="tenant-indicator" style="background-color: ${color};"></span>
-                            <span style="color: ${color}; font-weight: 500;">${tenant}</span>
+                            <span style="color: ${color}; font-weight: 500;">${displayName}</span>
                         </td>
                         <td class="text-end">${data.count}</td>
                         <td class="text-end">${data.area.toFixed(2)}</td>
@@ -1372,14 +1427,15 @@
             
             Object.entries(tenants)
                 .sort((a, b) => b[1].area - a[1].area)
-                .forEach(([tenant, data]) => {
-                    const color = getColor(tenant);
+                .forEach(([tenantKey, data]) => {
+                    const color = getColor(tenantKey);
+                    const displayName = getTenantDisplayName(tenantKey);
                     let rowTotal = 0;
                     
-                    html += `<tr><td class="sticky-col"><span class="tenant-indicator" style="background-color: ${color};"></span><span style="color: ${color};">${tenant}</span></td>`;
+                    html += `<tr><td class="sticky-col"><span class="tenant-indicator" style="background-color: ${color};"></span><span style="color: ${color};">${displayName}</span></td>`;
                     
                     years.forEach(year => {
-                        const areaForYear = expiryYears[year]?.tenants?.[tenant]?.area || 0;
+                        const areaForYear = expiryYears[year]?.tenants?.[tenantKey]?.area || 0;
                         yearTotals[year] += areaForYear;
                         rowTotal += areaForYear;
                         
@@ -1473,9 +1529,12 @@
             const top5 = sorted.slice(0, 5);
             const othersArea = sorted.slice(5).reduce((sum, [_, d]) => sum + d.area, 0);
             
-            const labels = top5.map(([name, _]) => name.length > 20 ? name.substring(0, 20) + '...' : name);
+            const labels = top5.map(([key, _]) => {
+                const displayName = getTenantDisplayName(key);
+                return displayName.length > 20 ? displayName.substring(0, 20) + '...' : displayName;
+            });
             const data = top5.map(([_, d]) => d.area);
-            const colors = top5.map(([name, _]) => getColor(name));
+            const colors = top5.map(([key, _]) => getColor(key));
             
             if (othersArea > 0) {
                 labels.push('Інші');
@@ -1649,9 +1708,10 @@
             const tenantsData = [['Орендар', 'Кількість ділянок', 'Площа (га)', '% площі', 'Середня площа', 'НГО (грн)']];
             Object.entries(globalStats.tenants)
                 .sort((a, b) => b[1].area - a[1].area)
-                .forEach(([name, data]) => {
+                .forEach(([tenantKey, data]) => {
+                    const displayName = getTenantDisplayName(tenantKey);
                     tenantsData.push([
-                        name,
+                        displayName,
                         data.count,
                         data.area.toFixed(2),
                         (data.area / globalStats.totalArea * 100).toFixed(1) + '%',
@@ -1696,11 +1756,12 @@
             
             Object.entries(globalStats.tenants)
                 .sort((a, b) => b[1].area - a[1].area)
-                .forEach(([tenant, data]) => {
-                    const row = [tenant];
+                .forEach(([tenantKey, data]) => {
+                    const displayName = getTenantDisplayName(tenantKey);
+                    const row = [displayName];
                     let rowTotal = 0;
                     years.forEach(year => {
-                        const areaForYear = globalStats.expiryYears[year]?.tenants?.[tenant]?.area || 0;
+                        const areaForYear = globalStats.expiryYears[year]?.tenants?.[tenantKey]?.area || 0;
                         row.push(areaForYear > 0 ? areaForYear.toFixed(1) : '-');
                         rowTotal += areaForYear;
                     });
