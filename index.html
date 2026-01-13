@@ -6729,7 +6729,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
             const cadastralNumber = props["Кадастровий номер"] || '';
             const tenant = props["Орендар"] || props["Орендар частини"] || '';
             const expiryDate = props["Дата завершення"] || '';
-            const registrationDate = props["Дата реєстрації оренди"] || props["Дата реєстрації"] || '';
+            // Дата реєстрації оренди (окремо від права власності)
+            const rentalRegistrationDate = props["Дата реєстрації оренди"] || '';
+            // Дата реєстрації права власності
+            const ownershipRegistrationDate = props["Дата реєстрації"] || '';
             // Виправлено: використовуємо "Площа ДЗК" замість "Площа земельної ділянки"
             const areaDZK = parseFloat(props["Площа ДЗК"]) || parseFloat(props["Площа земельної ділянки"]) || 0;
             const areaCalc = parseFloat(props["Площа розрахована"]) || parseFloat(props["Площа частини"]) || 0;
@@ -6849,10 +6852,24 @@ function addPolygonToMap(geoJSON, originalProperties) {
             
             // СЕКЦІЯ: Власність
             if (props["Власник"] || props["Форма власності"]) {
+                // Форматуємо дату реєстрації права власності (з YYYY-MM-DD в DD.MM.YYYY)
+                let formattedOwnershipDate = '';
+                if (ownershipRegistrationDate) {
+                    const parts = ownershipRegistrationDate.split('-');
+                    if (parts.length === 3) {
+                        formattedOwnershipDate = `${parts[2]}.${parts[1]}.${parts[0]}`;
+                    } else {
+                        formattedOwnershipDate = ownershipRegistrationDate;
+                    }
+                }
+                
                 popupContent += `
                     <div style="padding: 12px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                        <div style="color: #8E8E93; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                            <i class="bi bi-person" style="margin-right: 4px;"></i>ВЛАСНІСТЬ
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: #8E8E93; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="bi bi-person" style="margin-right: 4px;"></i>ВЛАСНІСТЬ
+                            </span>
+                            ${formattedOwnershipDate ? `<span style="color: #8E8E93; font-size: 11px;"><i class="bi bi-calendar3" style="margin-right: 3px;"></i>${formattedOwnershipDate}</span>` : ''}
                         </div>
                         ${props["Власник"] ? `<div style="color: #FFFFFF; font-size: 14px; font-weight: 500; margin-bottom: 4px;">${props["Власник"]}</div>` : ''}
                         ${props["Форма власності"] ? `<div style="color: #ABABAB; font-size: 12px;">${props["Форма власності"]}</div>` : ''}
@@ -6860,9 +6877,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
             }
             
             // СЕКЦІЯ: Оренда
-            if (tenant || registrationDate || expiryDate) {
+            if (tenant || rentalRegistrationDate || expiryDate) {
                 // Отримуємо колір орендаря з карти
-                const tenantColor = tenant ? getColor(tenant) : '#FFFFFF';
+                const edrpou = props["ЄДРПОУ орендаря частини"] || props["ЄДРПОУ орендаря ділянки"];
+                const tenantColor = tenant ? getColor(tenant, edrpou) : '#FFFFFF';
                 
                 popupContent += `
                     <div style="padding: 12px 14px; background: #1C1C1E; border-bottom: 1px solid rgba(255,255,255,0.08);">
@@ -6876,10 +6894,10 @@ function addPolygonToMap(geoJSON, originalProperties) {
                             <span style="color: ${tenantColor}; font-size: 14px; font-weight: 600;">${tenant}</span>
                         </div>` : ''}
                         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                            ${registrationDate ? `
+                            ${rentalRegistrationDate ? `
                             <div>
                                 <div style="color: #8E8E93; font-size: 11px;">Реєстрація</div>
-                                <div style="color: #FFFFFF; font-size: 13px; font-weight: 500;">${registrationDate}</div>
+                                <div style="color: #FFFFFF; font-size: 13px; font-weight: 500;">${rentalRegistrationDate}</div>
                             </div>` : ''}
                             ${expiryDate ? `
                             <div style="text-align: right;">
