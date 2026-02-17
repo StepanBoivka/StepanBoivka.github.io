@@ -1150,11 +1150,18 @@
 
             .offcanvas-body {
                 overflow-y: auto !important;
-                flex-grow: 1 !important;
+                height: 100% !important;
+                /* Гарантуємо, що body займає всю доступну висоту */
                 padding-bottom: 80px !important;
                 /* Збільшений відступ для гарантованої видимості низу */
                 -webkit-overflow-scrolling: touch !important;
                 /* Плавна прокрутка на iOS */
+                overscroll-behavior-y: contain !important;
+                /* Блокуємо передачу скролу на карту */
+                touch-action: pan-y !important;
+                /* Дозволяємо лише вертикальний скрол */
+                will-change: scroll-position;
+                /* Оптимізація для браузера */
             }
 
             /* Забезпечуємо display flex для батьківського елемента, якщо Bootstrap ще не зробив */
