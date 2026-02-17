@@ -1096,15 +1096,22 @@
                 right: 0 !important;
                 width: 100% !important;
                 max-width: 100% !important;
-                height: auto !important;
-                max-height: 70vh !important;
-                border-radius: 20px 20px 0 0 !important;
+                height: 70vh !important;
+                /* Фіксована висота для стабільності */
+                max-height: none !important;
+                border-radius: var(--mono-radius-lg) var(--mono-radius-lg) 0 0 !important;
                 background: var(--mono-surface) !important;
                 border: none !important;
                 border-top: 1px solid var(--mono-border) !important;
                 transform: translateY(100%) !important;
                 transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1) !important;
-                padding-bottom: env(safe-area-inset-bottom, 20px) !important;
+                padding-bottom: 0 !important;
+            }
+
+            /* Блокуємо скрол фону при відкритій шторці */
+            .offcanvas-backdrop.show {
+                touch-action: none;
+                overscroll-behavior: none;
             }
 
             .offcanvas.offcanvas-start.show {
