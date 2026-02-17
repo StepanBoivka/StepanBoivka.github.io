@@ -9,6 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <style>
         :root {
             --mono-bg: #000000;
@@ -742,6 +744,10 @@
                 Повернутися на карту
             </a>
             <div class="export-buttons">
+                <button class="btn-export" onclick="generateAnalyticsReport()" style="background: linear-gradient(135deg, #EF4444, #DC2626);">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    <span class="d-none d-sm-inline">Довідка</span>
+                </button>
                 <button class="btn-export excel" onclick="exportToExcel()">
                     <i class="bi bi-file-earmark-excel"></i>
                     <span class="d-none d-sm-inline">Excel</span>
@@ -1981,7 +1987,33 @@
             window.location.href = returnUrl;
         }
 
+        // Генерація аналітичної довідки
+        function generateAnalyticsReport() {
+            if (!globalStats) {
+                alert('Дані ще завантажуються. Зачекайте...');
+                return;
+            }
+            
+            const councilName = document.getElementById('councilName').textContent || 'Невідома рада';
+            
+            // Викликаємо функцію з analyticsReport.js
+            if (typeof generateReportFromStats === 'function') {
+                generateReportFromStats(councilName, globalStats);
+            } else if (typeof createReportPDF === 'function') {
+                createReportPDF(councilName, globalStats);
+            } else {
+                // Якщо скрипт не підключений, завантажуємо його
+                const script = document.createElement('script');
+                script.src = 'js/analyticsReport.js';
+                script.onload = function() {
+                    generateReportFromStats(councilName, globalStats);
+                };
+                document.head.appendChild(script);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', loadAndProcessData);
     </script>
+    <script src="js/analyticsReport.js"></script>
 </body>
 </html>
