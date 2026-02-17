@@ -1097,13 +1097,14 @@
                 width: 100% !important;
                 max-width: 100% !important;
                 height: auto !important;
-                max-height: 85vh !important;
-                border-radius: var(--mono-radius-lg) var(--mono-radius-lg) 0 0 !important;
+                max-height: 70vh !important;
+                border-radius: 20px 20px 0 0 !important;
                 background: var(--mono-surface) !important;
                 border: none !important;
                 border-top: 1px solid var(--mono-border) !important;
                 transform: translateY(100%) !important;
                 transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1) !important;
+                padding-bottom: env(safe-area-inset-bottom, 20px) !important;
             }
 
             .offcanvas.offcanvas-start.show {
@@ -1114,7 +1115,7 @@
             .offcanvas-header::before {
                 content: '';
                 position: absolute;
-                top: 8px;
+                top: 12px;
                 left: 50%;
                 transform: translateX(-50%);
                 width: 36px;
@@ -1126,7 +1127,7 @@
 
             .offcanvas-header {
                 position: relative;
-                padding: 32px 20px 16px 20px !important;
+                padding: 42px 20px 20px 20px !important;
                 border-bottom: none !important;
                 display: flex !important;
                 align-items: center !important;
