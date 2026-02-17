@@ -1148,6 +1148,21 @@
                 box-sizing: content-box !important;
             }
 
+            .offcanvas-body {
+                overflow-y: auto !important;
+                flex-grow: 1 !important;
+                padding-bottom: 80px !important;
+                /* Збільшений відступ для гарантованої видимості низу */
+                -webkit-overflow-scrolling: touch !important;
+                /* Плавна прокрутка на iOS */
+            }
+
+            /* Забезпечуємо display flex для батьківського елемента, якщо Bootstrap ще не зробив */
+            .offcanvas {
+                display: flex !important;
+                flex-direction: column !important;
+            }
+
             .offcanvas-title {
                 font-size: 1.5rem !important;
                 font-weight: 700 !important;
