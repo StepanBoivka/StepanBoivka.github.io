@@ -337,7 +337,7 @@
 
         #map {
             position: absolute;
-            top: calc(56px + env(safe-area-inset-top));
+            top: calc(56px + var(--banner-height, 42px) + env(safe-area-inset-top));
             bottom: env(safe-area-inset-bottom);
             left: 0;
             right: 0;
@@ -3299,9 +3299,201 @@
         </div>
     </button>
 
+    <!-- Банер переходу на нову платформу -->
+    <div id="newPlatformBanner" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 99999;
+        background: linear-gradient(135deg, #0d6efd, #0a58ca);
+        color: white;
+        text-align: center;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    ">
+        <span><span id="bannerFreshness" style="opacity:0.85;font-weight:400;"></span><span id="bannerWarning" style="display:none;"><span class="blink-warn">⚠️</span> <span id="bannerDataDate"></span> — у вас є можливість перейти на нову версію з актуальними даними</span></span>
+        <style>
+            @keyframes blink-warn { 0%,100%{opacity:1} 50%{opacity:0.15} }
+            .blink-warn { animation: blink-warn 1.4s ease-in-out infinite; display:inline-block; }
+        </style>
+        <a href="https://agro-space.app/" target="_blank" style="
+            background: white;
+            color: #0d6efd;
+            padding: 4px 14px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 13px;
+            white-space: nowrap;
+        ">Перейти →</a>
+        <a href="tel:+380673502760" class="banner-phone" style="
+            color: white;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0.9;
+            text-decoration: none;
+        ">📞 +38 067 350 27 60</a>
+        <style>
+            @media (max-width: 576px) { .banner-phone { display: none !important; } }
+        </style>
+    </div>
+
+    <!-- Модальне вікно переходу (раз на тиждень) -->
+    <div id="newPlatformModal" style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        background: rgba(0,0,0,0.6);
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    ">
+        <div style="
+            background: white;
+            border-radius: 16px;
+            max-width: 420px;
+            width: 100%;
+            padding: 32px 28px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            text-align: center;
+            position: relative;
+        ">
+            <div style="font-size: 48px; margin-bottom: 12px;">🚀</div>
+            <h2 style="color: #0d6efd; margin: 0 0 12px; font-size: 22px; font-weight: 700;">Нова версія платформи</h2>
+            <p style="color: #444; margin: 0 0 8px; line-height: 1.5;">
+                Платформа <strong>Агро-Простір</strong> оновилась! Нова версія має актуальніші дані, покращений інтерфейс та нові можливості.
+            </p>
+            <p style="color: #666; font-size: 13px; margin: 0 0 8px;" data-freshness>
+                Рекомендуємо перейти на <strong>agro-space.app</strong>
+            </p>
+            <p style="margin: 0 0 24px;">
+                <a href="tel:+380673502760" style="color: #0d6efd; font-weight: 600; font-size: 15px; text-decoration: none;">📞 +38 067 350 27 60</a><br>
+                <span style="color: #999; font-size: 12px;">Питання або проблеми — дзвоніть</span>
+            </p>
+            <a href="https://agro-space.app/" target="_blank" onclick="closeNewPlatformModal()" style="
+                display: block;
+                background: linear-gradient(135deg, #0d6efd, #0a58ca);
+                color: white;
+                padding: 14px;
+                border-radius: 10px;
+                text-decoration: none;
+                font-weight: 700;
+                font-size: 16px;
+                margin-bottom: 12px;
+            ">Перейти на нову версію →</a>
+            <button onclick="closeNewPlatformModal()" style="
+                background: none;
+                border: none;
+                color: #999;
+                font-size: 13px;
+                cursor: pointer;
+                padding: 8px;
+                text-decoration: underline;
+            ">Залишитись на старій версії</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Зміщуємо navbar вниз на висоту банера
+            var bannerH = document.getElementById('newPlatformBanner').offsetHeight || 42;
+            document.documentElement.style.setProperty('--banner-height', bannerH + 'px');
+
+            // Модальне — показуємо раз на тиждень
+            var lastShown = localStorage.getItem('newPlatformModalShown');
+            var weekMs = 7 * 24 * 60 * 60 * 1000;
+            if (!lastShown || (Date.now() - parseInt(lastShown)) > weekMs) {
+                setTimeout(function() {
+                    var modal = document.getElementById('newPlatformModal');
+                    modal.style.display = 'flex';
+                }, 1500);
+            }
+        })();
+
+        function closeNewPlatformModal() {
+            document.getElementById('newPlatformModal').style.display = 'none';
+            localStorage.setItem('newPlatformModalShown', Date.now().toString());
+        }
+
+        // Закриття по кліку поза модальним
+        document.getElementById('newPlatformModal').addEventListener('click', function(e) {
+            if (e.target === this) closeNewPlatformModal();
+        });
+
+        // Розрахунок свіжості даних для банера
+        window.addEventListener('load', function() {
+            setTimeout(async function() {
+                try {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const clientId = urlParams.get('id') || localStorage.getItem('client_id');
+                    const dataPath = clientId ? 'data/' + clientId + '/' : 'data/';
+
+                    const listResp = await fetch(dataPath + 'file_list.json');
+                    if (!listResp.ok) return;
+                    const listData = await listResp.json();
+                    const files = listData.files || [];
+                    if (!files.length) return;
+
+                    const now = new Date();
+                    let latestDate = null;
+
+                    await Promise.all(files.map(async function(file) {
+                        try {
+                            const resp = await fetch(dataPath + file);
+                            if (!resp.ok) return;
+                            const geo = await resp.json();
+                            (geo.features || []).forEach(function(f) {
+                                if (f.properties?.type !== 'original') return;
+                                const dateStr = f.properties?.['Дата оновлення'];
+                                if (!dateStr) return;
+                                const [d, m, y] = dateStr.split('.').map(Number);
+                                const dt = new Date(y, m - 1, d);
+                                if (!latestDate || dt > latestDate) latestDate = dt;
+                            });
+                        } catch(e) {}
+                    }));
+
+                    if (!latestDate) return;
+
+                    const daysOld = Math.round((now - latestDate) / (1000 * 60 * 60 * 24));
+                    const dateFormatted = latestDate.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                    const freshnessEl = document.getElementById('bannerFreshness');
+                    const warningEl = document.getElementById('bannerWarning');
+                    const dateEl = document.getElementById('bannerDataDate');
+
+                    if (daysOld > 45) {
+                        // Дані старші 45 днів — показуємо мигаючий блок
+                        if (freshnessEl) freshnessEl.style.display = 'none';
+                        if (dateEl) dateEl.textContent = 'Дані станом на ' + dateFormatted;
+                        if (warningEl) warningEl.style.display = 'inline';
+
+                        // Оновлюємо модальне
+                        var modalDesc = document.querySelector('#newPlatformModal p[data-freshness]');
+                        if (modalDesc) {
+                            modalDesc.innerHTML = 'Ваші дані станом на <strong>' + dateFormatted + '</strong> (' + daysOld + ' днів тому). На новій платформі дані завжди актуальні.';
+                        }
+                    } else {
+                        // Дані свіжі — просто показуємо дату
+                        if (freshnessEl) freshnessEl.textContent = '— дані станом на ' + dateFormatted;
+                    }
+                } catch(e) {}
+            }, 3000);
+        });
+    </script>
+
     <!-- Оставляем тільки один navbar -->
     <nav class="navbar navbar-dark fixed-top py-1"
-        style="background: var(--mono-surface) !important; border-bottom: 1px solid var(--mono-border);">
+        style="background: var(--mono-surface) !important; border-bottom: 1px solid var(--mono-border); top: var(--banner-height, 42px);">
         <div class="container-fluid px-3">
             <!-- Кнопка для відкриття бокового меню -->
             <button class="btn btn-sm"
